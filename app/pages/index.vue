@@ -1,5 +1,5 @@
 <template>
-  <div class="test-center">
+  <div class="text-center">
     oi
   </div>
 </template>
