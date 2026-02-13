@@ -1,5 +1,3 @@
 <template>
-  <div class="text-center">
-    oi
-  </div>
+  <Button class="text-center"> oi </Button>
 </template>
