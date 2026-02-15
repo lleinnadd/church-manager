@@ -91,7 +91,7 @@ const userEmail = computed(() => {
       </SidebarGroup>
     </SidebarContent>
 
-    <SidebarFooter>
+    <SidebarFooter v-if="user">
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
