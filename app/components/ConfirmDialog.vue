@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { cn } from '~/lib/utils';
+
 defineProps<{
   open: boolean;
   title: string;
@@ -30,18 +32,19 @@ function handleOpenChange(value: boolean) {
       </AlertDialogHeader>
       <AlertDialogFooter>
         <AlertDialogCancel :disabled="loading" @click="emit('cancel')">
-          {{ cancelLabel ?? 'Cancel' }}
+          {{ cancelLabel ?? $t('common.cancel') }}
         </AlertDialogCancel>
         <AlertDialogAction
           :class="
-            variant === 'destructive'
-              ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-              : ''
+            cn(
+              variant === 'destructive' &&
+                'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+            )
           "
           :disabled="loading"
           @click="emit('confirm')"
         >
-          {{ loading ? 'Loading...' : (confirmLabel ?? 'Confirm') }}
+          {{ loading ? $t('common.loading') : (confirmLabel ?? $t('common.confirm')) }}
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>

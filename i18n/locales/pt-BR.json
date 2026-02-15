@@ -1,0 +1,79 @@
+{
+  "app": {
+    "name": "Church Manager"
+  },
+  "sidebar": {
+    "menu": "Menu",
+    "home": "Início",
+    "congregations": "Congregações",
+    "members": "Membros",
+    "events": "Eventos",
+    "settings": "Configurações",
+    "manageAccount": "Gerenciar Conta",
+    "signOut": "Sair",
+    "userFallback": "Usuário"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "saving": "Salvando...",
+    "back": "Voltar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "actions": "Ações",
+    "switchLanguage": "Trocar idioma",
+    "since": "Desde {date}",
+    "member": "membro",
+    "members": "membros",
+    "memberCount": "{count} membro | {count} membros",
+    "pickADate": "Selecione uma data"
+  },
+  "pages": {
+    "home": {
+      "title": "Bem-vindo ao Church Manager"
+    },
+    "congregations": {
+      "title": "Congregações",
+      "description": "Gerencie suas congregações e suas informações.",
+      "new": "Nova Congregação",
+      "newDescription": "Preencha os detalhes para criar uma nova congregação.",
+      "editTitle": "Editar Congregação",
+      "editDescription": "Atualize os detalhes da congregação.",
+      "emptyTitle": "Nenhuma congregação ainda",
+      "emptyDescription": "Comece criando sua primeira congregação.",
+      "deleteTitle": "Excluir congregação",
+      "deleteDescription": "Tem certeza que deseja excluir '{name}'? Esta ação não pode ser desfeita.",
+      "deleteSuccess": "Congregação excluída com sucesso",
+      "deleteError": "Falha ao excluir congregação",
+      "createSuccess": "Congregação criada com sucesso",
+      "createError": "Falha ao criar congregação",
+      "updateSuccess": "Congregação atualizada com sucesso",
+      "updateError": "Falha ao atualizar congregação"
+    }
+  },
+  "form": {
+    "congregation": {
+      "generalInfo": "Informações Gerais",
+      "generalInfoDescription": "Detalhes básicos sobre a congregação.",
+      "name": "Nome *",
+      "namePlaceholder": "Nome da congregação",
+      "since": "Desde",
+      "address": "Endereço",
+      "addressDescription": "Detalhes de localização da congregação.",
+      "zipCode": "CEP",
+      "zipCodePlaceholder": "00000-000",
+      "addressLine": "Endereço",
+      "addressLinePlaceholder": "Rua, número",
+      "complement": "Complemento",
+      "complementPlaceholder": "Apartamento, sala, etc.",
+      "district": "Bairro",
+      "districtPlaceholder": "Bairro / Vizinhança",
+      "city": "Cidade",
+      "cityPlaceholder": "Cidade",
+      "state": "Estado",
+      "statePlaceholder": "Selecione um estado"
+    }
+  }
+}

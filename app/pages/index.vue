@@ -1,5 +1,5 @@
 <template>
   <div>
-    <h1 class="text-2xl font-bold">Welcome to Church Manager</h1>
+    <h1 class="text-2xl font-bold">{{ $t('pages.home.title') }}</h1>
   </div>
 </template>

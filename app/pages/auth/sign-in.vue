@@ -1,11 +1,9 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: false,
+  layout: 'auth',
 });
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center">
-    <SignIn routing="path" path="/auth/sign-in" sign-up-url="/auth/sign-up" />
-  </div>
+  <SignIn routing="path" path="/auth/sign-in" sign-up-url="/auth/sign-up" />
 </template>

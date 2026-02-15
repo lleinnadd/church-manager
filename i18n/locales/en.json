@@ -1,0 +1,79 @@
+{
+  "app": {
+    "name": "Church Manager"
+  },
+  "sidebar": {
+    "menu": "Menu",
+    "home": "Home",
+    "congregations": "Congregations",
+    "members": "Members",
+    "events": "Events",
+    "settings": "Settings",
+    "manageAccount": "Manage Account",
+    "signOut": "Sign Out",
+    "userFallback": "User"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "save": "Save",
+    "saving": "Saving...",
+    "back": "Back",
+    "edit": "Edit",
+    "delete": "Delete",
+    "actions": "Actions",
+    "switchLanguage": "Switch language",
+    "since": "Since {date}",
+    "member": "member",
+    "members": "members",
+    "memberCount": "{count} member | {count} members",
+    "pickADate": "Pick a date"
+  },
+  "pages": {
+    "home": {
+      "title": "Welcome to Church Manager"
+    },
+    "congregations": {
+      "title": "Congregations",
+      "description": "Manage your congregations and their information.",
+      "new": "New Congregation",
+      "newDescription": "Fill in the details to create a new congregation.",
+      "editTitle": "Edit Congregation",
+      "editDescription": "Update the congregation details.",
+      "emptyTitle": "No congregations yet",
+      "emptyDescription": "Get started by creating your first congregation.",
+      "deleteTitle": "Delete congregation",
+      "deleteDescription": "Are you sure you want to delete '{name}'? This action cannot be undone.",
+      "deleteSuccess": "Congregation deleted successfully",
+      "deleteError": "Failed to delete congregation",
+      "createSuccess": "Congregation created successfully",
+      "createError": "Failed to create congregation",
+      "updateSuccess": "Congregation updated successfully",
+      "updateError": "Failed to update congregation"
+    }
+  },
+  "form": {
+    "congregation": {
+      "generalInfo": "General Information",
+      "generalInfoDescription": "Basic details about the congregation.",
+      "name": "Name *",
+      "namePlaceholder": "Congregation name",
+      "since": "Since",
+      "address": "Address",
+      "addressDescription": "Location details of the congregation.",
+      "zipCode": "ZIP Code",
+      "zipCodePlaceholder": "00000-000",
+      "addressLine": "Address",
+      "addressLinePlaceholder": "Street, number",
+      "complement": "Complement",
+      "complementPlaceholder": "Apartment, suite, etc.",
+      "district": "District",
+      "districtPlaceholder": "District / Neighborhood",
+      "city": "City",
+      "cityPlaceholder": "City",
+      "state": "State",
+      "statePlaceholder": "Select a state"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner';
 
+const { t } = useI18n();
 const router = useRouter();
 const loading = ref(false);
 
@@ -11,10 +12,10 @@ async function handleSubmit(data: any) {
       method: 'POST',
       body: data,
     });
-    toast.success('Congregation created successfully');
+    toast.success(t('pages.congregations.createSuccess'));
     router.push('/congregations');
   } catch {
-    toast.error('Failed to create congregation');
+    toast.error(t('pages.congregations.createError'));
   } finally {
     loading.value = false;
   }
@@ -24,8 +25,8 @@ async function handleSubmit(data: any) {
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-2xl font-bold tracking-tight">New Congregation</h1>
-      <p class="text-muted-foreground text-sm">Fill in the details to create a new congregation.</p>
+      <h1 class="text-2xl font-bold tracking-tight">{{ $t('pages.congregations.new') }}</h1>
+      <p class="text-muted-foreground text-sm">{{ $t('pages.congregations.newDescription') }}</p>
     </div>
 
     <CongregationForm :loading="loading" @submit="handleSubmit" />

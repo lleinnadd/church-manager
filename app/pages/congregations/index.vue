@@ -3,6 +3,8 @@ import { Church, Plus, Pencil, Trash2, MapPin, Users } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
 import type { Congregation } from '@prisma/client';
 
+const { t, locale } = useI18n();
+
 type CongregationWithCount = Congregation & { _count: { members: number } };
 
 const {
@@ -25,10 +27,10 @@ async function handleDelete() {
   isDeleting.value = true;
   try {
     await $fetch(`/api/congregations/${deleteTarget.value.id}`, { method: 'DELETE' });
-    toast.success('Congregation deleted successfully');
+    toast.success(t('pages.congregations.deleteSuccess'));
     refresh();
   } catch {
-    toast.error('Failed to delete congregation');
+    toast.error(t('pages.congregations.deleteError'));
   } finally {
     isDeleting.value = false;
     deleteTarget.value = null;
@@ -37,7 +39,7 @@ async function handleDelete() {
 
 function formatDate(date: string | Date | null) {
   if (!date) return '—';
-  return new Date(date).toLocaleDateString('pt-BR');
+  return new Date(date).toLocaleDateString(locale.value);
 }
 
 function formatAddress(congregation: CongregationWithCount) {
@@ -55,15 +57,15 @@ function formatAddress(congregation: CongregationWithCount) {
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight">Congregations</h1>
+        <h1 class="text-2xl font-bold tracking-tight">{{ $t('pages.congregations.title') }}</h1>
         <p class="text-muted-foreground text-sm">
-          Manage your congregations and their information.
+          {{ $t('pages.congregations.description') }}
         </p>
       </div>
       <Button as-child>
         <NuxtLink to="/congregations/new">
           <Plus class="mr-2 size-4" />
-          New Congregation
+          {{ $t('pages.congregations.new') }}
         </NuxtLink>
       </Button>
     </div>
@@ -77,14 +79,14 @@ function formatAddress(congregation: CongregationWithCount) {
         <Church class="size-8" />
       </EmptyMedia>
       <EmptyHeader>
-        <EmptyTitle>No congregations yet</EmptyTitle>
-        <EmptyDescription>Get started by creating your first congregation.</EmptyDescription>
+        <EmptyTitle>{{ $t('pages.congregations.emptyTitle') }}</EmptyTitle>
+        <EmptyDescription>{{ $t('pages.congregations.emptyDescription') }}</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <Button as-child>
           <NuxtLink to="/congregations/new">
             <Plus class="mr-2 size-4" />
-            New Congregation
+            {{ $t('pages.congregations.new') }}
           </NuxtLink>
         </Button>
       </EmptyContent>
@@ -97,13 +99,13 @@ function formatAddress(congregation: CongregationWithCount) {
             <div class="min-w-0 flex-1">
               <CardTitle class="truncate text-lg">{{ congregation.name }}</CardTitle>
               <CardDescription v-if="congregation.since">
-                Since {{ formatDate(congregation.since) }}
+                {{ $t('common.since', { date: formatDate(congregation.since) }) }}
               </CardDescription>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
                 <Button variant="ghost" size="icon-sm">
-                  <span class="sr-only">Actions</span>
+                  <span class="sr-only">{{ $t('common.actions') }}</span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
@@ -125,7 +127,7 @@ function formatAddress(congregation: CongregationWithCount) {
                 <DropdownMenuItem as-child>
                   <NuxtLink :to="`/congregations/${congregation.id}/edit`">
                     <Pencil class="mr-2 size-4" />
-                    Edit
+                    {{ $t('common.edit') }}
                   </NuxtLink>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -134,7 +136,7 @@ function formatAddress(congregation: CongregationWithCount) {
                   @click="confirmDelete(congregation.id, congregation.name)"
                 >
                   <Trash2 class="mr-2 size-4" />
-                  Delete
+                  {{ $t('common.delete') }}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -152,7 +154,9 @@ function formatAddress(congregation: CongregationWithCount) {
             <Users class="size-4 shrink-0" />
             <span
               >{{ congregation._count.members }}
-              {{ congregation._count.members === 1 ? 'member' : 'members' }}</span
+              {{
+                congregation._count.members === 1 ? $t('common.member') : $t('common.members')
+              }}</span
             >
           </div>
         </CardContent>
@@ -161,9 +165,9 @@ function formatAddress(congregation: CongregationWithCount) {
 
     <ConfirmDialog
       :open="!!deleteTarget"
-      title="Delete congregation"
-      :description="`Are you sure you want to delete '${deleteTarget?.name}'? This action cannot be undone.`"
-      confirm-label="Delete"
+      :title="$t('pages.congregations.deleteTitle')"
+      :description="$t('pages.congregations.deleteDescription', { name: deleteTarget?.name })"
+      :confirm-label="$t('common.delete')"
       variant="destructive"
       :loading="isDeleting"
       @confirm="handleDelete"

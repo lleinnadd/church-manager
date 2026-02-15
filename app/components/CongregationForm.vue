@@ -3,6 +3,8 @@ import { ArrowLeft, CalendarIcon } from 'lucide-vue-next';
 import { type DateValue, CalendarDate, getLocalTimeZone } from '@internationalized/date';
 import { BRAZIL_STATES } from '@/lib/constants';
 
+const { locale } = useI18n();
+
 const props = defineProps<{
   initialData?: {
     name: string;
@@ -41,7 +43,7 @@ const form = ref({
 
 function formatDateDisplay(date: DateValue | undefined) {
   if (!date) return '';
-  return date.toDate(getLocalTimeZone()).toLocaleDateString('pt-BR');
+  return date.toDate(getLocalTimeZone()).toLocaleDateString(locale.value);
 }
 
 function handleSubmit() {
@@ -54,16 +56,21 @@ function handleSubmit() {
   <form class="space-y-8" @submit.prevent="handleSubmit">
     <Card>
       <CardHeader>
-        <CardTitle>General Information</CardTitle>
-        <CardDescription>Basic details about the congregation.</CardDescription>
+        <CardTitle>{{ $t('form.congregation.generalInfo') }}</CardTitle>
+        <CardDescription>{{ $t('form.congregation.generalInfoDescription') }}</CardDescription>
       </CardHeader>
       <CardContent class="grid gap-4 md:grid-cols-2">
         <div class="space-y-2">
-          <Label for="name">Name *</Label>
-          <Input id="name" v-model="form.name" placeholder="Congregation name" required />
+          <Label for="name">{{ $t('form.congregation.name') }}</Label>
+          <Input
+            id="name"
+            v-model="form.name"
+            :placeholder="$t('form.congregation.namePlaceholder')"
+            required
+          />
         </div>
         <div class="space-y-2">
-          <Label>Since</Label>
+          <Label>{{ $t('form.congregation.since') }}</Label>
           <Popover>
             <PopoverTrigger as-child>
               <Button
@@ -74,7 +81,7 @@ function handleSubmit() {
                 ]"
               >
                 <CalendarIcon class="mr-2 size-4" />
-                {{ sinceDate ? formatDateDisplay(sinceDate as DateValue) : 'Pick a date' }}
+                {{ sinceDate ? formatDateDisplay(sinceDate as DateValue) : $t('common.pickADate') }}
               </Button>
             </PopoverTrigger>
             <PopoverContent class="w-auto p-0">
@@ -91,43 +98,55 @@ function handleSubmit() {
 
     <Card>
       <CardHeader>
-        <CardTitle>Address</CardTitle>
-        <CardDescription>Location details of the congregation.</CardDescription>
+        <CardTitle>{{ $t('form.congregation.address') }}</CardTitle>
+        <CardDescription>{{ $t('form.congregation.addressDescription') }}</CardDescription>
       </CardHeader>
       <CardContent class="grid gap-4 md:grid-cols-2">
         <div class="space-y-2">
-          <Label for="zipCode">ZIP Code</Label>
-          <Input id="zipCode" v-model="form.zipCode" placeholder="00000-000" />
+          <Label for="zipCode">{{ $t('form.congregation.zipCode') }}</Label>
+          <Input
+            id="zipCode"
+            v-model="form.zipCode"
+            :placeholder="$t('form.congregation.zipCodePlaceholder')"
+          />
         </div>
         <div class="space-y-2">
-          <Label for="addressLinePrimary">Address</Label>
+          <Label for="addressLinePrimary">{{ $t('form.congregation.addressLine') }}</Label>
           <Input
             id="addressLinePrimary"
             v-model="form.addressLinePrimary"
-            placeholder="Street, number"
+            :placeholder="$t('form.congregation.addressLinePlaceholder')"
           />
         </div>
         <div class="space-y-2">
-          <Label for="addressLineSecondary">Complement</Label>
+          <Label for="addressLineSecondary">{{ $t('form.congregation.complement') }}</Label>
           <Input
             id="addressLineSecondary"
             v-model="form.addressLineSecondary"
-            placeholder="Apartment, suite, etc."
+            :placeholder="$t('form.congregation.complementPlaceholder')"
           />
         </div>
         <div class="space-y-2">
-          <Label for="district">District</Label>
-          <Input id="district" v-model="form.district" placeholder="District / Neighborhood" />
+          <Label for="district">{{ $t('form.congregation.district') }}</Label>
+          <Input
+            id="district"
+            v-model="form.district"
+            :placeholder="$t('form.congregation.districtPlaceholder')"
+          />
         </div>
         <div class="space-y-2">
-          <Label for="city">City</Label>
-          <Input id="city" v-model="form.city" placeholder="City" />
+          <Label for="city">{{ $t('form.congregation.city') }}</Label>
+          <Input
+            id="city"
+            v-model="form.city"
+            :placeholder="$t('form.congregation.cityPlaceholder')"
+          />
         </div>
         <div class="space-y-2">
-          <Label for="state">State</Label>
+          <Label for="state">{{ $t('form.congregation.state') }}</Label>
           <Select v-model="form.state">
             <SelectTrigger>
-              <SelectValue placeholder="Select a state" />
+              <SelectValue :placeholder="$t('form.congregation.statePlaceholder')" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem v-for="state in BRAZIL_STATES" :key="state.value" :value="state.value">
@@ -143,12 +162,12 @@ function handleSubmit() {
       <Button type="button" variant="outline" as-child>
         <NuxtLink to="/congregations">
           <ArrowLeft class="mr-2 size-4" />
-          Back
+          {{ $t('common.back') }}
         </NuxtLink>
       </Button>
       <Button type="submit" :disabled="loading || !form.name">
-        <span v-if="loading">Saving...</span>
-        <span v-else>Save</span>
+        <span v-if="loading">{{ $t('common.saving') }}</span>
+        <span v-else>{{ $t('common.save') }}</span>
       </Button>
     </div>
   </form>

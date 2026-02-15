@@ -1,27 +1,31 @@
 <script setup lang="ts">
 import { Home, Users, CalendarDays, Settings, ChevronUp, Church } from 'lucide-vue-next';
+import { dark } from '@clerk/themes';
 import { useSidebar } from '@/components/ui/sidebar/utils';
 
+const { t } = useI18n();
 const { user } = useUser();
 const clerk = useClerk();
 const { state } = useSidebar();
 
 const isCollapsed = computed(() => state.value === 'collapsed');
 
-const menuItems = [
-  { title: 'Home', icon: Home, url: '/' },
-  { title: 'Congregations', icon: Church, url: '/congregations' },
-  { title: 'Members', icon: Users, url: '/members' },
-  { title: 'Events', icon: CalendarDays, url: '/events' },
-  { title: 'Settings', icon: Settings, url: '/settings' },
-];
+const menuItems = computed(() => [
+  { title: t('sidebar.home'), icon: Home, url: '/' },
+  { title: t('sidebar.congregations'), icon: Church, url: '/congregations' },
+  { title: t('sidebar.members'), icon: Users, url: '/members' },
+  { title: t('sidebar.events'), icon: CalendarDays, url: '/events' },
+  { title: t('sidebar.settings'), icon: Settings, url: '/settings' },
+]);
 
 function handleSignOut() {
   clerk.value?.signOut({ redirectUrl: '/auth/sign-in' });
 }
 
 function handleManageAccount() {
-  clerk.value?.openUserProfile();
+  clerk.value?.openUserProfile({
+    appearance: { baseTheme: dark },
+  });
 }
 
 const userInitials = computed(() => {
@@ -31,7 +35,7 @@ const userInitials = computed(() => {
 });
 
 const userFullName = computed(() => {
-  return user.value?.fullName ?? 'User';
+  return user.value?.fullName ?? t('sidebar.userFallback');
 });
 
 const userEmail = computed(() => {
@@ -46,25 +50,25 @@ const userEmail = computed(() => {
         <img
           v-if="!isCollapsed"
           src="/logos/rectangle_dark.png"
-          alt="Church Manager"
+          :alt="$t('app.name')"
           class="hidden w-full h-auto dark:block"
         />
         <img
           v-if="!isCollapsed"
           src="/logos/rectangle_light.png"
-          alt="Church Manager"
+          :alt="$t('app.name')"
           class="block w-full h-auto dark:hidden"
         />
         <img
           v-if="isCollapsed"
           src="/logos/square_dark.png"
-          alt="Church Manager"
+          :alt="$t('app.name')"
           class="hidden size-8 dark:block"
         />
         <img
           v-if="isCollapsed"
           src="/logos/square_light.png"
-          alt="Church Manager"
+          :alt="$t('app.name')"
           class="block size-8 dark:hidden"
         />
       </div>
@@ -74,7 +78,7 @@ const userEmail = computed(() => {
 
     <SidebarContent>
       <SidebarGroup>
-        <SidebarGroupLabel>Menu</SidebarGroupLabel>
+        <SidebarGroupLabel>{{ $t('sidebar.menu') }}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="item in menuItems" :key="item.title">
@@ -115,9 +119,13 @@ const userEmail = computed(() => {
               side="top"
               align="start"
             >
-              <DropdownMenuItem @click="handleManageAccount"> Manage Account </DropdownMenuItem>
+              <DropdownMenuItem @click="handleManageAccount">
+                {{ $t('sidebar.manageAccount') }}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem @click="handleSignOut"> Sign Out </DropdownMenuItem>
+              <DropdownMenuItem @click="handleSignOut">
+                {{ $t('sidebar.signOut') }}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarMenuItem>

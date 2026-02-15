@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const loading = ref(false);
@@ -18,10 +19,10 @@ async function handleSubmit(data: any) {
       method: 'PUT',
       body: data,
     });
-    toast.success('Congregation updated successfully');
+    toast.success(t('pages.congregations.updateSuccess'));
     router.push('/congregations');
   } catch {
-    toast.error('Failed to update congregation');
+    toast.error(t('pages.congregations.updateError'));
   } finally {
     loading.value = false;
   }
@@ -31,8 +32,8 @@ async function handleSubmit(data: any) {
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-2xl font-bold tracking-tight">Edit Congregation</h1>
-      <p class="text-muted-foreground text-sm">Update the congregation details.</p>
+      <h1 class="text-2xl font-bold tracking-tight">{{ $t('pages.congregations.editTitle') }}</h1>
+      <p class="text-muted-foreground text-sm">{{ $t('pages.congregations.editDescription') }}</p>
     </div>
 
     <div v-if="isLoading" class="space-y-4">

@@ -16,10 +16,12 @@
     "commit": "cz"
   },
   "dependencies": {
+    "@clerk/localizations": "^3.35.4",
     "@clerk/nuxt": "^1.13.19",
     "@clerk/themes": "^2.4.52",
     "@internationalized/date": "^3.11.0",
     "@nuxt/fonts": "^0.13.0",
+    "@nuxtjs/i18n": "^10.2.3",
     "@prisma/client": "6",
     "@tanstack/vue-table": "^8.21.3",
     "@vee-validate/zod": "^4.15.1",
