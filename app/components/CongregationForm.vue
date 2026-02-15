@@ -31,6 +31,12 @@ function parseDate(value: string | null | undefined): DateValue | undefined {
 
 const sinceDate = ref<DateValue | undefined>(parseDate(props.initialData?.since));
 
+const {
+  masked: maskedZipCode,
+  unmasked: unmaskedZipCode,
+  onInput: onZipCodeInput,
+} = useZipCodeMask(props.initialData?.zipCode ?? '');
+
 const form = ref({
   name: props.initialData?.name ?? '',
   zipCode: props.initialData?.zipCode ?? '',
@@ -48,7 +54,7 @@ function formatDateDisplay(date: DateValue | undefined) {
 
 function handleSubmit() {
   const since = sinceDate.value ? sinceDate.value.toDate(getLocalTimeZone()).toISOString() : '';
-  emit('submit', { ...form.value, since });
+  emit('submit', { ...form.value, zipCode: unmaskedZipCode.value, since });
 }
 </script>
 
@@ -106,8 +112,10 @@ function handleSubmit() {
           <Label for="zipCode">{{ $t('form.congregation.zipCode') }}</Label>
           <Input
             id="zipCode"
-            v-model="form.zipCode"
+            :model-value="maskedZipCode"
             :placeholder="$t('form.congregation.zipCodePlaceholder')"
+            maxlength="9"
+            @input="onZipCodeInput"
           />
         </div>
         <div class="space-y-2">
