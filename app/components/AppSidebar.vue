@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Home, Users, CalendarDays, Settings, ChevronUp } from 'lucide-vue-next';
-import { useSidebar } from '@/components/ui/sidebar';
+import { useSidebar } from '@/components/ui/sidebar/utils';
 
 const { user } = useUser();
 const clerk = useClerk();
