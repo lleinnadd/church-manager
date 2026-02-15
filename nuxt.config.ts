@@ -1,13 +1,19 @@
+import { dark } from '@clerk/themes';
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
+  devServer: { port: 3333 },
   modules: ['@clerk/nuxt', '@nuxtjs/tailwindcss', 'shadcn-nuxt', '@vueuse/nuxt', '@nuxt/fonts'],
   clerk: {
     signInUrl: '/auth/sign-in',
     signUpUrl: '/auth/sign-up',
     signInFallbackRedirectUrl: '/',
     signUpFallbackRedirectUrl: '/',
+    appearance: {
+      theme: dark,
+    },
   },
   fonts: {
     families: [
