@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Home, Users, CalendarDays, Settings, ChevronUp } from 'lucide-vue-next';
+import { Home, Users, CalendarDays, Settings, ChevronUp, Church } from 'lucide-vue-next';
 import { useSidebar } from '@/components/ui/sidebar/utils';
 
 const { user } = useUser();
@@ -10,6 +10,7 @@ const isCollapsed = computed(() => state.value === 'collapsed');
 
 const menuItems = [
   { title: 'Home', icon: Home, url: '/' },
+  { title: 'Congregations', icon: Church, url: '/congregations' },
   { title: 'Members', icon: Users, url: '/members' },
   { title: 'Events', icon: CalendarDays, url: '/events' },
   { title: 'Settings', icon: Settings, url: '/settings' },
@@ -42,7 +43,6 @@ const userEmail = computed(() => {
   <Sidebar collapsible="icon">
     <SidebarHeader class="p-2">
       <div class="flex items-center justify-center">
-        <!-- Expanded: full rectangle logo -->
         <img
           v-if="!isCollapsed"
           src="/logos/rectangle_dark.png"
@@ -55,7 +55,6 @@ const userEmail = computed(() => {
           alt="Church Manager"
           class="block w-full h-auto dark:hidden"
         />
-        <!-- Collapsed: small square logo -->
         <img
           v-if="isCollapsed"
           src="/logos/square_dark.png"

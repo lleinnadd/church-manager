@@ -6,3 +6,69 @@ datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
 }
+
+model Congregation {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name  String
+  since DateTime?
+
+  zipCode              String?
+  addressLinePrimary   String?
+  addressLineSecondary String?
+  district             String?
+  city                 String?
+  state                String?
+
+  members Member[]
+}
+
+model Member {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  congregationId String       @db.ObjectId
+  congregation   Congregation @relation(fields: [congregationId], references: [id])
+
+  name        String
+  dateOfBirth DateTime?
+
+  ssn        String?
+  nationalId String?
+
+  maritalStatus MaritalStatus?
+
+  addressLinePrimary String?
+  district           String?
+
+  memberSince    DateTime?
+  motherName     String?
+  fatherName     String?
+  naturality     String?
+  nationality    String?   @default("Brasileira")
+  role           String?
+  convertionDate DateTime?
+
+  phonePrimary   String?
+  phoneSecondary String?
+
+  status       MemberStatus @default(ACTIVE)
+  observations String?
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  SEPARATED
+}
+
+enum MemberStatus {
+  ACTIVE
+  TRANSFERRED
+  WITHDRAWN
+}
