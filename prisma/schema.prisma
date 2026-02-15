@@ -23,6 +23,8 @@ model Congregation {
   state                String?
 
   members Member[]
+
+  @@map("congregations")
 }
 
 model Member {
@@ -57,6 +59,8 @@ model Member {
 
   status       MemberStatus @default(ACTIVE)
   observations String?
+
+  @@map("members")
 }
 
 enum MaritalStatus {
