@@ -1,2 +1,2 @@
-pnpm lint
 pnpm exec commitlint --edit "$1"
+pnpm lint

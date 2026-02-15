@@ -1,0 +1,5 @@
+# Only run commitizen for new commits (not amend, merge, etc.)
+if [ -z "$2" ]; then
+  exec < /dev/tty && node_modules/.bin/cz --hook || true
+  touch .git/.cz-skip-editor
+fi

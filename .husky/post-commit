@@ -1,0 +1,2 @@
+# Clean up flag file if it still exists
+rm -f .git/.cz-skip-editor
