@@ -30,6 +30,7 @@ export default typescriptEslint.config(
       '**/*.d.ts',
       'eslint.config.ts',
       'commitlint.config.ts',
+      'prisma.config.ts',
     ],
   },
 
