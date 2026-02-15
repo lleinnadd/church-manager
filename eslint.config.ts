@@ -22,7 +22,15 @@ function withVueFiles(cfgs: Linter.Config[]): Linter.Config[] {
 export default typescriptEslint.config(
   // ── Global ignores ────────────────────────────────────────────────────
   {
-    ignores: ['node_modules/', '.nuxt/', '.output/', 'dist/', '**/*.d.ts', 'eslint.config.ts'],
+    ignores: [
+      'node_modules/',
+      '.nuxt/',
+      '.output/',
+      'dist/',
+      '**/*.d.ts',
+      'eslint.config.ts',
+      'commitlint.config.ts',
+    ],
   },
 
   // ── Register plugins used by airbnb-extended configs ──────────────────

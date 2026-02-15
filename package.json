@@ -37,6 +37,8 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.4.1",
+    "@commitlint/config-conventional": "^20.4.1",
     "@eslint/js": "^9.39.2",
     "@nuxtjs/tailwindcss": "7.0.0-beta.1",
     "@types/node": "^25.2.3",
