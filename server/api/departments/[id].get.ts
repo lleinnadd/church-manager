@@ -7,7 +7,6 @@ export default defineEventHandler(async (event) => {
     where: { id },
     include: {
       functions: true,
-      _count: { select: { memberships: true } },
     },
   });
 
@@ -15,5 +14,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Department not found' });
   }
 
-  return department;
+  const uniqueMembers = await prisma.memberDepartment.groupBy({
+    by: ['memberId'],
+    where: { departmentId: department.id },
+  });
+
+  return {
+    ...department,
+    _count: { memberships: uniqueMembers.length },
+  };
 });
