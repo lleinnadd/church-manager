@@ -24,7 +24,7 @@ const form = reactive({
 interface FunctionInput {
   id?: string;
   name: string;
-  description?: string | null;
+  description: string;
 }
 
 const functions = ref<FunctionInput[]>(
@@ -76,24 +76,24 @@ function handleSubmit() {
         <CardDescription>{{ $t('form.department.generalInfoDescription') }}</CardDescription>
       </CardHeader>
       <CardContent class="grid gap-4">
-        <div class="space-y-2">
-          <Label for="name">{{ $t('form.department.name') }}</Label>
+        <Field>
+          <FieldLabel for="name">{{ $t('form.department.name') }}</FieldLabel>
           <Input
             id="name"
             v-model="form.name"
             :placeholder="$t('form.department.namePlaceholder')"
             required
           />
-        </div>
-        <div class="space-y-2">
-          <Label for="description">{{ $t('form.department.description') }}</Label>
+        </Field>
+        <Field>
+          <FieldLabel for="description">{{ $t('form.department.description') }}</FieldLabel>
           <Textarea
             id="description"
             v-model="form.description"
             :placeholder="$t('form.department.descriptionPlaceholder')"
             rows="3"
           />
-        </div>
+        </Field>
         <div class="flex items-center justify-between rounded-lg border p-4">
           <div>
             <p class="text-sm font-medium leading-none">
@@ -123,22 +123,22 @@ function handleSubmit() {
             :key="fn.id || index"
             class="grid gap-3 md:grid-cols-3 items-end"
           >
-            <div class="space-y-2">
-              <Label>{{ $t('form.department.functionName') }}</Label>
+            <Field>
+              <FieldLabel>{{ $t('form.department.functionName') }}</FieldLabel>
               <Input
                 v-model="fn.name"
                 :placeholder="$t('form.department.functionNamePlaceholder')"
                 required
               />
-            </div>
-            <div class="space-y-2">
-              <Label>{{ $t('form.department.functionDescription') }}</Label>
+            </Field>
+            <Field>
+              <FieldLabel>{{ $t('form.department.functionDescription') }}</FieldLabel>
               <Input
                 v-model="fn.description"
                 :placeholder="$t('form.department.functionDescriptionPlaceholder')"
               />
-            </div>
-            <div class="flex md:justify-end">
+            </Field>
+            <div class="flex justify-end md:justify-end">
               <Button variant="ghost" size="icon" @click="removeFunction(index)">
                 <Trash2 class="size-4" />
               </Button>

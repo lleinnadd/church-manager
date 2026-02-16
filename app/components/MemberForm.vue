@@ -168,8 +168,8 @@ function handleSubmit() {
         <CardDescription>{{ $t('form.member.generalInfoDescription') }}</CardDescription>
       </CardHeader>
       <CardContent class="grid gap-4 md:grid-cols-2">
-        <div class="space-y-2">
-          <Label for="name">{{ $t('form.member.name') }}</Label>
+        <Field>
+          <FieldLabel for="name">{{ $t('form.member.name') }}</FieldLabel>
           <Input
             id="name"
             v-model="form.name"
@@ -177,9 +177,9 @@ function handleSubmit() {
             :disabled="isClerkManaged"
             required
           />
-        </div>
-        <div class="space-y-2">
-          <Label for="congregation">{{ $t('form.member.congregation') }}</Label>
+        </Field>
+        <Field>
+          <FieldLabel for="congregation">{{ $t('form.member.congregation') }}</FieldLabel>
           <Select v-model="form.congregationId" required>
             <SelectTrigger>
               <SelectValue :placeholder="$t('form.member.congregationPlaceholder')" />
@@ -195,9 +195,9 @@ function handleSubmit() {
               </SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div class="space-y-2">
-          <Label for="status">{{ $t('form.member.status') }}</Label>
+        </Field>
+        <Field>
+          <FieldLabel for="status">{{ $t('form.member.status') }}</FieldLabel>
           <Select v-model="form.status" :disabled="isClerkManaged">
             <SelectTrigger>
               <SelectValue :placeholder="$t('form.member.statusPlaceholder')" />
@@ -208,7 +208,7 @@ function handleSubmit() {
               </SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </Field>
       </CardContent>
     </Card>
 
@@ -289,7 +289,7 @@ function handleSubmit() {
             <Button
               variant="ghost"
               size="icon"
-              class="col-start-4"
+              class="col-start-1 justify-self-end md:col-start-4"
               @click="removeMembership(index)"
             >
               <Trash2 class="size-4" />

@@ -74,17 +74,17 @@ function handleSubmit() {
         <CardDescription>{{ $t('form.congregation.generalInfoDescription') }}</CardDescription>
       </CardHeader>
       <CardContent class="grid gap-4 md:grid-cols-2">
-        <div class="space-y-2">
-          <Label for="name">{{ $t('form.congregation.name') }}</Label>
+        <Field>
+          <FieldLabel for="name">{{ $t('form.congregation.name') }}</FieldLabel>
           <Input
             id="name"
             v-model="form.name"
             :placeholder="$t('form.congregation.namePlaceholder')"
             required
           />
-        </div>
-        <div class="space-y-2">
-          <Label for="type">{{ $t('form.congregation.type.label') }}</Label>
+        </Field>
+        <Field>
+          <FieldLabel for="type">{{ $t('form.congregation.type.label') }}</FieldLabel>
           <Select v-model="form.type">
             <SelectTrigger>
               <SelectValue :placeholder="$t('form.congregation.type.placeholder')" />
@@ -99,9 +99,9 @@ function handleSubmit() {
               </SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div class="space-y-2">
-          <Label>{{ $t('form.congregation.since') }}</Label>
+        </Field>
+        <Field>
+          <FieldLabel>{{ $t('form.congregation.since') }}</FieldLabel>
           <Popover>
             <PopoverTrigger as-child>
               <Button
@@ -123,7 +123,7 @@ function handleSubmit() {
               />
             </PopoverContent>
           </Popover>
-        </div>
+        </Field>
       </CardContent>
     </Card>
 
@@ -133,8 +133,8 @@ function handleSubmit() {
         <CardDescription>{{ $t('form.congregation.addressDescription') }}</CardDescription>
       </CardHeader>
       <CardContent class="grid gap-4 md:grid-cols-2">
-        <div class="space-y-2">
-          <Label for="zipCode">{{ $t('form.congregation.zipCode') }}</Label>
+        <Field>
+          <FieldLabel for="zipCode">{{ $t('form.congregation.zipCode') }}</FieldLabel>
           <Input
             id="zipCode"
             :model-value="maskedZipCode"
@@ -142,41 +142,45 @@ function handleSubmit() {
             maxlength="9"
             @input="onZipCodeInput"
           />
-        </div>
-        <div class="space-y-2">
-          <Label for="addressLinePrimary">{{ $t('form.congregation.addressLine') }}</Label>
+        </Field>
+        <Field>
+          <FieldLabel for="addressLinePrimary">{{
+            $t('form.congregation.addressLine')
+          }}</FieldLabel>
           <Input
             id="addressLinePrimary"
             v-model="form.addressLinePrimary"
             :placeholder="$t('form.congregation.addressLinePlaceholder')"
           />
-        </div>
-        <div class="space-y-2">
-          <Label for="addressLineSecondary">{{ $t('form.congregation.complement') }}</Label>
+        </Field>
+        <Field>
+          <FieldLabel for="addressLineSecondary">{{
+            $t('form.congregation.complement')
+          }}</FieldLabel>
           <Input
             id="addressLineSecondary"
             v-model="form.addressLineSecondary"
             :placeholder="$t('form.congregation.complementPlaceholder')"
           />
-        </div>
-        <div class="space-y-2">
-          <Label for="district">{{ $t('form.congregation.district') }}</Label>
+        </Field>
+        <Field>
+          <FieldLabel for="district">{{ $t('form.congregation.district') }}</FieldLabel>
           <Input
             id="district"
             v-model="form.district"
             :placeholder="$t('form.congregation.districtPlaceholder')"
           />
-        </div>
-        <div class="space-y-2">
-          <Label for="city">{{ $t('form.congregation.city') }}</Label>
+        </Field>
+        <Field>
+          <FieldLabel for="city">{{ $t('form.congregation.city') }}</FieldLabel>
           <Input
             id="city"
             v-model="form.city"
             :placeholder="$t('form.congregation.cityPlaceholder')"
           />
-        </div>
-        <div class="space-y-2">
-          <Label for="state">{{ $t('form.congregation.state') }}</Label>
+        </Field>
+        <Field>
+          <FieldLabel for="state">{{ $t('form.congregation.state') }}</FieldLabel>
           <Select v-model="form.state">
             <SelectTrigger>
               <SelectValue :placeholder="$t('form.congregation.statePlaceholder')" />
@@ -187,7 +191,7 @@ function handleSubmit() {
               </SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </Field>
       </CardContent>
     </Card>
 
