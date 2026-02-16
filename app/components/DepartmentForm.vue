@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Trash2 } from 'lucide-vue-next';
+
 const props = defineProps<{
   initialData?: {
     name: string;

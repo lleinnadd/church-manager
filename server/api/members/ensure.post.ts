@@ -9,7 +9,22 @@ export default defineEventHandler(async (event) => {
   }
 
   const existing = await prisma.member.findUnique({ where: { clerkUserId: body.clerkUserId } });
-  if (existing) return existing;
+  if (existing) {
+    const desiredName = body.name || existing.name || 'Novo membro';
+
+    // Keep Clerk-managed member aligned with Clerk data (name + active status)
+    if (existing.name !== desiredName || existing.status !== MemberStatus.ACTIVE) {
+      return prisma.member.update({
+        where: { id: existing.id },
+        data: {
+          name: desiredName,
+          status: MemberStatus.ACTIVE,
+        },
+      });
+    }
+
+    return existing;
+  }
 
   let congregationId: string | undefined = body.congregationId;
 

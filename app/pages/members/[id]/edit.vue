@@ -13,6 +13,7 @@ interface MemberFormData {
   name: string;
   congregationId: string;
   status: MemberStatus;
+  clerkUserId?: string | null;
   departments?: {
     departmentId: string;
     scope: DepartmentScope;

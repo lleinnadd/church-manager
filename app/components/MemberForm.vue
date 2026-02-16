@@ -15,13 +15,8 @@ const props = defineProps<{
     name: string;
     congregationId: string;
     status: MemberStatus;
-    departments?: {
-      departmentId: string;
-      scope: DepartmentScope;
-      functionId?: string | null;
-      function?: { id: string; name: string; departmentId: string } | null;
-      congregationId?: string | null;
-    }[];
+    clerkUserId?: string | null;
+    departments?: MemberDepartmentInput[];
   };
   loading?: boolean;
 }>();
@@ -30,10 +25,15 @@ const emit = defineEmits<{
   submit: [data: Record<string, any>];
 }>();
 
+const isClerkManaged = computed(() => Boolean(props.initialData?.clerkUserId));
+
 const form = reactive({
   name: props.initialData?.name ?? '',
   congregationId: props.initialData?.congregationId ?? '',
-  status: props.initialData?.status ?? MemberStatus.ACTIVE,
+  status:
+    props.initialData?.clerkUserId || props.initialData?.status === MemberStatus.ACTIVE
+      ? MemberStatus.ACTIVE
+      : (props.initialData?.status ?? MemberStatus.ACTIVE),
 });
 
 const { data: congregations, status: congregationsStatus } =
@@ -60,9 +60,16 @@ interface MembershipInput {
   functionId?: string | null;
   congregationId?: string | null;
 }
+interface MemberDepartmentInput {
+  departmentId: string;
+  scope: DepartmentScope;
+  functionId?: string | null;
+  function?: { id: string; name: string; departmentId: string } | null;
+  congregationId?: string | null;
+}
 
 const memberships = ref<MembershipInput[]>(
-  props.initialData?.departments?.map((d) => ({
+  props.initialData?.departments?.map((d: MemberDepartmentInput) => ({
     departmentId: d.departmentId,
     scope: d.scope,
     functionId: d.functionId ?? d.function?.id ?? null,
@@ -91,12 +98,14 @@ function functionsByDepartment(departmentId: string): DepartmentFunction[] {
 
 watch(
   memberships,
-  (current) => {
+  (current: MembershipInput[]) => {
     for (let i = 0; i < current.length; i += 1) {
-      const membership = current[i];
+      const membership = current[i]!;
+
       const functions = functionsByDepartment(membership.departmentId);
-      if (!functions.some((fn) => fn.id === membership.functionId)) {
-        memberships.value[i].functionId = functions[0]?.id ?? null;
+      const hasSelectedFunction = functions.some((fn) => fn.id === membership.functionId);
+      if (!hasSelectedFunction) {
+        memberships.value[i]!.functionId = functions[0]?.id ?? null;
       }
     }
   },
@@ -106,6 +115,7 @@ watch(
 function handleSubmit() {
   const payload = {
     ...form,
+    status: isClerkManaged.value ? MemberStatus.ACTIVE : form.status,
     departments: showDepartments.value
       ? memberships.value.map((m) => ({
           departmentId: m.departmentId,
@@ -135,6 +145,7 @@ function handleSubmit() {
             id="name"
             v-model="form.name"
             :placeholder="$t('form.member.namePlaceholder')"
+            :disabled="isClerkManaged"
             required
           />
         </div>
@@ -158,7 +169,7 @@ function handleSubmit() {
         </div>
         <div class="space-y-2">
           <Label for="status">{{ $t('form.member.status') }}</Label>
-          <Select v-model="form.status">
+          <Select v-model="form.status" :disabled="isClerkManaged">
             <SelectTrigger>
               <SelectValue :placeholder="$t('form.member.statusPlaceholder')" />
             </SelectTrigger>
