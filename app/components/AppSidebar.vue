@@ -13,8 +13,8 @@ const isCollapsed = computed(() => state.value === 'collapsed');
 const menuItems = computed(() => [
   { title: t('sidebar.home'), icon: Home, url: '/' },
   { title: t('sidebar.congregations'), icon: Church, url: '/congregations' },
-  { title: t('sidebar.members'), icon: Users, url: '/members' },
   { title: t('sidebar.departments'), icon: Building2, url: '/departments' },
+  { title: t('sidebar.members'), icon: Users, url: '/members' },
   { title: t('sidebar.events'), icon: CalendarDays, url: '/events' },
   { title: t('sidebar.settings'), icon: Settings, url: '/settings' },
 ]);
