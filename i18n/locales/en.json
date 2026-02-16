@@ -7,6 +7,7 @@
     "home": "Home",
     "congregations": "Congregations",
     "members": "Members",
+    "departments": "Departments",
     "events": "Events",
     "settings": "Settings",
     "manageAccount": "Manage Account",
@@ -23,12 +24,14 @@
     "edit": "Edit",
     "delete": "Delete",
     "actions": "Actions",
+    "remove": "Remove",
     "switchLanguage": "Switch language",
     "since": "Since {date}",
     "member": "member",
     "members": "members",
     "memberCount": "{count} member | {count} members",
-    "pickADate": "Pick a date"
+    "pickADate": "Pick a date",
+    "refresh": "Refresh"
   },
   "pages": {
     "home": {
@@ -51,6 +54,44 @@
       "createError": "Failed to create congregation",
       "updateSuccess": "Congregation updated successfully",
       "updateError": "Failed to update congregation"
+    },
+    "members": {
+      "title": "Members",
+      "description": "View members, their congregations and department roles.",
+      "emptyTitle": "No members yet",
+      "emptyDescription": "Members will appear after being created or linked via login.",
+      "departments": "Departments",
+      "noDepartments": "No departments assigned",
+      "new": "New Member",
+      "newDescription": "Fill in the details to create a member.",
+      "editTitle": "Edit Member",
+      "editDescription": "Update the member details.",
+      "createSuccess": "Member created successfully",
+      "createError": "Failed to create member",
+      "updateSuccess": "Member updated successfully",
+      "updateError": "Failed to update member",
+      "deleteTitle": "Delete member",
+      "deleteDescription": "Are you sure you want to delete '{name}'? This action cannot be undone.",
+      "deleteSuccess": "Member deleted successfully",
+      "deleteError": "Failed to delete member"
+    },
+    "departments": {
+      "title": "Departments",
+      "description": "Manage departments and see how many members belong to each.",
+      "new": "New Department",
+      "newDescription": "Fill in the details to create a department.",
+      "editTitle": "Edit Department",
+      "editDescription": "Update the department details.",
+      "emptyTitle": "No departments yet",
+      "emptyDescription": "Create your first department to start assigning members.",
+      "createSuccess": "Department created successfully",
+      "createError": "Failed to create department",
+      "updateSuccess": "Department updated successfully",
+      "updateError": "Failed to update department",
+      "deleteTitle": "Delete department",
+      "deleteDescription": "Are you sure you want to delete '{name}'? This action cannot be undone.",
+      "deleteSuccess": "Department deleted successfully",
+      "deleteError": "Failed to delete department"
     }
   },
   "form": {
@@ -60,6 +101,13 @@
       "name": "Name *",
       "namePlaceholder": "Congregation name",
       "since": "Since",
+      "type": {
+        "label": "Type",
+        "placeholder": "Select a type",
+        "headquarters": "Headquarters",
+        "branch": "Branch",
+        "subBranch": "Sub-branch"
+      },
       "address": "Address",
       "addressDescription": "Location details of the congregation.",
       "zipCode": "ZIP Code",
@@ -74,6 +122,61 @@
       "cityPlaceholder": "City",
       "state": "State",
       "statePlaceholder": "Select a state"
+    },
+    "member": {
+      "generalInfo": "Member Information",
+      "generalInfoDescription": "Basic details to identify the member.",
+      "name": "Name *",
+      "namePlaceholder": "Member name",
+      "congregation": "Congregation *",
+      "congregationPlaceholder": "Select a congregation",
+      "status": "Status",
+      "statusPlaceholder": "Select a status",
+      "departments": "Departments",
+      "departmentsDescription": "Assign the member to departments and functions.",
+      "departmentsInactiveHint": "Departments can only be assigned while the member is active.",
+      "noDepartments": "No departments available",
+      "department": "Department",
+      "departmentPlaceholder": "Select a department",
+      "scope": "Scope",
+      "scopePlaceholder": "Select a scope",
+      "departmentFunction": "Department function",
+      "departmentFunctionPlaceholder": "Select a function",
+      "noDepartmentFunctions": "No functions available for this department",
+      "addDepartment": "Add department"
+    },
+    "department": {
+      "generalInfo": "Department Information",
+      "generalInfoDescription": "Details about the department.",
+      "name": "Name *",
+      "namePlaceholder": "Department name",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "functions": "Functions",
+      "functionsDescription": "Add, edit or remove functions within this department.",
+      "noFunctions": "No functions added yet",
+      "functionName": "Function name",
+      "functionNamePlaceholder": "Enter a function name",
+      "functionDescription": "Description",
+      "functionDescriptionPlaceholder": "Optional function description",
+      "addFunction": "Add function"
+    }
+  },
+  "members": {
+    "status": {
+      "active": "Active",
+      "transferred": "Transferred",
+      "withdrawn": "Withdrawn"
+    }
+  },
+  "departments": {
+    "scope": {
+      "local": "Local",
+      "general": "General"
+    },
+    "role": {
+      "member": "Member",
+      "leader": "Leader"
     }
   }
 }

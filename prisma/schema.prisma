@@ -13,6 +13,7 @@ model Congregation {
   updatedAt DateTime @updatedAt
 
   name  String
+  type  CongregationType @default(HEADQUARTERS)
   since DateTime?
 
   zipCode              String?
@@ -22,7 +23,8 @@ model Congregation {
   city                 String?
   state                String?
 
-  members Member[]
+  members           Member[]
+  memberDepartments MemberDepartment[]
 
   @@map("congregations")
 }
@@ -51,7 +53,6 @@ model Member {
   fatherName     String?
   naturality     String?
   nationality    String?   @default("Brasileira")
-  role           String?
   convertionDate DateTime?
 
   phonePrimary   String?
@@ -60,7 +61,65 @@ model Member {
   status       MemberStatus @default(ACTIVE)
   observations String?
 
+  clerkUserId String? @unique
+
+  departments MemberDepartment[]
+
   @@map("members")
+}
+
+model Department {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String  @unique
+  description String?
+
+  memberships MemberDepartment[]
+  functions   DepartmentFunction[]
+
+  @@map("departments")
+}
+
+model DepartmentFunction {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name         String
+  description  String?
+  departmentId String     @db.ObjectId
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  memberships MemberDepartment[]
+
+  @@unique([departmentId, name])
+  @@index([departmentId])
+  @@map("department_functions")
+}
+
+model MemberDepartment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberId       String              @db.ObjectId
+  member         Member              @relation(fields: [memberId], references: [id])
+  departmentId   String              @db.ObjectId
+  department     Department          @relation(fields: [departmentId], references: [id])
+  scope          DepartmentScope
+  congregationId String?             @db.ObjectId
+  congregation   Congregation?       @relation(fields: [congregationId], references: [id])
+  functionId     String?             @db.ObjectId
+  function       DepartmentFunction? @relation(fields: [functionId], references: [id])
+
+  @@unique([memberId, departmentId, scope, congregationId, functionId])
+  @@index([memberId])
+  @@index([departmentId])
+  @@index([congregationId])
+  @@index([functionId])
+  @@map("member_departments")
 }
 
 enum MaritalStatus {
@@ -75,4 +134,15 @@ enum MemberStatus {
   ACTIVE
   TRANSFERRED
   WITHDRAWN
+}
+
+enum CongregationType {
+  HEADQUARTERS
+  BRANCH
+  SUB_BRANCH
+}
+
+enum DepartmentScope {
+  LOCAL
+  GENERAL
 }

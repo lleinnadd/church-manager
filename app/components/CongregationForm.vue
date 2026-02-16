@@ -3,11 +3,12 @@ import { ArrowLeft, CalendarIcon } from 'lucide-vue-next';
 import { type DateValue, CalendarDate, getLocalTimeZone } from '@internationalized/date';
 import { BRAZIL_STATES } from '@/lib/constants';
 
-const { locale } = useI18n();
+const { t, locale } = useI18n();
 
 const props = defineProps<{
   initialData?: {
     name: string;
+    type: string;
     since: string | null;
     zipCode: string | null;
     addressLinePrimary: string | null;
@@ -39,6 +40,7 @@ const {
 
 const form = ref({
   name: props.initialData?.name ?? '',
+  type: props.initialData?.type ?? 'HEADQUARTERS',
   zipCode: props.initialData?.zipCode ?? '',
   addressLinePrimary: props.initialData?.addressLinePrimary ?? '',
   addressLineSecondary: props.initialData?.addressLineSecondary ?? '',
@@ -46,6 +48,12 @@ const form = ref({
   city: props.initialData?.city ?? '',
   state: props.initialData?.state ?? '',
 });
+
+const congregationTypes = computed(() => [
+  { value: 'HEADQUARTERS', label: t('form.congregation.type.headquarters') },
+  { value: 'BRANCH', label: t('form.congregation.type.branch') },
+  { value: 'SUB_BRANCH', label: t('form.congregation.type.subBranch') },
+]);
 
 function formatDateDisplay(date: DateValue | undefined) {
   if (!date) return '';
@@ -74,6 +82,23 @@ function handleSubmit() {
             :placeholder="$t('form.congregation.namePlaceholder')"
             required
           />
+        </div>
+        <div class="space-y-2">
+          <Label for="type">{{ $t('form.congregation.type.label') }}</Label>
+          <Select v-model="form.type">
+            <SelectTrigger>
+              <SelectValue :placeholder="$t('form.congregation.type.placeholder')" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="option in congregationTypes"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div class="space-y-2">
           <Label>{{ $t('form.congregation.since') }}</Label>

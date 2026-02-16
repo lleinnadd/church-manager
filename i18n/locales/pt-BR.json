@@ -7,6 +7,7 @@
     "home": "Início",
     "congregations": "Congregações",
     "members": "Membros",
+    "departments": "Departamentos",
     "events": "Eventos",
     "settings": "Configurações",
     "manageAccount": "Gerenciar Conta",
@@ -23,12 +24,14 @@
     "edit": "Editar",
     "delete": "Excluir",
     "actions": "Ações",
+    "remove": "Remover",
     "switchLanguage": "Trocar idioma",
     "since": "Desde {date}",
     "member": "membro",
     "members": "membros",
     "memberCount": "{count} membro | {count} membros",
-    "pickADate": "Selecione uma data"
+    "pickADate": "Selecione uma data",
+    "refresh": "Recarregar"
   },
   "pages": {
     "home": {
@@ -51,6 +54,44 @@
       "createError": "Falha ao criar congregação",
       "updateSuccess": "Congregação atualizada com sucesso",
       "updateError": "Falha ao atualizar congregação"
+    },
+    "members": {
+      "title": "Membros",
+      "description": "Veja os membros, suas congregações e papéis nos departamentos.",
+      "emptyTitle": "Nenhum membro ainda",
+      "emptyDescription": "Os membros aparecerão após serem criados ou vinculados pelo login.",
+      "departments": "Departamentos",
+      "noDepartments": "Nenhum departamento atribuído",
+      "new": "Novo Membro",
+      "newDescription": "Preencha os detalhes para criar um membro.",
+      "editTitle": "Editar Membro",
+      "editDescription": "Atualize os dados do membro.",
+      "createSuccess": "Membro criado com sucesso",
+      "createError": "Falha ao criar membro",
+      "updateSuccess": "Membro atualizado com sucesso",
+      "updateError": "Falha ao atualizar membro",
+      "deleteTitle": "Excluir membro",
+      "deleteDescription": "Tem certeza que deseja excluir '{name}'? Esta ação não pode ser desfeita.",
+      "deleteSuccess": "Membro excluído com sucesso",
+      "deleteError": "Falha ao excluir membro"
+    },
+    "departments": {
+      "title": "Departamentos",
+      "description": "Gerencie os departamentos e veja quantos membros pertencem a cada um.",
+      "new": "Novo Departamento",
+      "newDescription": "Preencha os detalhes para criar um departamento.",
+      "editTitle": "Editar Departamento",
+      "editDescription": "Atualize os dados do departamento.",
+      "emptyTitle": "Nenhum departamento ainda",
+      "emptyDescription": "Crie seu primeiro departamento para começar a atribuir membros.",
+      "createSuccess": "Departamento criado com sucesso",
+      "createError": "Falha ao criar departamento",
+      "updateSuccess": "Departamento atualizado com sucesso",
+      "updateError": "Falha ao atualizar departamento",
+      "deleteTitle": "Excluir departamento",
+      "deleteDescription": "Tem certeza que deseja excluir '{name}'? Esta ação não pode ser desfeita.",
+      "deleteSuccess": "Departamento excluído com sucesso",
+      "deleteError": "Falha ao excluir departamento"
     }
   },
   "form": {
@@ -60,6 +101,13 @@
       "name": "Nome *",
       "namePlaceholder": "Nome da congregação",
       "since": "Desde",
+      "type": {
+        "label": "Tipo",
+        "placeholder": "Selecione um tipo",
+        "headquarters": "Sede",
+        "branch": "Filial",
+        "subBranch": "Sub-filial"
+      },
       "address": "Endereço",
       "addressDescription": "Detalhes de localização da congregação.",
       "zipCode": "CEP",
@@ -74,6 +122,61 @@
       "cityPlaceholder": "Cidade",
       "state": "Estado",
       "statePlaceholder": "Selecione um estado"
+    },
+    "member": {
+      "generalInfo": "Informações do Membro",
+      "generalInfoDescription": "Detalhes básicos para identificar o membro.",
+      "name": "Nome *",
+      "namePlaceholder": "Nome do membro",
+      "congregation": "Congregação *",
+      "congregationPlaceholder": "Selecione uma congregação",
+      "status": "Status",
+      "statusPlaceholder": "Selecione um status",
+      "departments": "Departamentos",
+      "departmentsDescription": "Associe o membro a departamentos e funções.",
+      "departmentsInactiveHint": "Departamentos só podem ser atribuídos enquanto o membro estiver ativo.",
+      "noDepartments": "Nenhum departamento disponível",
+      "department": "Departamento",
+      "departmentPlaceholder": "Selecione um departamento",
+      "scope": "Escopo",
+      "scopePlaceholder": "Selecione um escopo",
+      "departmentFunction": "Função no departamento",
+      "departmentFunctionPlaceholder": "Selecione uma função",
+      "noDepartmentFunctions": "Nenhuma função disponível para este departamento",
+      "addDepartment": "Adicionar departamento"
+    },
+    "department": {
+      "generalInfo": "Informações do Departamento",
+      "generalInfoDescription": "Detalhes sobre o departamento.",
+      "name": "Nome *",
+      "namePlaceholder": "Nome do departamento",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Descrição opcional",
+      "functions": "Funções",
+      "functionsDescription": "Adicione, edite ou remova funções deste departamento.",
+      "noFunctions": "Nenhuma função adicionada ainda",
+      "functionName": "Nome da função",
+      "functionNamePlaceholder": "Informe o nome da função",
+      "functionDescription": "Descrição",
+      "functionDescriptionPlaceholder": "Descrição opcional da função",
+      "addFunction": "Adicionar função"
+    }
+  },
+  "members": {
+    "status": {
+      "active": "Ativo",
+      "transferred": "Transferido",
+      "withdrawn": "Desligado"
+    }
+  },
+  "departments": {
+    "scope": {
+      "local": "Local",
+      "general": "Geral"
+    },
+    "role": {
+      "member": "Membro",
+      "leader": "Líder"
     }
   }
 }

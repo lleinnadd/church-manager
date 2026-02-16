@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Church, Plus, Pencil, Trash2, MapPin, Users } from 'lucide-vue-next';
+import type { CongregationType, Congregation } from '@prisma/client';
 import { toast } from 'vue-sonner';
-import type { Congregation } from '@prisma/client';
 
 const { t, locale } = useI18n();
 
@@ -51,6 +51,15 @@ function formatAddress(congregation: CongregationWithCount) {
   ].filter(Boolean);
   return parts.length > 0 ? parts.join(', ') : null;
 }
+
+function formatType(type: CongregationType) {
+  const labels: Record<CongregationType, string> = {
+    HEADQUARTERS: t('form.congregation.type.headquarters'),
+    BRANCH: t('form.congregation.type.branch'),
+    SUB_BRANCH: t('form.congregation.type.subBranch'),
+  };
+  return labels[type] ?? type;
+}
 </script>
 
 <template>
@@ -98,6 +107,9 @@ function formatAddress(congregation: CongregationWithCount) {
           <div class="flex items-start justify-between">
             <div class="min-w-0 flex-1">
               <CardTitle class="truncate text-lg">{{ congregation.name }}</CardTitle>
+              <div class="text-xs uppercase tracking-wide text-muted-foreground">
+                {{ formatType(congregation.type) }}
+              </div>
               <CardDescription v-if="congregation.since">
                 {{ $t('common.since', { date: formatDate(congregation.since) }) }}
               </CardDescription>
