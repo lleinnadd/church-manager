@@ -34,8 +34,8 @@ model Member {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  congregationId String       @db.ObjectId
-  congregation   Congregation @relation(fields: [congregationId], references: [id])
+  congregationId String?       @db.ObjectId
+  congregation   Congregation? @relation(fields: [congregationId], references: [id])
 
   name        String
   dateOfBirth DateTime?
