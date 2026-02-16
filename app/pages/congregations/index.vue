@@ -107,7 +107,7 @@ function formatType(type: CongregationType) {
           <div class="flex items-start justify-between">
             <div class="min-w-0 flex-1">
               <CardTitle class="truncate text-lg">{{ congregation.name }}</CardTitle>
-              <div class="text-xs uppercase tracking-wide text-muted-foreground">
+              <div class="text-xs tracking-wide text-muted-foreground">
                 {{ formatType(congregation.type) }}
               </div>
               <CardDescription v-if="congregation.since">
