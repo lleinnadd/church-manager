@@ -73,8 +73,9 @@ model Department {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  name        String  @unique
-  description String?
+  name             String  @unique
+  description      String?
+  hasScopeDivision Boolean @default(true)
 
   memberships MemberDepartment[]
   functions   DepartmentFunction[]
@@ -108,7 +109,7 @@ model MemberDepartment {
   member         Member              @relation(fields: [memberId], references: [id])
   departmentId   String              @db.ObjectId
   department     Department          @relation(fields: [departmentId], references: [id])
-  scope          DepartmentScope
+  scope          DepartmentScope?
   congregationId String?             @db.ObjectId
   congregation   Congregation?       @relation(fields: [congregationId], references: [id])
   functionId     String?             @db.ObjectId

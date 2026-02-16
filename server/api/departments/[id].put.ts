@@ -8,6 +8,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'name is required' });
   }
 
+  const existingDepartment = await prisma.department.findUnique({
+    where: { id },
+    select: { hasScopeDivision: true },
+  });
+
+  if (!existingDepartment) {
+    throw createError({ statusCode: 404, statusMessage: 'Department not found' });
+  }
+
   const functions = (Array.isArray(body?.functions) ? body.functions : [])
     .filter((fn: any) => fn?.name?.trim())
     .map((fn: any) => ({
@@ -15,6 +24,9 @@ export default defineEventHandler(async (event) => {
       name: fn.name.trim(),
       description: fn.description?.trim() || null,
     }));
+
+  const hasScopeDivision = body?.hasScopeDivision !== false;
+  const shouldClearScopes = existingDepartment.hasScopeDivision && !hasScopeDivision;
 
   const existingFunctions = await prisma.departmentFunction.findMany({
     where: { departmentId: id },
@@ -36,8 +48,17 @@ export default defineEventHandler(async (event) => {
       data: {
         name: body.name,
         description: body.description || null,
+        hasScopeDivision,
       },
     }),
+    ...(shouldClearScopes
+      ? [
+          prisma.memberDepartment.updateMany({
+            where: { departmentId: id },
+            data: { scope: null, congregationId: null },
+          }),
+        ]
+      : []),
     ...updates.map((fn) =>
       prisma.departmentFunction.update({
         where: { id: fn.id },

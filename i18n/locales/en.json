@@ -140,6 +140,7 @@
       "departmentPlaceholder": "Select a department",
       "scope": "Scope",
       "scopePlaceholder": "Select a scope",
+      "scopeNotRequired": "This department has no scope division.",
       "departmentFunction": "Department function",
       "departmentFunctionPlaceholder": "Select a function",
       "noDepartmentFunctions": "No functions available for this department",
@@ -152,6 +153,8 @@
       "namePlaceholder": "Department name",
       "description": "Description",
       "descriptionPlaceholder": "Optional description",
+      "scopeDivisionLabel": "Has local/general division?",
+      "scopeDivisionDescription": "If disabled, members won't choose a scope for this department.",
       "functions": "Functions",
       "functionsDescription": "Add, edit or remove functions within this department.",
       "noFunctions": "No functions added yet",
@@ -172,7 +175,8 @@
   "departments": {
     "scope": {
       "local": "Local",
-      "general": "General"
+      "general": "General",
+      "none": "No division"
     },
     "role": {
       "member": "Member",

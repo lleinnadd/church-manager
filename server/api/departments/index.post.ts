@@ -10,6 +10,8 @@ export default defineEventHandler(async (event) => {
       description: fn.description?.trim() || null,
     }));
 
+  const hasScopeDivision = body?.hasScopeDivision !== false;
+
   if (!body?.name) {
     throw createError({ statusCode: 400, statusMessage: 'name is required' });
   }
@@ -18,6 +20,7 @@ export default defineEventHandler(async (event) => {
     data: {
       name: body.name,
       description: body.description || null,
+      hasScopeDivision,
       functions: functions.length
         ? {
             create: functions,

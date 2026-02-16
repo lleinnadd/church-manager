@@ -1,7 +1,8 @@
-import { MemberStatus } from '@prisma/client';
+import { DepartmentScope, MemberStatus } from '@prisma/client';
 import prisma from '#server/utils/prisma';
 
 const allowedStatus = Object.values(MemberStatus);
+const allowedScopes = Object.values(DepartmentScope);
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -14,12 +15,50 @@ export default defineEventHandler(async (event) => {
     ? (body.status as MemberStatus)
     : MemberStatus.ACTIVE;
 
-  const departmentsInput = (body.departments || []).map((d: any) => ({
-    departmentId: d.departmentId,
-    scope: d.scope,
-    functionId: d.functionId || null,
-    congregationId: d.scope === 'LOCAL' ? d.congregationId || body.congregationId : null,
-  }));
+  const rawDepartments = Array.isArray(body.departments) ? body.departments : [];
+  const departmentIds = rawDepartments.map((d: any) => d.departmentId).filter(Boolean);
+
+  const departments = await prisma.department.findMany({
+    where: { id: { in: departmentIds } },
+    select: { id: true, hasScopeDivision: true },
+  });
+  const departmentById = new Map(departments.map((d) => [d.id, d.hasScopeDivision]));
+
+  const departmentsInput = rawDepartments.map((d: any) => {
+    if (!departmentById.has(d.departmentId)) {
+      throw createError({ statusCode: 400, statusMessage: 'Invalid departmentId' });
+    }
+
+    const hasScopeDivision = departmentById.get(d.departmentId) ?? true;
+    const scope =
+      hasScopeDivision && allowedScopes.includes(d.scope) ? (d.scope as DepartmentScope) : null;
+
+    if (hasScopeDivision && !scope) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'scope is required for this department',
+      });
+    }
+
+    const congregationId =
+      hasScopeDivision && scope === DepartmentScope.LOCAL
+        ? d.congregationId || body.congregationId
+        : null;
+
+    if (hasScopeDivision && scope === DepartmentScope.LOCAL && !congregationId) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'congregationId is required for local scope',
+      });
+    }
+
+    return {
+      departmentId: d.departmentId,
+      scope,
+      functionId: d.functionId || null,
+      congregationId,
+    };
+  });
 
   const functionIds = departmentsInput.map((d) => d.functionId).filter(Boolean) as string[];
   if (functionIds.length) {

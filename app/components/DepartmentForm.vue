@@ -5,6 +5,7 @@ const props = defineProps<{
   initialData?: {
     name: string;
     description?: string | null;
+    hasScopeDivision?: boolean;
     functions?: { id?: string; name: string; description?: string | null }[];
   };
   loading?: boolean;
@@ -17,6 +18,7 @@ const emit = defineEmits<{
 const form = reactive({
   name: props.initialData?.name ?? '',
   description: props.initialData?.description ?? '',
+  hasScopeDivision: props.initialData?.hasScopeDivision ?? true,
 });
 
 interface FunctionInput {
@@ -31,6 +33,23 @@ const functions = ref<FunctionInput[]>(
     name: fn.name,
     description: fn.description ?? '',
   })) ?? [],
+);
+
+watch(
+  () => props.initialData,
+  (value) => {
+    if (!value) return;
+    form.name = value.name ?? '';
+    form.description = value.description ?? '';
+    form.hasScopeDivision = value.hasScopeDivision ?? true;
+    functions.value =
+      value.functions?.map((fn) => ({
+        id: fn.id,
+        name: fn.name,
+        description: fn.description ?? '',
+      })) ?? [];
+  },
+  { immediate: true, deep: true },
 );
 
 function addFunction() {
@@ -74,6 +93,17 @@ function handleSubmit() {
             :placeholder="$t('form.department.descriptionPlaceholder')"
             rows="3"
           />
+        </div>
+        <div class="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p class="text-sm font-medium leading-none">
+              {{ $t('form.department.scopeDivisionLabel') }}
+            </p>
+            <p class="text-sm text-muted-foreground">
+              {{ $t('form.department.scopeDivisionDescription') }}
+            </p>
+          </div>
+          <Switch v-model="form.hasScopeDivision" />
         </div>
       </CardContent>
     </Card>

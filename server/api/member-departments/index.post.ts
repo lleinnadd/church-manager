@@ -6,16 +6,29 @@ const allowedScopes = Object.values(DepartmentScope);
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
 
-  if (!body?.memberId || !body?.departmentId || !body?.scope) {
+  if (!body?.memberId || !body?.departmentId) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'memberId, departmentId and scope are required',
+      statusMessage: 'memberId and departmentId are required',
     });
   }
 
-  const scope = allowedScopes.includes(body.scope)
-    ? (body.scope as DepartmentScope)
-    : DepartmentScope.LOCAL;
+  const department = await prisma.department.findUnique({
+    where: { id: body.departmentId },
+    select: { id: true, hasScopeDivision: true },
+  });
+
+  if (!department) {
+    throw createError({ statusCode: 404, statusMessage: 'Department not found' });
+  }
+
+  const { hasScopeDivision } = department;
+  const scope =
+    hasScopeDivision && allowedScopes.includes(body.scope) ? (body.scope as DepartmentScope) : null;
+
+  if (hasScopeDivision && !scope) {
+    throw createError({ statusCode: 400, statusMessage: 'scope is required for this department' });
+  }
 
   const functionId = body.functionId ?? null;
 
@@ -33,7 +46,7 @@ export default defineEventHandler(async (event) => {
 
   let congregationId: string | null = null;
 
-  if (scope === DepartmentScope.LOCAL) {
+  if (hasScopeDivision && scope === DepartmentScope.LOCAL) {
     congregationId = body.congregationId || member.congregationId;
 
     if (!congregationId) {

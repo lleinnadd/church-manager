@@ -140,6 +140,7 @@
       "departmentPlaceholder": "Selecione um departamento",
       "scope": "Escopo",
       "scopePlaceholder": "Selecione um escopo",
+      "scopeNotRequired": "Este departamento não possui divisão de escopo.",
       "departmentFunction": "Função no departamento",
       "departmentFunctionPlaceholder": "Selecione uma função",
       "noDepartmentFunctions": "Nenhuma função disponível para este departamento",
@@ -152,6 +153,8 @@
       "namePlaceholder": "Nome do departamento",
       "description": "Descrição",
       "descriptionPlaceholder": "Descrição opcional",
+      "scopeDivisionLabel": "Possui divisão local/geral?",
+      "scopeDivisionDescription": "Se desativado, os membros não escolherão escopo para este departamento.",
       "functions": "Funções",
       "functionsDescription": "Adicione, edite ou remova funções deste departamento.",
       "noFunctions": "Nenhuma função adicionada ainda",
@@ -172,7 +175,8 @@
   "departments": {
     "scope": {
       "local": "Local",
-      "general": "Geral"
+      "general": "Geral",
+      "none": "Sem divisão"
     },
     "role": {
       "member": "Membro",

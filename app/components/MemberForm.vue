@@ -56,13 +56,13 @@ const showDepartments = computed(() => form.status === MemberStatus.ACTIVE);
 
 interface MembershipInput {
   departmentId: string;
-  scope: DepartmentScope;
+  scope: DepartmentScope | null;
   functionId?: string | null;
   congregationId?: string | null;
 }
 interface MemberDepartmentInput {
   departmentId: string;
-  scope: DepartmentScope;
+  scope: DepartmentScope | null;
   functionId?: string | null;
   function?: { id: string; name: string; departmentId: string } | null;
   congregationId?: string | null;
@@ -82,7 +82,7 @@ function addMembership() {
   const firstFunction = firstDept?.functions?.[0];
   memberships.value.push({
     departmentId: firstDept?.id ?? '',
-    scope: DepartmentScope.LOCAL,
+    scope: firstDept?.hasScopeDivision === false ? null : DepartmentScope.LOCAL,
     functionId: firstFunction?.id ?? null,
     congregationId: form.congregationId || undefined,
   });
@@ -96,6 +96,16 @@ function functionsByDepartment(departmentId: string): DepartmentFunction[] {
   return departmentsWithFunctions.value.find((d) => d.id === departmentId)?.functions ?? [];
 }
 
+function departmentHasScopeDivision(departmentId: string): boolean {
+  const department = departmentsWithFunctions.value.find((d) => d.id === departmentId);
+  // Default to true only when explicitly true; otherwise treat as no division until loaded
+  return department?.hasScopeDivision === true;
+}
+
+function membershipHasScopeDivision(membership: MembershipInput): boolean {
+  return departmentHasScopeDivision(membership.departmentId);
+}
+
 watch(
   memberships,
   (current: MembershipInput[]) => {
@@ -106,6 +116,23 @@ watch(
       const hasSelectedFunction = functions.some((fn) => fn.id === membership.functionId);
       if (!hasSelectedFunction) {
         memberships.value[i]!.functionId = functions[0]?.id ?? null;
+      }
+
+      const hasScopeDivision = departmentHasScopeDivision(membership.departmentId);
+      if (!hasScopeDivision) {
+        memberships.value[i]!.scope = null;
+        memberships.value[i]!.congregationId = null;
+      } else {
+        if (!membership.scope) {
+          memberships.value[i]!.scope = DepartmentScope.LOCAL;
+        }
+
+        if (memberships.value[i]!.scope === DepartmentScope.LOCAL) {
+          memberships.value[i]!.congregationId =
+            memberships.value[i]!.congregationId || form.congregationId || undefined;
+        } else {
+          memberships.value[i]!.congregationId = null;
+        }
       }
     }
   },
@@ -119,10 +146,12 @@ function handleSubmit() {
     departments: showDepartments.value
       ? memberships.value.map((m) => ({
           departmentId: m.departmentId,
-          scope: m.scope,
+          scope: departmentHasScopeDivision(m.departmentId) ? m.scope : null,
           functionId: m.functionId || null,
           congregationId:
-            m.scope === DepartmentScope.LOCAL ? m.congregationId || form.congregationId : null,
+            departmentHasScopeDivision(m.departmentId) && m.scope === DepartmentScope.LOCAL
+              ? m.congregationId || form.congregationId
+              : null,
         }))
       : [],
   };
@@ -199,10 +228,10 @@ function handleSubmit() {
           <div
             v-for="(membership, index) in memberships"
             :key="index"
-            class="grid gap-3 md:grid-cols-3 items-end"
+            class="grid gap-3 items-end md:grid-cols-[repeat(3,minmax(0,1fr))_36px]"
           >
-            <div class="space-y-2">
-              <Label>{{ $t('form.member.department') }}</Label>
+            <Field>
+              <FieldLabel>{{ $t('form.member.department') }}</FieldLabel>
               <Select v-model="membership.departmentId">
                 <SelectTrigger>
                   <SelectValue :placeholder="$t('form.member.departmentPlaceholder')" />
@@ -213,9 +242,36 @@ function handleSubmit() {
                   </SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div class="space-y-2">
-              <Label>{{ $t('form.member.scope') }}</Label>
+            </Field>
+            <Field>
+              <FieldLabel>{{ $t('form.member.departmentFunction') }}</FieldLabel>
+              <Select
+                v-model="membership.functionId"
+                class="w-full"
+                :disabled="!functionsByDepartment(membership.departmentId).length"
+              >
+                <SelectTrigger>
+                  <SelectValue :placeholder="$t('form.member.departmentFunctionPlaceholder')" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="fn in functionsByDepartment(membership.departmentId)"
+                    :key="fn.id"
+                    :value="fn.id"
+                  >
+                    {{ fn.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p
+                v-if="!functionsByDepartment(membership.departmentId).length"
+                class="text-xs text-muted-foreground"
+              >
+                {{ $t('form.member.noDepartmentFunctions') }}
+              </p>
+            </Field>
+            <Field v-if="membershipHasScopeDivision(membership)">
+              <FieldLabel>{{ $t('form.member.scope') }}</FieldLabel>
               <Select v-model="membership.scope">
                 <SelectTrigger>
                   <SelectValue :placeholder="$t('form.member.scopePlaceholder')" />
@@ -229,39 +285,15 @@ function handleSubmit() {
                   </SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div class="space-y-2">
-              <Label>{{ $t('form.member.departmentFunction') }}</Label>
-              <div class="flex gap-2">
-                <Select
-                  v-model="membership.functionId"
-                  class="w-full"
-                  :disabled="!functionsByDepartment(membership.departmentId).length"
-                >
-                  <SelectTrigger>
-                    <SelectValue :placeholder="$t('form.member.departmentFunctionPlaceholder')" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      v-for="fn in functionsByDepartment(membership.departmentId)"
-                      :key="fn.id"
-                      :value="fn.id"
-                    >
-                      {{ fn.name }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="ghost" size="icon" @click="removeMembership(index)">
-                  <Trash2 class="size-4" />
-                </Button>
-              </div>
-              <p
-                v-if="!functionsByDepartment(membership.departmentId).length"
-                class="text-xs text-muted-foreground"
-              >
-                {{ $t('form.member.noDepartmentFunctions') }}
-              </p>
-            </div>
+            </Field>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="col-start-4"
+              @click="removeMembership(index)"
+            >
+              <Trash2 class="size-4" />
+            </Button>
           </div>
           <Button type="button" variant="outline" @click="addMembership">
             {{ $t('form.member.addDepartment') }}

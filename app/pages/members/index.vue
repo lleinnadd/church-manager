@@ -47,7 +47,9 @@ function typeLabel(type: CongregationType) {
   return labels[type] ?? type;
 }
 
-function scopeLabel(scope: DepartmentScope) {
+function scopeLabel(scope: DepartmentScope | null) {
+  if (!scope) return t('departments.scope.none');
+
   const labels: Record<DepartmentScope, string> = {
     LOCAL: t('departments.scope.local'),
     GENERAL: t('departments.scope.general'),
@@ -173,8 +175,10 @@ async function handleDelete() {
                 variant="secondary"
               >
                 <span class="font-medium">{{ membership.department.name }}</span>
-                <span class="mx-1">•</span>
-                <span>{{ scopeLabel(membership.scope) }}</span>
+                <template v-if="membership.scope">
+                  <span class="mx-1">•</span>
+                  <span>{{ scopeLabel(membership.scope) }}</span>
+                </template>
                 <template v-if="membership.function">
                   <span class="mx-1">•</span>
                   <span>{{ membership.function.name }}</span>
