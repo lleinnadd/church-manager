@@ -5,9 +5,10 @@ export default defineEventHandler(async (event) => {
 
   const functions = (Array.isArray(body?.functions) ? body.functions : [])
     .filter((fn: any) => fn?.name?.trim())
-    .map((fn: any) => ({
+    .map((fn: any, index: number) => ({
       name: fn.name.trim(),
       description: fn.description?.trim() || null,
+      sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
     }));
 
   const hasScopeDivision = body?.hasScopeDivision !== false;
@@ -28,7 +29,7 @@ export default defineEventHandler(async (event) => {
         : undefined,
     },
     include: {
-      functions: true,
+      functions: { orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] },
     },
   });
 

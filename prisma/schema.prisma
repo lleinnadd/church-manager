@@ -90,6 +90,7 @@ model DepartmentFunction {
 
   name         String
   description  String?
+  sortOrder    Int        @default(0)
   departmentId String     @db.ObjectId
   department   Department @relation(fields: [departmentId], references: [id])
 
@@ -97,6 +98,7 @@ model DepartmentFunction {
 
   @@unique([departmentId, name])
   @@index([departmentId])
+  @@index([departmentId, sortOrder])
   @@map("department_functions")
 }
 

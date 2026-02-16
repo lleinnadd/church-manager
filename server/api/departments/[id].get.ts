@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const department = await prisma.department.findUnique({
     where: { id },
     include: {
-      functions: true,
+      functions: { orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] },
     },
   });
 

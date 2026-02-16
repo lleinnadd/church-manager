@@ -26,6 +26,16 @@ export default defineEventHandler(async () => {
         $addFields: {
           id: { $toString: '$_id' },
           functions: {
+            $sortArray: {
+              input: '$functions',
+              sortBy: { sortOrder: 1, name: 1 },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          functions: {
             $map: {
               input: '$functions',
               as: 'fn',
@@ -33,6 +43,7 @@ export default defineEventHandler(async () => {
                 id: { $toString: '$$fn._id' },
                 name: '$$fn.name',
                 description: '$$fn.description',
+                sortOrder: '$$fn.sortOrder',
                 departmentId: { $toString: '$$fn.departmentId' },
                 createdAt: '$$fn.createdAt',
                 updatedAt: '$$fn.updatedAt',

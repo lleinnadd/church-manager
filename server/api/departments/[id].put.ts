@@ -19,10 +19,11 @@ export default defineEventHandler(async (event) => {
 
   const functions = (Array.isArray(body?.functions) ? body.functions : [])
     .filter((fn: any) => fn?.name?.trim())
-    .map((fn: any) => ({
+    .map((fn: any, index: number) => ({
       id: fn.id as string | undefined,
       name: fn.name.trim(),
       description: fn.description?.trim() || null,
+      sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
     }));
 
   const hasScopeDivision = body?.hasScopeDivision !== false;
@@ -40,7 +41,12 @@ export default defineEventHandler(async (event) => {
   const updates = functions.filter((fn) => fn.id);
   const creations = functions
     .filter((fn) => !fn.id)
-    .map(({ name, description }) => ({ name, description, departmentId: id }));
+    .map(({ name, description, sortOrder }) => ({
+      name,
+      description,
+      sortOrder,
+      departmentId: id,
+    }));
 
   await prisma.$transaction([
     prisma.department.update({
@@ -62,7 +68,7 @@ export default defineEventHandler(async (event) => {
     ...updates.map((fn) =>
       prisma.departmentFunction.update({
         where: { id: fn.id },
-        data: { name: fn.name, description: fn.description },
+        data: { name: fn.name, description: fn.description, sortOrder: fn.sortOrder },
       }),
     ),
     ...(creations.length ? [prisma.departmentFunction.createMany({ data: creations })] : []),
@@ -79,7 +85,7 @@ export default defineEventHandler(async (event) => {
 
   const department = await prisma.department.findUnique({
     where: { id },
-    include: { functions: true },
+    include: { functions: { orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] } },
   });
 
   return department;

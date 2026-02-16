@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { Trash2 } from 'lucide-vue-next';
+import { ArrowDown, ArrowUp, Trash2 } from 'lucide-vue-next';
 
 const props = defineProps<{
   initialData?: {
     name: string;
     description?: string | null;
     hasScopeDivision?: boolean;
-    functions?: { id?: string; name: string; description?: string | null }[];
+    functions?: { id?: string; name: string; description?: string | null; sortOrder?: number }[];
   };
   loading?: boolean;
 }>();
@@ -25,15 +25,26 @@ interface FunctionInput {
   id?: string;
   name: string;
   description: string;
+  sortOrder: number;
 }
 
 const functions = ref<FunctionInput[]>(
-  props.initialData?.functions?.map((fn) => ({
-    id: fn.id,
-    name: fn.name,
-    description: fn.description ?? '',
-  })) ?? [],
+  props.initialData?.functions
+    ?.map((fn, index) => ({
+      id: fn.id,
+      name: fn.name,
+      description: fn.description ?? '',
+      sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
+    }))
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)) ?? [],
 );
+
+function normalizeSortOrder() {
+  functions.value = functions.value.map((fn, index) => ({
+    ...fn,
+    sortOrder: index,
+  }));
+}
 
 watch(
   () => props.initialData,
@@ -43,27 +54,51 @@ watch(
     form.description = value.description ?? '';
     form.hasScopeDivision = value.hasScopeDivision ?? true;
     functions.value =
-      value.functions?.map((fn) => ({
-        id: fn.id,
-        name: fn.name,
-        description: fn.description ?? '',
-      })) ?? [];
+      value.functions
+        ?.map((fn, index) => ({
+          id: fn.id,
+          name: fn.name,
+          description: fn.description ?? '',
+          sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
+        }))
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)) ?? [];
+    normalizeSortOrder();
   },
   { immediate: true, deep: true },
 );
 
 function addFunction() {
-  functions.value.push({ id: undefined, name: '', description: '' });
+  functions.value.push({
+    id: undefined,
+    name: '',
+    description: '',
+    sortOrder: functions.value.length,
+  });
 }
 
 function removeFunction(index: number) {
   functions.value.splice(index, 1);
+  normalizeSortOrder();
+}
+
+function moveFunction(index: number, direction: 'up' | 'down') {
+  const targetIndex = direction === 'up' ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= functions.value.length) return;
+  const current = functions.value[index];
+  const target = functions.value[targetIndex];
+  if (!current || !target) return;
+  functions.value.splice(index, 1, target);
+  functions.value.splice(targetIndex, 1, current);
+  normalizeSortOrder();
 }
 
 function handleSubmit() {
   emit('submit', {
     ...form,
-    functions: functions.value,
+    functions: functions.value.map((fn, index) => ({
+      ...fn,
+      sortOrder: index,
+    })),
   });
 }
 </script>
@@ -121,7 +156,7 @@ function handleSubmit() {
           <div
             v-for="(fn, index) in functions"
             :key="fn.id || index"
-            class="grid gap-3 md:grid-cols-3 items-end"
+            class="grid gap-3 md:grid-cols-[1fr_1fr_auto] items-end"
           >
             <Field>
               <FieldLabel>{{ $t('form.department.functionName') }}</FieldLabel>
@@ -138,8 +173,28 @@ function handleSubmit() {
                 :placeholder="$t('form.department.functionDescriptionPlaceholder')"
               />
             </Field>
-            <div class="flex justify-end md:justify-end">
-              <Button variant="ghost" size="icon" @click="removeFunction(index)">
+            <div class="flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                :disabled="index === 0"
+                aria-label="Mover acima"
+                @click="moveFunction(index, 'up')"
+              >
+                <ArrowUp class="size-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                :disabled="index === functions.length - 1"
+                aria-label="Mover abaixo"
+                @click="moveFunction(index, 'down')"
+              >
+                <ArrowDown class="size-4" />
+              </Button>
+              <Button type="button" variant="ghost" size="icon" @click="removeFunction(index)">
                 <Trash2 class="size-4" />
               </Button>
             </div>

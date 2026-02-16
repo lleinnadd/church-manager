@@ -79,7 +79,9 @@ const memberships = ref<MembershipInput[]>(
 
 function addMembership() {
   const firstDept = departmentsWithFunctions.value?.[0];
-  const firstFunction = firstDept?.functions?.[0];
+  const firstFunction = firstDept?.functions
+    ?.slice()
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name))?.[0];
   memberships.value.push({
     departmentId: firstDept?.id ?? '',
     scope: firstDept?.hasScopeDivision === false ? null : DepartmentScope.LOCAL,
@@ -93,7 +95,9 @@ function removeMembership(index: number) {
 }
 
 function functionsByDepartment(departmentId: string): DepartmentFunction[] {
-  return departmentsWithFunctions.value.find((d) => d.id === departmentId)?.functions ?? [];
+  return (departmentsWithFunctions.value.find((d) => d.id === departmentId)?.functions ?? [])
+    .slice()
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
 }
 
 function departmentHasScopeDivision(departmentId: string): boolean {
