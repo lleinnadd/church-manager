@@ -83,9 +83,6 @@ async function handleDelete() {
         <p class="text-muted-foreground text-sm">{{ $t('pages.members.description') }}</p>
       </div>
       <div class="flex gap-2">
-        <Button variant="outline" @click="refresh()">
-          {{ $t('common.refresh') }}
-        </Button>
         <Button as-child>
           <NuxtLink to="/members/new">
             <Plus class="mr-2 size-4" />
