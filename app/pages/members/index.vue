@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { Users, Shield, Network, Plus, Pencil, Trash2 } from 'lucide-vue-next';
+import {
+  Users,
+  Shield,
+  Network,
+  Plus,
+  Pencil,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
 import {
   type Member,
@@ -35,6 +44,7 @@ const isLoading = computed(() => status.value === 'pending');
 
 const deleteTarget = ref<{ id: string; name: string } | null>(null);
 const isDeleting = ref(false);
+const departmentScrollRefs = ref<Record<string, HTMLElement | null>>({});
 
 function statusLabel(memberStatus: MemberStatus) {
   const labels: Record<MemberStatus, string> = {
@@ -78,6 +88,18 @@ function departmentDisplayName(
 
 function confirmDelete(id: string, name: string) {
   deleteTarget.value = { id, name };
+}
+
+function setDepartmentScrollRef(id: string, el: HTMLElement | null) {
+  if (!el) return;
+  departmentScrollRefs.value[id] = el;
+}
+
+function scrollDepartments(id: string, direction: 'left' | 'right') {
+  const target = departmentScrollRefs.value[id];
+  if (!target) return;
+  const delta = direction === 'left' ? -180 : 180;
+  target.scrollBy({ left: delta, behavior: 'smooth' });
 }
 
 async function handleDelete() {
@@ -187,22 +209,47 @@ async function handleDelete() {
         <CardContent class="space-y-3">
           <div class="space-y-2">
             <p class="text-sm font-medium">{{ $t('pages.members.departments') }}</p>
-            <div v-if="member.departments.length" class="flex flex-wrap gap-2">
-              <Badge
-                v-for="membership in member.departments"
-                :key="membership.id"
-                variant="secondary"
+            <div v-if="member.departments.length" class="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                class="h-[22px] w-[22px] shrink-0 rounded-full border bg-background/70 p-0 shadow-sm hover:bg-background/90"
+                aria-label="Scroll left"
+                @click="scrollDepartments(member.id, 'left')"
               >
-                <span class="font-medium">{{ departmentDisplayName(member, membership) }}</span>
-                <template v-if="membership.scope">
-                  <span class="mx-1">•</span>
-                  <span>{{ scopeLabel(membership.scope) }}</span>
-                </template>
-                <template v-if="membership.function">
-                  <span class="mx-1">•</span>
-                  <span>{{ membership.function.name }}</span>
-                </template>
-              </Badge>
+                <ChevronLeft class="size-3" />
+              </Button>
+              <div
+                :ref="(el) => setDepartmentScrollRef(member.id, el as HTMLElement | null)"
+                class="no-scrollbar flex-1 overflow-x-auto"
+              >
+                <div class="flex flex-nowrap gap-2">
+                  <Badge
+                    v-for="membership in member.departments"
+                    :key="membership.id"
+                    variant="secondary"
+                  >
+                    <span class="font-medium">{{ departmentDisplayName(member, membership) }}</span>
+                    <template v-if="membership.scope">
+                      <span class="mx-1">•</span>
+                      <span>{{ scopeLabel(membership.scope) }}</span>
+                    </template>
+                    <template v-if="membership.function">
+                      <span class="mx-1">•</span>
+                      <span>{{ membership.function.name }}</span>
+                    </template>
+                  </Badge>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                class="h-[22px] w-[22px] shrink-0 rounded-full border bg-background/70 p-0 shadow-sm hover:bg-background/90"
+                aria-label="Scroll right"
+                @click="scrollDepartments(member.id, 'right')"
+              >
+                <ChevronRight class="size-3" />
+              </Button>
             </div>
             <p v-else class="text-muted-foreground text-sm">
               {{ $t('pages.members.noDepartments') }}
@@ -224,3 +271,14 @@ async function handleDelete() {
     />
   </div>
 </template>
+
+<style scoped>
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+</style>
