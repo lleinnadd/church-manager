@@ -7,6 +7,10 @@ export default defineEventHandler(async (event) => {
     where: { id },
     include: {
       functions: { orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] },
+      localNames: {
+        include: { congregation: { select: { id: true, name: true, type: true } } },
+        orderBy: { name: 'asc' },
+      },
     },
   });
 

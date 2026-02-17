@@ -13,6 +13,22 @@ export default defineEventHandler(async (event) => {
 
   const hasScopeDivision = body?.hasScopeDivision !== false;
 
+  const localNames = (Array.isArray(body?.localNames) ? body.localNames : [])
+    .filter((entry: any) => entry?.congregationId && entry?.name?.trim())
+    .map((entry: any) => ({
+      congregationId: entry.congregationId,
+      name: entry.name.trim(),
+    }));
+
+  const localNamesByCongregation = new Map<string, string>();
+  localNames.forEach((entry) => {
+    localNamesByCongregation.set(entry.congregationId, entry.name);
+  });
+  const localNamesPayload = Array.from(localNamesByCongregation, ([congregationId, name]) => ({
+    congregationId,
+    name,
+  }));
+
   if (!body?.name) {
     throw createError({ statusCode: 400, statusMessage: 'name is required' });
   }
@@ -27,9 +43,20 @@ export default defineEventHandler(async (event) => {
             create: functions,
           }
         : undefined,
+      localNames: localNamesPayload.length
+        ? {
+            createMany: {
+              data: localNamesPayload,
+            },
+          }
+        : undefined,
     },
     include: {
       functions: { orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] },
+      localNames: {
+        include: { congregation: { select: { id: true, name: true, type: true } } },
+        orderBy: { name: 'asc' },
+      },
     },
   });
 

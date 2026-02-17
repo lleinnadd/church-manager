@@ -91,7 +91,11 @@
       "deleteTitle": "Delete department",
       "deleteDescription": "Are you sure you want to delete '{name}'? This action cannot be undone.",
       "deleteSuccess": "Department deleted successfully",
-      "deleteError": "Failed to delete department"
+      "deleteError": "Failed to delete department",
+      "localNamesLabel": "Local names",
+      "localNameItem": "{congregation}: {name}",
+      "localNamesMore": "+{count} more",
+      "localNameUnknown": "Congregation"
     }
   },
   "form": {
@@ -155,6 +159,14 @@
       "descriptionPlaceholder": "Optional description",
       "scopeDivisionLabel": "Has local/general division?",
       "scopeDivisionDescription": "If disabled, members won't choose a scope for this department.",
+      "localNamesTitle": "Local names",
+      "localNamesDescription": "Optionally set a specific name per congregation.",
+      "localNamesNoCongregations": "No congregations available to assign local names.",
+      "localNameCongregation": "Congregation",
+      "localNameCongregationPlaceholder": "Select a congregation",
+      "localNameLabel": "Local department name",
+      "localNamePlaceholder": "Local name (optional)",
+      "addLocalName": "Add local name",
       "functions": "Functions",
       "functionsDescription": "Add, edit or remove functions within this department.",
       "noFunctions": "No functions added yet",

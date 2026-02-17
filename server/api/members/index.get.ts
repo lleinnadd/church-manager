@@ -9,7 +9,14 @@ export default defineEventHandler(async () => {
       },
       departments: {
         include: {
-          department: true,
+          department: {
+            include: {
+              localNames: {
+                include: { congregation: { select: { id: true, name: true, type: true } } },
+                orderBy: { name: 'asc' },
+              },
+            },
+          },
           congregation: {
             select: { id: true, name: true, type: true },
           },

@@ -23,8 +23,9 @@ model Congregation {
   city                 String?
   state                String?
 
-  members           Member[]
-  memberDepartments MemberDepartment[]
+  members              Member[]
+  memberDepartments    MemberDepartment[]
+  departmentLocalNames DepartmentLocalName[]
 
   @@map("congregations")
 }
@@ -79,8 +80,26 @@ model Department {
 
   memberships MemberDepartment[]
   functions   DepartmentFunction[]
+  localNames  DepartmentLocalName[]
 
   @@map("departments")
+}
+
+model DepartmentLocalName {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name           String
+  departmentId   String       @db.ObjectId
+  department     Department   @relation(fields: [departmentId], references: [id])
+  congregationId String       @db.ObjectId
+  congregation   Congregation @relation(fields: [congregationId], references: [id])
+
+  @@unique([departmentId, congregationId])
+  @@index([departmentId])
+  @@index([congregationId])
+  @@map("department_local_names")
 }
 
 model DepartmentFunction {

@@ -40,11 +40,20 @@ const { data: congregations, status: congregationsStatus } =
   useFetch<Congregation[]>('/api/congregations');
 
 type DepartmentWithFunctions = Department & { functions: DepartmentFunction[] };
+interface DepartmentLocalName {
+  id: string;
+  name: string;
+  congregationId: string;
+  congregation?: { id: string; name: string } | null;
+}
+type DepartmentWithLocalNames = DepartmentWithFunctions & { localNames?: DepartmentLocalName[] };
 
 const { data: departments, status: departmentsStatus } =
-  useFetch<DepartmentWithFunctions[]>('/api/departments');
+  useFetch<DepartmentWithLocalNames[]>('/api/departments');
 
-const departmentsWithFunctions = computed<DepartmentWithFunctions[]>(() => departments.value ?? []);
+const departmentsWithFunctions = computed<DepartmentWithLocalNames[]>(
+  () => departments.value ?? [],
+);
 
 const statusOptions = computed(() => [
   { value: MemberStatus.ACTIVE, label: t('members.status.active') },
@@ -84,7 +93,7 @@ function addMembership() {
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name))?.[0];
   memberships.value.push({
     departmentId: firstDept?.id ?? '',
-    scope: firstDept?.hasScopeDivision === false ? null : DepartmentScope.LOCAL,
+    scope: firstDept?.hasScopeDivision === false ? null : DepartmentScope.GENERAL,
     functionId: firstFunction?.id ?? null,
     congregationId: form.congregationId || undefined,
   });
@@ -104,6 +113,23 @@ function departmentHasScopeDivision(departmentId: string): boolean {
   const department = departmentsWithFunctions.value.find((d) => d.id === departmentId);
   // Default to true only when explicitly true; otherwise treat as no division until loaded
   return department?.hasScopeDivision === true;
+}
+
+function departmentLabel(
+  department: DepartmentWithLocalNames,
+  membership: MembershipInput,
+): string {
+  const effectiveScope =
+    membership.scope ?? (department.hasScopeDivision === false ? null : DepartmentScope.GENERAL);
+
+  if (effectiveScope === DepartmentScope.LOCAL) {
+    const congregationId = membership.congregationId || form.congregationId;
+    const localName = department.localNames?.find(
+      (entry) => entry.congregationId === congregationId,
+    )?.name;
+    return localName || department.name;
+  }
+  return department.name;
 }
 
 function membershipHasScopeDivision(membership: MembershipInput): boolean {
@@ -128,7 +154,7 @@ watch(
         memberships.value[i]!.congregationId = null;
       } else {
         if (!membership.scope) {
-          memberships.value[i]!.scope = DepartmentScope.LOCAL;
+          memberships.value[i]!.scope = DepartmentScope.GENERAL;
         }
 
         if (memberships.value[i]!.scope === DepartmentScope.LOCAL) {
@@ -236,13 +262,16 @@ function handleSubmit() {
           >
             <Field>
               <FieldLabel>{{ $t('form.member.department') }}</FieldLabel>
-              <Select v-model="membership.departmentId">
+              <Select
+                v-model="membership.departmentId"
+                :key="`${membership.departmentId}-${membership.scope ?? 'none'}-${membership.congregationId ?? form.congregationId ?? 'none'}`"
+              >
                 <SelectTrigger>
                   <SelectValue :placeholder="$t('form.member.departmentPlaceholder')" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem v-for="d in departments" :key="d.id" :value="d.id">
-                    {{ d.name }}
+                    {{ departmentLabel(d, membership) }}
                   </SelectItem>
                 </SelectContent>
               </Select>

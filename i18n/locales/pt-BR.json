@@ -91,7 +91,11 @@
       "deleteTitle": "Excluir departamento",
       "deleteDescription": "Tem certeza que deseja excluir '{name}'? Esta ação não pode ser desfeita.",
       "deleteSuccess": "Departamento excluído com sucesso",
-      "deleteError": "Falha ao excluir departamento"
+      "deleteError": "Falha ao excluir departamento",
+      "localNamesLabel": "Nomes locais",
+      "localNameItem": "{congregation}: {name}",
+      "localNamesMore": "+{count} outros",
+      "localNameUnknown": "Congregação"
     }
   },
   "form": {
@@ -155,6 +159,14 @@
       "descriptionPlaceholder": "Descrição opcional",
       "scopeDivisionLabel": "Possui divisão local/geral?",
       "scopeDivisionDescription": "Se desativado, os membros não escolherão escopo para este departamento.",
+      "localNamesTitle": "Nomes locais",
+      "localNamesDescription": "Opcionalmente defina um nome específico por congregação.",
+      "localNamesNoCongregations": "Nenhuma congregação disponível para associar nomes locais.",
+      "localNameCongregation": "Congregação",
+      "localNameCongregationPlaceholder": "Selecione uma congregação",
+      "localNameLabel": "Nome do departamento local",
+      "localNamePlaceholder": "Nome local (opcional)",
+      "addLocalName": "Adicionar nome local",
       "functions": "Funções",
       "functionsDescription": "Adicione, edite ou remova funções deste departamento.",
       "noFunctions": "Nenhuma função adicionada ainda",

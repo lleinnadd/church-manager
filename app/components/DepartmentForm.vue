@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ArrowDown, ArrowUp, Trash2 } from 'lucide-vue-next';
+import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-vue-next';
+import type { Congregation } from '@prisma/client';
 
 const props = defineProps<{
   initialData?: {
@@ -7,6 +8,12 @@ const props = defineProps<{
     description?: string | null;
     hasScopeDivision?: boolean;
     functions?: { id?: string; name: string; description?: string | null; sortOrder?: number }[];
+    localNames?: {
+      id?: string;
+      name: string;
+      congregationId: string;
+      congregation?: { id: string; name: string } | null;
+    }[];
   };
   loading?: boolean;
 }>();
@@ -28,6 +35,15 @@ interface FunctionInput {
   sortOrder: number;
 }
 
+interface LocalNameInput {
+  id?: string;
+  congregationId: string;
+  name: string;
+}
+
+const { data: congregations, status: congregationsStatus } =
+  useFetch<Congregation[]>('/api/congregations');
+
 const functions = ref<FunctionInput[]>(
   props.initialData?.functions
     ?.map((fn, index) => ({
@@ -38,6 +54,21 @@ const functions = ref<FunctionInput[]>(
     }))
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)) ?? [],
 );
+
+const localNames = ref<LocalNameInput[]>(
+  props.initialData?.localNames?.map((entry) => ({
+    id: entry.id,
+    congregationId: entry.congregationId,
+    name: entry.name,
+  })) ?? [],
+);
+
+const hasAvailableCongregation = computed(() => {
+  const options = congregations.value ?? [];
+  if (!options.length) return false;
+  const used = new Set(localNames.value.map((entry) => entry.congregationId).filter(Boolean));
+  return options.some((item) => !used.has(item.id));
+});
 
 function normalizeSortOrder() {
   functions.value = functions.value.map((fn, index) => ({
@@ -62,6 +93,12 @@ watch(
           sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
         }))
         .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)) ?? [];
+    localNames.value =
+      value.localNames?.map((entry) => ({
+        id: entry.id,
+        congregationId: entry.congregationId,
+        name: entry.name,
+      })) ?? [];
     normalizeSortOrder();
   },
   { immediate: true, deep: true },
@@ -92,6 +129,32 @@ function moveFunction(index: number, direction: 'up' | 'down') {
   normalizeSortOrder();
 }
 
+function nextAvailableCongregationId(): string {
+  const used = new Set(localNames.value.map((entry) => entry.congregationId).filter(Boolean));
+  const options = congregations.value ?? [];
+  const available = options.find((item) => !used.has(item.id));
+  return available?.id ?? options[0]?.id ?? '';
+}
+
+function addLocalName() {
+  localNames.value.push({
+    id: undefined,
+    congregationId: nextAvailableCongregationId(),
+    name: '',
+  });
+}
+
+function removeLocalName(index: number) {
+  localNames.value.splice(index, 1);
+}
+
+function isCongregationTaken(congregationId: string, index: number): boolean {
+  if (!congregationId) return false;
+  return localNames.value.some(
+    (entry, idx) => idx !== index && entry.congregationId === congregationId,
+  );
+}
+
 function handleSubmit() {
   emit('submit', {
     ...form,
@@ -99,6 +162,13 @@ function handleSubmit() {
       ...fn,
       sortOrder: index,
     })),
+    localNames: localNames.value
+      .filter((entry) => entry.congregationId && entry.name.trim())
+      .map((entry) => ({
+        id: entry.id,
+        congregationId: entry.congregationId,
+        name: entry.name.trim(),
+      })),
   });
 }
 </script>
@@ -139,6 +209,70 @@ function handleSubmit() {
             </p>
           </div>
           <Switch v-model="form.hasScopeDivision" />
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card v-if="form.hasScopeDivision">
+      <CardHeader>
+        <CardTitle>{{ $t('form.department.localNamesTitle') }}</CardTitle>
+        <CardDescription>{{ $t('form.department.localNamesDescription') }}</CardDescription>
+      </CardHeader>
+      <CardContent class="space-y-4">
+        <div v-if="congregationsStatus === 'pending'" class="text-sm text-muted-foreground">
+          {{ $t('common.loading') }}
+        </div>
+        <div v-else-if="!congregations?.length" class="text-sm text-muted-foreground">
+          {{ $t('form.department.localNamesNoCongregations') }}
+        </div>
+        <div v-else class="space-y-4">
+          <div
+            v-for="(entry, index) in localNames"
+            :key="entry.id || index"
+            class="grid gap-3 items-end md:grid-cols-[1fr_1fr_auto]"
+          >
+            <Field>
+              <FieldLabel>{{ $t('form.department.localNameCongregation') }}</FieldLabel>
+              <Select v-model="entry.congregationId">
+                <SelectTrigger>
+                  <SelectValue
+                    :placeholder="$t('form.department.localNameCongregationPlaceholder')"
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="c in congregations || []"
+                    :key="c.id"
+                    :value="c.id"
+                    :disabled="isCongregationTaken(c.id, index)"
+                  >
+                    {{ c.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel>{{ $t('form.department.localNameLabel') }}</FieldLabel>
+              <Input
+                v-model="entry.name"
+                :placeholder="$t('form.department.localNamePlaceholder')"
+              />
+            </Field>
+            <div class="flex items-center justify-end">
+              <Button type="button" variant="ghost" size="icon" @click="removeLocalName(index)">
+                <Trash2 class="size-4" />
+              </Button>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            :disabled="!hasAvailableCongregation"
+            @click="addLocalName"
+          >
+            <Plus class="mr-2 size-4" />
+            {{ $t('form.department.addLocalName') }}
+          </Button>
         </div>
       </CardContent>
     </Card>

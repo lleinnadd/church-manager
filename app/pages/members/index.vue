@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { Users, Shield, Network, Plus, Pencil, Trash2 } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
-import type {
-  Member,
-  Congregation,
-  MemberDepartment,
-  Department,
+import {
+  type Member,
+  type Congregation,
+  type MemberDepartment,
+  type Department,
   MemberStatus,
   DepartmentScope,
   CongregationType,
@@ -16,7 +16,14 @@ const { t } = useI18n();
 type MemberWithRelations = Member & {
   congregation: Pick<Congregation, 'id' | 'name' | 'type'>;
   departments: (MemberDepartment & {
-    department: Department;
+    department: Department & {
+      localNames?: {
+        id: string;
+        name: string;
+        congregationId: string;
+        congregation?: Pick<Congregation, 'id' | 'name' | 'type'> | null;
+      }[];
+    };
     congregation: Pick<Congregation, 'id' | 'name' | 'type'> | null;
     function?: { id: string; name: string; departmentId: string } | null;
   })[];
@@ -55,6 +62,18 @@ function scopeLabel(scope: DepartmentScope | null) {
     GENERAL: t('departments.scope.general'),
   };
   return labels[scope] ?? scope;
+}
+
+function departmentDisplayName(
+  member: MemberWithRelations,
+  membership: MemberWithRelations['departments'][number],
+) {
+  if (membership.scope !== DepartmentScope.LOCAL) return membership.department.name;
+  const congregationId = membership.congregation?.id || member.congregation?.id;
+  const localName = membership.department.localNames?.find(
+    (entry) => entry.congregationId === congregationId,
+  )?.name;
+  return localName || membership.department.name;
 }
 
 function confirmDelete(id: string, name: string) {
@@ -174,7 +193,7 @@ async function handleDelete() {
                 :key="membership.id"
                 variant="secondary"
               >
-                <span class="font-medium">{{ membership.department.name }}</span>
+                <span class="font-medium">{{ departmentDisplayName(member, membership) }}</span>
                 <template v-if="membership.scope">
                   <span class="mx-1">•</span>
                   <span>{{ scopeLabel(membership.scope) }}</span>

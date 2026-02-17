@@ -5,15 +5,31 @@ import type { Department } from '@prisma/client';
 
 const { t } = useI18n();
 
-const {
-  data: departments,
-  refresh,
-  status,
-} = useFetch<(Department & { _count: { memberships: number } })[]>('/api/departments');
+interface DepartmentLocalName {
+  id: string;
+  name: string;
+  congregationId: string;
+  congregation?: { id: string; name: string } | null;
+}
+
+type DepartmentWithCounts = Department & {
+  _count: { memberships: number };
+  localNames?: DepartmentLocalName[];
+};
+
+const { data: departments, refresh, status } = useFetch<DepartmentWithCounts[]>('/api/departments');
 
 const isLoading = computed(() => status.value === 'pending');
 const deleteTarget = ref<{ id: string; name: string } | null>(null);
 const isDeleting = ref(false);
+
+function localNameLabel(entry: DepartmentLocalName) {
+  const congregationName = entry.congregation?.name ?? t('pages.departments.localNameUnknown');
+  return t('pages.departments.localNameItem', {
+    congregation: congregationName,
+    name: entry.name,
+  });
+}
 
 function confirmDelete(id: string, name: string) {
   deleteTarget.value = { id, name };
@@ -81,6 +97,25 @@ async function handleDelete() {
             <div class="min-w-0 flex-1">
               <CardTitle class="truncate text-lg">{{ department.name }}</CardTitle>
               <CardDescription class="line-clamp-2">{{ department.description }}</CardDescription>
+              <div v-if="department.localNames?.length" class="mt-2 text-xs text-muted-foreground">
+                <span class="font-medium">{{ $t('pages.departments.localNamesLabel') }}:</span>
+                <span class="ml-1">
+                  <span
+                    v-for="(entry, index) in department.localNames.slice(0, 2)"
+                    :key="entry.id || index"
+                  >
+                    {{ localNameLabel(entry) }}
+                    <span v-if="index < Math.min(department.localNames.length, 2) - 1"> • </span>
+                  </span>
+                  <span v-if="department.localNames.length > 2" class="ml-1">
+                    {{
+                      $t('pages.departments.localNamesMore', {
+                        count: department.localNames.length - 2,
+                      })
+                    }}
+                  </span>
+                </span>
+              </div>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger as-child>

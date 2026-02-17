@@ -20,6 +20,22 @@ export default defineEventHandler(async () => {
           as: 'memberships',
         },
       },
+      {
+        $lookup: {
+          from: 'department_local_names',
+          localField: '_id',
+          foreignField: 'departmentId',
+          as: 'localNames',
+        },
+      },
+      {
+        $lookup: {
+          from: 'congregations',
+          localField: 'localNames.congregationId',
+          foreignField: '_id',
+          as: 'localNameCongregations',
+        },
+      },
       { $addFields: { memberIds: { $setUnion: ['$memberships.memberId', []] } } },
       { $addFields: { _count: { memberships: { $size: '$memberIds' } } } },
       {
@@ -35,6 +51,37 @@ export default defineEventHandler(async () => {
       },
       {
         $addFields: {
+          localNames: {
+            $map: {
+              input: '$localNames',
+              as: 'ln',
+              in: {
+                id: { $toString: '$$ln._id' },
+                name: '$$ln.name',
+                congregationId: { $toString: '$$ln.congregationId' },
+                congregation: {
+                  $let: {
+                    vars: {
+                      match: {
+                        $first: {
+                          $filter: {
+                            input: '$localNameCongregations',
+                            as: 'c',
+                            cond: { $eq: ['$$c._id', '$$ln.congregationId'] },
+                          },
+                        },
+                      },
+                    },
+                    in: {
+                      id: { $toString: '$$match._id' },
+                      name: '$$match.name',
+                      type: '$$match.type',
+                    },
+                  },
+                },
+              },
+            },
+          },
           functions: {
             $map: {
               input: '$functions',
@@ -52,7 +99,7 @@ export default defineEventHandler(async () => {
           },
         },
       },
-      { $project: { _id: 0, memberships: 0, memberIds: 0 } },
+      { $project: { _id: 0, memberships: 0, memberIds: 0, localNameCongregations: 0 } },
     ],
   });
 });

@@ -26,6 +26,22 @@ export default defineEventHandler(async (event) => {
       sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
     }));
 
+  const localNames = (Array.isArray(body?.localNames) ? body.localNames : [])
+    .filter((entry: any) => entry?.congregationId && entry?.name?.trim())
+    .map((entry: any) => ({
+      congregationId: entry.congregationId,
+      name: entry.name.trim(),
+    }));
+
+  const localNamesByCongregation = new Map<string, string>();
+  localNames.forEach((entry) => {
+    localNamesByCongregation.set(entry.congregationId, entry.name);
+  });
+  const normalizedLocalNames = Array.from(localNamesByCongregation, ([congregationId, name]) => ({
+    congregationId,
+    name,
+  }));
+
   const hasScopeDivision = body?.hasScopeDivision !== false;
   const shouldClearScopes = existingDepartment.hasScopeDivision && !hasScopeDivision;
 
@@ -47,6 +63,18 @@ export default defineEventHandler(async (event) => {
       sortOrder,
       departmentId: id,
     }));
+
+  const existingLocalNames = await prisma.departmentLocalName.findMany({
+    where: { departmentId: id },
+  });
+
+  const incomingLocalNamesByCongregation = new Map(
+    normalizedLocalNames.map((entry) => [entry.congregationId, entry]),
+  );
+
+  const localNamesToDelete = existingLocalNames
+    .filter((entry) => !incomingLocalNamesByCongregation.has(entry.congregationId))
+    .map((entry) => entry.id);
 
   await prisma.$transaction([
     prisma.department.update({
@@ -81,11 +109,36 @@ export default defineEventHandler(async (event) => {
           prisma.departmentFunction.deleteMany({ where: { id: { in: toDeleteIds } } }),
         ]
       : []),
+    ...normalizedLocalNames.map((entry) =>
+      prisma.departmentLocalName.upsert({
+        where: {
+          departmentId_congregationId: {
+            departmentId: id,
+            congregationId: entry.congregationId,
+          },
+        },
+        update: { name: entry.name },
+        create: {
+          departmentId: id,
+          congregationId: entry.congregationId,
+          name: entry.name,
+        },
+      }),
+    ),
+    ...(localNamesToDelete.length
+      ? [prisma.departmentLocalName.deleteMany({ where: { id: { in: localNamesToDelete } } })]
+      : []),
   ]);
 
   const department = await prisma.department.findUnique({
     where: { id },
-    include: { functions: { orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] } },
+    include: {
+      functions: { orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] },
+      localNames: {
+        include: { congregation: { select: { id: true, name: true, type: true } } },
+        orderBy: { name: 'asc' },
+      },
+    },
   });
 
   return department;
