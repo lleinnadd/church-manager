@@ -162,16 +162,14 @@ function formatType(type: CongregationType) {
             <MapPin class="mt-0.5 size-4 shrink-0" />
             <span>{{ formatAddress(congregation) }}</span>
           </div>
-          <div class="text-muted-foreground flex items-center gap-2 text-sm">
-            <Users class="size-4 shrink-0" />
-            <span
-              >{{ congregation._count.members }}
-              {{
-                congregation._count.members === 1 ? $t('common.member') : $t('common.members')
-              }}</span
-            >
-          </div>
         </CardContent>
+        <CardFooter class="text-muted-foreground flex items-center gap-2 text-sm mt-auto">
+          <Users class="size-4 shrink-0" />
+          <span>
+            {{ congregation._count.members }}
+            {{ congregation._count.members === 1 ? $t('common.member') : $t('common.members') }}
+          </span>
+        </CardFooter>
       </Card>
     </div>
 

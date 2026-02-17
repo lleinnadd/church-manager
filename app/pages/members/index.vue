@@ -199,14 +199,14 @@ async function handleDelete() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+        </CardHeader>
+        <CardContent class="space-y-3">
           <div class="text-xs text-muted-foreground flex items-center gap-2">
             <Network class="size-4" />
             <span>
               {{ member.congregation.name }} • {{ typeLabel(member.congregation.type) }}
             </span>
           </div>
-        </CardHeader>
-        <CardContent class="space-y-3">
           <div class="space-y-2">
             <p class="text-sm font-medium">{{ $t('pages.members.departments') }}</p>
             <div v-if="member.departments.length" class="flex items-center gap-2">

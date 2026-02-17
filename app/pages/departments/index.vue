@@ -97,25 +97,6 @@ async function handleDelete() {
             <div class="min-w-0 flex-1">
               <CardTitle class="truncate text-lg">{{ department.name }}</CardTitle>
               <CardDescription class="line-clamp-2">{{ department.description }}</CardDescription>
-              <div v-if="department.localNames?.length" class="mt-2 text-xs text-muted-foreground">
-                <span class="font-medium">{{ $t('pages.departments.localNamesLabel') }}:</span>
-                <span class="ml-1">
-                  <span
-                    v-for="(entry, index) in department.localNames.slice(0, 2)"
-                    :key="entry.id || index"
-                  >
-                    {{ localNameLabel(entry) }}
-                    <span v-if="index < Math.min(department.localNames.length, 2) - 1"> • </span>
-                  </span>
-                  <span v-if="department.localNames.length > 2" class="ml-1">
-                    {{
-                      $t('pages.departments.localNamesMore', {
-                        count: department.localNames.length - 2,
-                      })
-                    }}
-                  </span>
-                </span>
-              </div>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
@@ -157,13 +138,32 @@ async function handleDelete() {
             </DropdownMenu>
           </div>
         </CardHeader>
-        <CardContent class="text-muted-foreground flex items-center gap-2 text-sm">
+        <CardContent>
+          <div v-if="department.localNames?.length" class="pl-3 text-xs text-muted-foreground">
+            <div class="flex flex-col gap-1.5">
+              <span
+                v-for="(entry, index) in department.localNames.slice(0, 2)"
+                :key="entry.id || index"
+              >
+                {{ localNameLabel(entry) }}
+              </span>
+              <span v-if="department.localNames.length > 2">
+                {{
+                  $t('pages.departments.localNamesMore', {
+                    count: department.localNames.length - 2,
+                  })
+                }}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter class="text-muted-foreground flex items-center gap-2 text-sm mt-auto">
           <Users class="size-4" />
           <span>
             {{ department._count.memberships }}
             {{ department._count.memberships === 1 ? $t('common.member') : $t('common.members') }}
           </span>
-        </CardContent>
+        </CardFooter>
       </Card>
     </div>
 
