@@ -4,6 +4,8 @@ import { computed } from 'vue';
 import type { ChartConfig } from '.';
 import { cn } from '@/lib/utils';
 
+type TooltipPayload = Record<string, string | number | Date | null | undefined>;
+
 const props = withDefaults(
   defineProps<{
     hideLabel?: boolean;
@@ -12,7 +14,7 @@ const props = withDefaults(
     nameKey?: string;
     labelKey?: string;
     labelFormatter?: (d: number | Date) => string;
-    payload?: Record<string, any>;
+    payload?: TooltipPayload;
     config?: ChartConfig;
     class?: HTMLAttributes['class'];
     color?: string;
@@ -25,15 +27,13 @@ const props = withDefaults(
   },
 );
 
-// TODO: currently we use `createElement` and `render` to render the
-// const chartContext = useChart(null)
-
 const payload = computed(() => {
   return Object.entries(props.payload)
     .map(([key, value]) => {
-      // const key = `${props.nameKey || item.name || item.dataKey || "value"}`
       const itemConfig = props.config[key];
-      const indicatorColor = props.config[key]?.color ?? props.payload.fill;
+      const indicatorColor =
+        (typeof props.config[key]?.color === 'string' ? props.config[key]?.color : undefined) ??
+        (typeof props.payload.fill === 'string' ? props.payload.fill : undefined);
 
       return { key, value, itemConfig, indicatorColor };
     })

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner';
+import type { DepartmentFormData, DepartmentFormPayload } from '@/types/forms';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -8,15 +9,15 @@ const loading = ref(false);
 
 const id = route.params.id as string;
 
-const { data: department, status } = useFetch(`/api/departments/${id}`);
+const { data: department, status } = useFetch<DepartmentFormData>(`/api/departments/${id}`);
 const isLoading = computed(() => status.value === 'pending');
 
-async function handleSubmit(data: any) {
+async function handleSubmit(data: DepartmentFormPayload) {
   loading.value = true;
   try {
     await $fetch(`/api/departments/${id}`, { method: 'PUT', body: data });
     toast.success(t('pages.departments.updateSuccess'));
-    router.push('/departments');
+    await router.push('/departments');
   } catch {
     toast.error(t('pages.departments.updateError'));
   } finally {

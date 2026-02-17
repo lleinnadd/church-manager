@@ -41,7 +41,7 @@ async function handleDelete() {
   try {
     await $fetch(`/api/departments/${deleteTarget.value.id}`, { method: 'DELETE' });
     toast.success(t('pages.departments.deleteSuccess'));
-    refresh();
+    await refresh();
   } catch {
     toast.error(t('pages.departments.deleteError'));
   } finally {

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner';
+import type { CongregationFormPayload } from '@/types/forms';
 
 const { t } = useI18n();
 const router = useRouter();
 const loading = ref(false);
 
-async function handleSubmit(data: any) {
+async function handleSubmit(data: CongregationFormPayload) {
   loading.value = true;
   try {
     await $fetch('/api/congregations', {
@@ -13,7 +14,7 @@ async function handleSubmit(data: any) {
       body: data,
     });
     toast.success(t('pages.congregations.createSuccess'));
-    router.push('/congregations');
+    await router.push('/congregations');
   } catch {
     toast.error(t('pages.congregations.createError'));
   } finally {

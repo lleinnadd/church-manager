@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import type { Component } from 'vue';
+import type { Component, HTMLAttributes } from 'vue';
+import type { PrimitiveProps } from 'reka-ui';
 import { reactiveOmit } from '@vueuse/core';
-import type { SidebarMenuButtonProps } from './SidebarMenuButtonChild.vue';
+import type { SidebarMenuButtonVariants } from '.';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import SidebarMenuButtonChild from './SidebarMenuButtonChild.vue';
 import { useSidebar } from './utils';
@@ -9,6 +10,13 @@ import { useSidebar } from './utils';
 defineOptions({
   inheritAttrs: false,
 });
+
+type SidebarMenuButtonProps = PrimitiveProps & {
+  variant?: SidebarMenuButtonVariants['variant'];
+  size?: SidebarMenuButtonVariants['size'];
+  isActive?: boolean;
+  class?: HTMLAttributes['class'];
+};
 
 const props = withDefaults(
   defineProps<

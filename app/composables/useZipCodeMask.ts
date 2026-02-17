@@ -11,14 +11,14 @@ export function useZipCodeMask(initialValue = '') {
 
   const unmasked = computed(() => masked.value.replace(/\D/g, ''));
 
-  function onInput(event: Event) {
+  async function onInput(event: Event) {
     const input = event.target as HTMLInputElement;
     const cursorPos = input.selectionStart ?? 0;
     const prevLength = input.value.length;
 
     masked.value = applyMask(input.value);
 
-    nextTick(() => {
+    await nextTick(() => {
       const diff = input.value.length - prevLength;
       const newPos = Math.max(0, cursorPos + diff);
       input.setSelectionRange(newPos, newPos);

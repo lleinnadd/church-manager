@@ -1,12 +1,39 @@
+import { z } from 'zod';
 import prisma from '#server/utils/prisma';
+
+const departmentSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional().nullable(),
+  hasScopeDivision: z.boolean().optional(),
+  functions: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        name: z.string(),
+        description: z.string().optional().nullable(),
+        sortOrder: z.number().optional(),
+      }),
+    )
+    .optional()
+    .default([]),
+  localNames: z
+    .array(
+      z.object({
+        congregationId: z.string(),
+        name: z.string(),
+      }),
+    )
+    .optional()
+    .default([]),
+});
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
-  const body = await readBody(event);
-
-  if (!body?.name) {
-    throw createError({ statusCode: 400, statusMessage: 'name is required' });
+  const parsed = departmentSchema.safeParse(await readBody(event));
+  if (!parsed.success) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
   }
+  const body = parsed.data;
 
   const existingDepartment = await prisma.department.findUnique({
     where: { id },
@@ -17,18 +44,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Department not found' });
   }
 
-  const functions = (Array.isArray(body?.functions) ? body.functions : [])
-    .filter((fn: any) => fn?.name?.trim())
-    .map((fn: any, index: number) => ({
-      id: fn.id as string | undefined,
+  const functions = body.functions
+    .filter((fn) => fn.name.trim())
+    .map((fn, index) => ({
+      id: fn.id,
       name: fn.name.trim(),
       description: fn.description?.trim() || null,
       sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
     }));
 
-  const localNames = (Array.isArray(body?.localNames) ? body.localNames : [])
-    .filter((entry: any) => entry?.congregationId && entry?.name?.trim())
-    .map((entry: any) => ({
+  const localNames = body.localNames
+    .filter((entry) => entry.congregationId && entry.name.trim())
+    .map((entry) => ({
       congregationId: entry.congregationId,
       name: entry.name.trim(),
     }));
@@ -42,7 +69,7 @@ export default defineEventHandler(async (event) => {
     name,
   }));
 
-  const hasScopeDivision = body?.hasScopeDivision !== false;
+  const hasScopeDivision = body.hasScopeDivision !== false;
   const shouldClearScopes = existingDepartment.hasScopeDivision && !hasScopeDivision;
 
   const existingFunctions = await prisma.departmentFunction.findMany({

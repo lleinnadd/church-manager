@@ -28,7 +28,7 @@ async function handleDelete() {
   try {
     await $fetch(`/api/congregations/${deleteTarget.value.id}`, { method: 'DELETE' });
     toast.success(t('pages.congregations.deleteSuccess'));
-    refresh();
+    await refresh();
   } catch {
     toast.error(t('pages.congregations.deleteError'));
   } finally {

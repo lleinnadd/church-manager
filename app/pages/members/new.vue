@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner';
+import type { MemberFormPayload } from '@/types/forms';
 
 const { t } = useI18n();
 const router = useRouter();
 const loading = ref(false);
 
-async function handleSubmit(data: any) {
+async function handleSubmit(data: MemberFormPayload) {
   loading.value = true;
   try {
     await $fetch('/api/members', { method: 'POST', body: data });
     toast.success(t('pages.members.createSuccess'));
-    router.push('/members');
+    await router.push('/members');
   } catch {
     toast.error(t('pages.members.createError'));
   } finally {

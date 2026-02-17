@@ -2,6 +2,7 @@
 import { ArrowLeft, CalendarIcon } from 'lucide-vue-next';
 import { type DateValue, CalendarDate, getLocalTimeZone } from '@internationalized/date';
 import { BRAZIL_STATES } from '@/lib/constants';
+import type { CongregationFormPayload } from '@/types/forms';
 
 const { t, locale } = useI18n();
 
@@ -21,7 +22,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  submit: [data: Record<string, string>];
+  submit: [data: CongregationFormPayload];
 }>();
 
 function parseDate(value: string | null | undefined): DateValue | undefined {

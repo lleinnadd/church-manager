@@ -1,8 +1,30 @@
 import { MemberStatus } from '@prisma/client';
 import { verifyWebhook } from '@clerk/nuxt/webhooks';
+import { z } from 'zod';
 import prisma from '#server/utils/prisma';
 
-const mapClerkName = (data: any) => {
+const clerkUserSchema = z
+  .object({
+    id: z.string().optional(),
+    first_name: z.string().optional().nullable(),
+    last_name: z.string().optional().nullable(),
+    firstName: z.string().optional().nullable(),
+    lastName: z.string().optional().nullable(),
+    username: z.string().optional().nullable(),
+    email_addresses: z
+      .array(z.object({ email_address: z.string().optional().nullable() }))
+      .optional(),
+  })
+  .passthrough();
+
+const webhookSchema = z.object({
+  type: z.string(),
+  data: clerkUserSchema.optional(),
+});
+
+type ClerkUserPayload = z.infer<typeof clerkUserSchema>;
+
+const mapClerkName = (data: ClerkUserPayload | undefined) => {
   const firstName = typeof data?.first_name === 'string' ? data.first_name : data?.firstName;
   const lastName = typeof data?.last_name === 'string' ? data.last_name : data?.lastName;
   const combined = `${firstName ?? ''} ${lastName ?? ''}`.trim();
@@ -19,12 +41,18 @@ const mapClerkName = (data: any) => {
 
 export default defineEventHandler(async (event) => {
   try {
-    const evt = await verifyWebhook(event);
+    const verified = await verifyWebhook(event);
+    const parsed = webhookSchema.safeParse(verified);
+    if (!parsed.success) {
+      setResponseStatus(event, 400);
+      return 'Error verifying webhook';
+    }
+
+    const evt = parsed.data;
     const eventType = evt.type;
     const clerkUserId = evt.data?.id;
 
     if (!clerkUserId) {
-      console.warn('Webhook received without clerk user id:', eventType);
       return 'Webhook received';
     }
 
@@ -50,22 +78,16 @@ export default defineEventHandler(async (event) => {
 
     if (eventType === 'user.updated') {
       const name = mapClerkName(evt.data);
-      const result = await prisma.member.updateMany({
+      await prisma.member.updateMany({
         where: { clerkUserId },
         data: { name },
       });
 
-      if (!result.count) {
-        console.log('No member found to update for clerk user:', clerkUserId);
-      }
-
       return 'Webhook received';
     }
 
-    console.log(`Ignoring unsupported webhook event: ${eventType}`);
     return 'Webhook received';
-  } catch (err) {
-    console.error('Error verifying webhook:', err);
+  } catch (_err) {
     setResponseStatus(event, 400);
     return 'Error verifying webhook';
   }

@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner';
+import type { DepartmentFormPayload } from '@/types/forms';
 
 const { t } = useI18n();
 const router = useRouter();
 const loading = ref(false);
 
-async function handleSubmit(data: any) {
+async function handleSubmit(data: DepartmentFormPayload) {
   loading.value = true;
   try {
     await $fetch('/api/departments', { method: 'POST', body: data });
     toast.success(t('pages.departments.createSuccess'));
-    router.push('/departments');
+    await router.push('/departments');
   } catch {
     toast.error(t('pages.departments.createError'));
   } finally {

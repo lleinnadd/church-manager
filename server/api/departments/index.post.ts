@@ -1,21 +1,51 @@
+import { z } from 'zod';
 import prisma from '#server/utils/prisma';
 
-export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
+const departmentSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional().nullable(),
+  hasScopeDivision: z.boolean().optional(),
+  functions: z
+    .array(
+      z.object({
+        name: z.string(),
+        description: z.string().optional().nullable(),
+        sortOrder: z.number().optional(),
+      }),
+    )
+    .optional()
+    .default([]),
+  localNames: z
+    .array(
+      z.object({
+        congregationId: z.string(),
+        name: z.string(),
+      }),
+    )
+    .optional()
+    .default([]),
+});
 
-  const functions = (Array.isArray(body?.functions) ? body.functions : [])
-    .filter((fn: any) => fn?.name?.trim())
-    .map((fn: any, index: number) => ({
+export default defineEventHandler(async (event) => {
+  const parsed = departmentSchema.safeParse(await readBody(event));
+  if (!parsed.success) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
+  }
+  const body = parsed.data;
+
+  const functions = body.functions
+    .filter((fn) => fn.name.trim())
+    .map((fn, index) => ({
       name: fn.name.trim(),
       description: fn.description?.trim() || null,
       sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
     }));
 
-  const hasScopeDivision = body?.hasScopeDivision !== false;
+  const hasScopeDivision = body.hasScopeDivision !== false;
 
-  const localNames = (Array.isArray(body?.localNames) ? body.localNames : [])
-    .filter((entry: any) => entry?.congregationId && entry?.name?.trim())
-    .map((entry: any) => ({
+  const localNames = body.localNames
+    .filter((entry) => entry.congregationId && entry.name.trim())
+    .map((entry) => ({
       congregationId: entry.congregationId,
       name: entry.name.trim(),
     }));
@@ -28,10 +58,6 @@ export default defineEventHandler(async (event) => {
     congregationId,
     name,
   }));
-
-  if (!body?.name) {
-    throw createError({ statusCode: 400, statusMessage: 'name is required' });
-  }
 
   const department = await prisma.department.create({
     data: {

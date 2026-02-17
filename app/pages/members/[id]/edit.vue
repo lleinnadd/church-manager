@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner';
-import type { MemberStatus, DepartmentScope } from '@prisma/client';
+import type { MemberFormData, MemberFormPayload } from '@/types/forms';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -9,29 +9,15 @@ const loading = ref(false);
 
 const id = route.params.id as string;
 
-interface MemberFormData {
-  name: string;
-  congregationId: string;
-  status: MemberStatus;
-  clerkUserId?: string | null;
-  departments?: {
-    departmentId: string;
-    scope: DepartmentScope;
-    functionId?: string | null;
-    function?: { id: string; name: string; departmentId: string } | null;
-    congregationId?: string | null;
-  }[];
-}
-
 const { data: member, status } = useFetch<MemberFormData>(`/api/members/${id}`);
 const isLoading = computed(() => status.value === 'pending');
 
-async function handleSubmit(data: any) {
+async function handleSubmit(data: MemberFormPayload) {
   loading.value = true;
   try {
     await $fetch(`/api/members/${id}`, { method: 'PUT', body: data });
     toast.success(t('pages.members.updateSuccess'));
-    router.push('/members');
+    await router.push('/members');
   } catch {
     toast.error(t('pages.members.updateError'));
   } finally {

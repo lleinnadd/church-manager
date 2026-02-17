@@ -46,6 +46,9 @@ export default typescriptEslint.config(
   ...withVueFiles(configs.base.recommended),
   ...withVueFiles(configs.base.typescript),
 
+  // ── TypeScript type-aware rules (TS + Vue) ───────────────────────────
+  ...withVueFiles(typescriptEslint.configs.recommendedTypeChecked),
+
   // ── Vue recommended rules ─────────────────────────────────────────────
   ...eslintPluginVue.configs['flat/recommended'],
 

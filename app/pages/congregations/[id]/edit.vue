@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner';
+import type { CongregationFormData, CongregationFormPayload } from '@/types/forms';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -8,11 +9,11 @@ const loading = ref(false);
 
 const id = route.params.id as string;
 
-const { data: congregation, status } = useFetch(`/api/congregations/${id}`);
+const { data: congregation, status } = useFetch<CongregationFormData>(`/api/congregations/${id}`);
 
 const isLoading = computed(() => status.value === 'pending');
 
-async function handleSubmit(data: any) {
+async function handleSubmit(data: CongregationFormPayload) {
   loading.value = true;
   try {
     await $fetch(`/api/congregations/${id}`, {
@@ -20,7 +21,7 @@ async function handleSubmit(data: any) {
       body: data,
     });
     toast.success(t('pages.congregations.updateSuccess'));
-    router.push('/congregations');
+    await router.push('/congregations');
   } catch {
     toast.error(t('pages.congregations.updateError'));
   } finally {

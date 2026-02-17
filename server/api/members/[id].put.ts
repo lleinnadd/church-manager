@@ -1,19 +1,31 @@
 import { DepartmentScope, MemberStatus } from '@prisma/client';
+import { z } from 'zod';
 import prisma from '#server/utils/prisma';
 
-const allowedStatus = Object.values(MemberStatus);
-const allowedScopes = Object.values(DepartmentScope);
+const departmentSchema = z.object({
+  departmentId: z.string().min(1),
+  scope: z.nativeEnum(DepartmentScope).optional().nullable(),
+  functionId: z.string().optional().nullable(),
+  congregationId: z.string().optional().nullable(),
+});
 
-interface DepartmentPayload {
-  departmentId: string;
-  scope: string;
-  functionId?: string | null;
-  congregationId?: string | null;
-}
+const memberSchema = z.object({
+  name: z.string().optional(),
+  congregationId: z.string().min(1),
+  status: z.nativeEnum(MemberStatus).optional(),
+  dateOfBirth: z.string().optional().nullable(),
+  memberSince: z.string().optional().nullable(),
+  convertionDate: z.string().optional().nullable(),
+  departments: z.array(departmentSchema).optional().default([]),
+});
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
-  const body = await readBody(event);
+  const parsed = memberSchema.safeParse(await readBody(event));
+  if (!parsed.success) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
+  }
+  const body = parsed.data;
 
   const existing = await prisma.member.findUnique({ where: { id } });
   if (!existing) {
@@ -22,30 +34,29 @@ export default defineEventHandler(async (event) => {
 
   const isClerkManaged = Boolean(existing.clerkUserId);
 
-  const requestedStatus = allowedStatus.includes(body.status)
-    ? (body.status as MemberStatus)
-    : undefined;
+  const requestedStatus = body.status;
   const status = isClerkManaged ? MemberStatus.ACTIVE : requestedStatus;
 
-  const rawDepartments = Array.isArray(body.departments) ? body.departments : [];
+  if (!isClerkManaged && !body.name) {
+    throw createError({ statusCode: 400, statusMessage: 'name is required' });
+  }
 
-  const departmentIds = rawDepartments
-    .map((d: DepartmentPayload) => d.departmentId)
-    .filter(Boolean);
+  const rawDepartments = body.departments;
+
+  const departmentIds = rawDepartments.map((d) => d.departmentId).filter(Boolean);
   const departments = await prisma.department.findMany({
     where: { id: { in: departmentIds } },
     select: { id: true, hasScopeDivision: true },
   });
   const departmentById = new Map(departments.map((d) => [d.id, d.hasScopeDivision]));
 
-  const departmentsInput = rawDepartments.map((d: DepartmentPayload) => {
+  const departmentsInput = rawDepartments.map((d) => {
     if (!departmentById.has(d.departmentId)) {
       throw createError({ statusCode: 400, statusMessage: 'Invalid departmentId' });
     }
 
     const hasScopeDivision = departmentById.get(d.departmentId) ?? true;
-    const scope =
-      hasScopeDivision && allowedScopes.includes(d.scope) ? (d.scope as DepartmentScope) : null;
+    const scope = hasScopeDivision ? (d.scope ?? null) : null;
 
     if (hasScopeDivision && !scope) {
       throw createError({
@@ -74,9 +85,7 @@ export default defineEventHandler(async (event) => {
     };
   });
 
-  const functionIds = departmentsInput
-    .map((d: DepartmentPayload) => d.functionId)
-    .filter(Boolean) as string[];
+  const functionIds = departmentsInput.map((d) => d.functionId).filter(Boolean) as string[];
   if (functionIds.length) {
     const functions = await prisma.departmentFunction.findMany({
       where: { id: { in: functionIds } },
@@ -87,7 +96,7 @@ export default defineEventHandler(async (event) => {
     }
     const fnById = new Map(functions.map((f) => [f.id, f.departmentId]));
     const mismatch = departmentsInput.find(
-      (d: DepartmentPayload) => d.functionId && fnById.get(d.functionId) !== d.departmentId,
+      (d) => d.functionId && fnById.get(d.functionId) !== d.departmentId,
     );
     if (mismatch) {
       throw createError({

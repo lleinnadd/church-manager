@@ -7,22 +7,17 @@ import {
   type DepartmentFunction,
 } from '@prisma/client';
 import { Trash2 } from 'lucide-vue-next';
+import type { MemberDepartmentInput, MemberFormData, MemberFormPayload } from '@/types/forms';
 
 const { t } = useI18n();
 
 const props = defineProps<{
-  initialData?: {
-    name: string;
-    congregationId: string;
-    status: MemberStatus;
-    clerkUserId?: string | null;
-    departments?: MemberDepartmentInput[];
-  };
+  initialData?: MemberFormData;
   loading?: boolean;
 }>();
 
 const emit = defineEmits<{
-  submit: [data: Record<string, any>];
+  submit: [data: MemberFormPayload];
 }>();
 
 const isClerkManaged = computed(() => Boolean(props.initialData?.clerkUserId));
@@ -69,14 +64,6 @@ interface MembershipInput {
   functionId?: string | null;
   congregationId?: string | null;
 }
-interface MemberDepartmentInput {
-  departmentId: string;
-  scope: DepartmentScope | null;
-  functionId?: string | null;
-  function?: { id: string; name: string; departmentId: string } | null;
-  congregationId?: string | null;
-}
-
 const memberships = ref<MembershipInput[]>(
   props.initialData?.departments?.map((d: MemberDepartmentInput) => ({
     departmentId: d.departmentId,
@@ -111,7 +98,6 @@ function functionsByDepartment(departmentId: string): DepartmentFunction[] {
 
 function departmentHasScopeDivision(departmentId: string): boolean {
   const department = departmentsWithFunctions.value.find((d) => d.id === departmentId);
-  // Default to true only when explicitly true; otherwise treat as no division until loaded
   return department?.hasScopeDivision === true;
 }
 
@@ -170,7 +156,7 @@ watch(
 );
 
 function handleSubmit() {
-  const payload = {
+  const payload: MemberFormPayload = {
     ...form,
     status: isClerkManaged.value ? MemberStatus.ACTIVE : form.status,
     departments: showDepartments.value
@@ -263,8 +249,8 @@ function handleSubmit() {
             <Field>
               <FieldLabel>{{ $t('form.member.department') }}</FieldLabel>
               <Select
-                v-model="membership.departmentId"
                 :key="`${membership.departmentId}-${membership.scope ?? 'none'}-${membership.congregationId ?? form.congregationId ?? 'none'}`"
+                v-model="membership.departmentId"
               >
                 <SelectTrigger>
                   <SelectValue :placeholder="$t('form.member.departmentPlaceholder')" />

@@ -86,7 +86,7 @@ async function handleDelete() {
   try {
     await $fetch(`/api/members/${deleteTarget.value.id}`, { method: 'DELETE' });
     toast.success(t('pages.members.deleteSuccess'));
-    refresh();
+    await refresh();
   } catch {
     toast.error(t('pages.members.deleteError'));
   } finally {

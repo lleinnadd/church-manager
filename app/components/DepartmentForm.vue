@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-vue-next';
 import type { Congregation } from '@prisma/client';
+import type {
+  DepartmentFormPayload,
+  DepartmentFunctionInput,
+  DepartmentLocalNameInput,
+} from '@/types/forms';
 
 const props = defineProps<{
   initialData?: {
@@ -19,7 +24,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  submit: [data: Record<string, any>];
+  submit: [data: DepartmentFormPayload];
 }>();
 
 const form = reactive({
@@ -28,18 +33,9 @@ const form = reactive({
   hasScopeDivision: props.initialData?.hasScopeDivision ?? true,
 });
 
-interface FunctionInput {
-  id?: string;
-  name: string;
-  description: string;
-  sortOrder: number;
-}
+type FunctionInput = DepartmentFunctionInput & { description: string; sortOrder: number };
 
-interface LocalNameInput {
-  id?: string;
-  congregationId: string;
-  name: string;
-}
+type LocalNameInput = DepartmentLocalNameInput;
 
 const { data: congregations, status: congregationsStatus } =
   useFetch<Congregation[]>('/api/congregations');
@@ -156,7 +152,7 @@ function isCongregationTaken(congregationId: string, index: number): boolean {
 }
 
 function handleSubmit() {
-  emit('submit', {
+  const payload: DepartmentFormPayload = {
     ...form,
     functions: functions.value.map((fn, index) => ({
       ...fn,
@@ -169,7 +165,9 @@ function handleSubmit() {
         congregationId: entry.congregationId,
         name: entry.name.trim(),
       })),
-  });
+  };
+
+  emit('submit', payload);
 }
 </script>
 

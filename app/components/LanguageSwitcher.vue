@@ -5,9 +5,14 @@ const { $i18n } = useNuxtApp();
 
 const currentLocale = computed(() => $i18n.locale.value);
 
-const availableLocales = computed(() =>
-  $i18n.locales.value.map((l: any) => (typeof l === 'string' ? { code: l, name: l } : l)),
-);
+type LocaleOption = string | { code: string; name: string };
+
+const availableLocales = computed(() => {
+  const locales = $i18n.locales.value as LocaleOption[];
+  return locales.map((locale) =>
+    typeof locale === 'string' ? { code: locale, name: locale } : locale,
+  );
+});
 
 async function switchLocale(code: string) {
   await $i18n.setLocale(code as 'en' | 'pt-BR');

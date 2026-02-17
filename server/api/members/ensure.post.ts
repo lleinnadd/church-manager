@@ -1,18 +1,24 @@
 import { MemberStatus } from '@prisma/client';
+import { z } from 'zod';
 import prisma from '#server/utils/prisma';
 
-export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
+const ensureSchema = z.object({
+  clerkUserId: z.string().min(1),
+  name: z.string().optional(),
+  congregationId: z.string().optional(),
+});
 
-  if (!body?.clerkUserId) {
-    throw createError({ statusCode: 400, statusMessage: 'clerkUserId is required' });
+export default defineEventHandler(async (event) => {
+  const parsed = ensureSchema.safeParse(await readBody(event));
+  if (!parsed.success) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
   }
+  const body = parsed.data;
 
   const existing = await prisma.member.findUnique({ where: { clerkUserId: body.clerkUserId } });
   if (existing) {
     const desiredName = body.name || existing.name || 'Novo membro';
 
-    // Keep Clerk-managed member aligned with Clerk data (name + active status)
     if (existing.name !== desiredName || existing.status !== MemberStatus.ACTIVE) {
       return prisma.member.update({
         where: { id: existing.id },

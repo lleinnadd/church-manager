@@ -1,22 +1,35 @@
 import { DepartmentScope, MemberStatus } from '@prisma/client';
+import { z } from 'zod';
 import prisma from '#server/utils/prisma';
 
-const allowedStatus = Object.values(MemberStatus);
-const allowedScopes = Object.values(DepartmentScope);
+const departmentSchema = z.object({
+  departmentId: z.string().min(1),
+  scope: z.nativeEnum(DepartmentScope).optional().nullable(),
+  functionId: z.string().optional().nullable(),
+  congregationId: z.string().optional().nullable(),
+});
+
+const memberSchema = z.object({
+  name: z.string().min(1),
+  congregationId: z.string().min(1),
+  status: z.nativeEnum(MemberStatus).optional(),
+  dateOfBirth: z.string().optional().nullable(),
+  memberSince: z.string().optional().nullable(),
+  convertionDate: z.string().optional().nullable(),
+  departments: z.array(departmentSchema).optional().default([]),
+});
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
-
-  if (!body?.name || !body?.congregationId) {
-    throw createError({ statusCode: 400, statusMessage: 'name and congregationId are required' });
+  const parsed = memberSchema.safeParse(await readBody(event));
+  if (!parsed.success) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
   }
+  const body = parsed.data;
 
-  const status = allowedStatus.includes(body.status)
-    ? (body.status as MemberStatus)
-    : MemberStatus.ACTIVE;
+  const status = body.status ?? MemberStatus.ACTIVE;
 
-  const rawDepartments = Array.isArray(body.departments) ? body.departments : [];
-  const departmentIds = rawDepartments.map((d: any) => d.departmentId).filter(Boolean);
+  const rawDepartments = body.departments;
+  const departmentIds = rawDepartments.map((d) => d.departmentId).filter(Boolean);
 
   const departments = await prisma.department.findMany({
     where: { id: { in: departmentIds } },
@@ -24,14 +37,13 @@ export default defineEventHandler(async (event) => {
   });
   const departmentById = new Map(departments.map((d) => [d.id, d.hasScopeDivision]));
 
-  const departmentsInput = rawDepartments.map((d: any) => {
+  const departmentsInput = rawDepartments.map((d) => {
     if (!departmentById.has(d.departmentId)) {
       throw createError({ statusCode: 400, statusMessage: 'Invalid departmentId' });
     }
 
     const hasScopeDivision = departmentById.get(d.departmentId) ?? true;
-    const scope =
-      hasScopeDivision && allowedScopes.includes(d.scope) ? (d.scope as DepartmentScope) : null;
+    const scope = hasScopeDivision ? (d.scope ?? null) : null;
 
     if (hasScopeDivision && !scope) {
       throw createError({

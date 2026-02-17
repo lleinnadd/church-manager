@@ -13,17 +13,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (import.meta.client && userId.value && !isAuthRoute) {
-    try {
-      await $fetch('/api/members/ensure', {
-        method: 'POST',
-        body: {
-          clerkUserId: userId.value,
-          name: user.value?.fullName,
-        },
-      });
-    } catch {
-      // Ignore ensure failures on client navigation
-    }
+    await $fetch('/api/members/ensure', {
+      method: 'POST',
+      body: {
+        clerkUserId: userId.value,
+        name: user.value?.fullName,
+      },
+    });
   }
 
   return undefined;

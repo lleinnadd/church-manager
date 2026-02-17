@@ -1,17 +1,21 @@
-import { DepartmentScope } from '@prisma/client';
+import { DepartmentScope, Prisma } from '@prisma/client';
+import { z } from 'zod';
 import prisma from '#server/utils/prisma';
 
-const allowedScopes = Object.values(DepartmentScope);
+const memberDepartmentSchema = z.object({
+  memberId: z.string().min(1),
+  departmentId: z.string().min(1),
+  scope: z.nativeEnum(DepartmentScope).optional(),
+  functionId: z.string().optional().nullable(),
+  congregationId: z.string().optional().nullable(),
+});
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
-
-  if (!body?.memberId || !body?.departmentId) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'memberId and departmentId are required',
-    });
+  const parsed = memberDepartmentSchema.safeParse(await readBody(event));
+  if (!parsed.success) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
   }
+  const body = parsed.data;
 
   const department = await prisma.department.findUnique({
     where: { id: body.departmentId },
@@ -23,8 +27,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { hasScopeDivision } = department;
-  const scope =
-    hasScopeDivision && allowedScopes.includes(body.scope) ? (body.scope as DepartmentScope) : null;
+  const scope = hasScopeDivision ? (body.scope ?? null) : null;
 
   if (hasScopeDivision && !scope) {
     throw createError({ statusCode: 400, statusMessage: 'scope is required for this department' });
@@ -81,8 +84,8 @@ export default defineEventHandler(async (event) => {
     });
 
     return membership;
-  } catch (error: any) {
-    if (error?.code === 'P2002') {
+  } catch (error: unknown) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       throw createError({ statusCode: 409, statusMessage: 'Membership already exists' });
     }
     throw error;

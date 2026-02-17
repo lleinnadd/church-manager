@@ -19,8 +19,8 @@ const menuItems = computed(() => [
   { title: t('sidebar.settings'), icon: Settings, url: '/settings' },
 ]);
 
-function handleSignOut() {
-  clerk.value?.signOut({ redirectUrl: '/auth/sign-in' });
+async function handleSignOut() {
+  await clerk.value?.signOut({ redirectUrl: '/auth/sign-in' });
 }
 
 function handleManageAccount() {
