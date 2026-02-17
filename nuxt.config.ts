@@ -24,6 +24,7 @@ export default defineNuxtConfig({
     detectBrowserLanguage: false,
   },
   clerk: {
+    skipServerMiddleware: true,
     signInUrl: '/auth/sign-in',
     signUpUrl: '/auth/sign-up',
     signInFallbackRedirectUrl: '/',
