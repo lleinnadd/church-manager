@@ -1,4 +1,4 @@
-import { DepartmentScope, MemberStatus } from '@prisma/client';
+import { DepartmentScope, MemberStatus, MaritalStatus } from '@prisma/client';
 import { z } from 'zod';
 import prisma from '#server/utils/prisma';
 
@@ -12,10 +12,22 @@ const departmentSchema = z.object({
 const memberSchema = z.object({
   name: z.string().min(1),
   congregationId: z.string().min(1),
-  status: z.nativeEnum(MemberStatus).optional(),
-  dateOfBirth: z.string().optional().nullable(),
-  memberSince: z.string().optional().nullable(),
-  convertionDate: z.string().optional().nullable(),
+  status: z.nativeEnum(MemberStatus),
+  dateOfBirth: z.string().min(1),
+  memberSince: z.string().min(1),
+  convertionDate: z.string().min(1),
+  ssn: z.string().min(1),
+  nationalId: z.string().min(1),
+  maritalStatus: z.nativeEnum(MaritalStatus),
+  addressLinePrimary: z.string().min(1),
+  district: z.string().min(1),
+  motherName: z.string().min(1),
+  fatherName: z.string().min(1),
+  naturality: z.string().min(1),
+  nationality: z.string().min(1),
+  phonePrimary: z.string().min(1),
+  phoneSecondary: z.string().min(1),
+  observations: z.string().min(1),
   departments: z.array(departmentSchema).optional().default([]),
 });
 
@@ -26,7 +38,7 @@ export default defineEventHandler(async (event) => {
   }
   const body = parsed.data;
 
-  const status = body.status ?? MemberStatus.ACTIVE;
+  const { status } = body;
 
   const rawDepartments = body.departments;
   const departmentIds = rawDepartments.map((d) => d.departmentId).filter(Boolean);
@@ -99,9 +111,21 @@ export default defineEventHandler(async (event) => {
       congregationId: body.congregationId,
       status,
       clerkUserId: null,
-      dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : null,
-      memberSince: body.memberSince ? new Date(body.memberSince) : null,
-      convertionDate: body.convertionDate ? new Date(body.convertionDate) : null,
+      dateOfBirth: new Date(body.dateOfBirth),
+      memberSince: new Date(body.memberSince),
+      convertionDate: new Date(body.convertionDate),
+      ssn: body.ssn,
+      nationalId: body.nationalId,
+      maritalStatus: body.maritalStatus,
+      addressLinePrimary: body.addressLinePrimary,
+      district: body.district,
+      motherName: body.motherName,
+      fatherName: body.fatherName,
+      naturality: body.naturality,
+      nationality: body.nationality,
+      phonePrimary: body.phonePrimary,
+      phoneSecondary: body.phoneSecondary,
+      observations: body.observations,
       departments: {
         create: departmentsInput,
       },

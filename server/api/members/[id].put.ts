@@ -1,4 +1,4 @@
-import { DepartmentScope, MemberStatus } from '@prisma/client';
+import { DepartmentScope, MemberStatus, MaritalStatus } from '@prisma/client';
 import { z } from 'zod';
 import prisma from '#server/utils/prisma';
 
@@ -10,12 +10,24 @@ const departmentSchema = z.object({
 });
 
 const memberSchema = z.object({
-  name: z.string().optional(),
+  name: z.string().min(1),
   congregationId: z.string().min(1),
-  status: z.nativeEnum(MemberStatus).optional(),
-  dateOfBirth: z.string().optional().nullable(),
-  memberSince: z.string().optional().nullable(),
-  convertionDate: z.string().optional().nullable(),
+  status: z.nativeEnum(MemberStatus),
+  dateOfBirth: z.string().min(1),
+  memberSince: z.string().min(1),
+  convertionDate: z.string().min(1),
+  ssn: z.string().min(1),
+  nationalId: z.string().min(1),
+  maritalStatus: z.nativeEnum(MaritalStatus),
+  addressLinePrimary: z.string().min(1),
+  district: z.string().min(1),
+  motherName: z.string().min(1),
+  fatherName: z.string().min(1),
+  naturality: z.string().min(1),
+  nationality: z.string().min(1),
+  phonePrimary: z.string().min(1),
+  phoneSecondary: z.string().min(1),
+  observations: z.string().min(1),
   departments: z.array(departmentSchema).optional().default([]),
 });
 
@@ -34,12 +46,7 @@ export default defineEventHandler(async (event) => {
 
   const isClerkManaged = Boolean(existing.clerkUserId);
 
-  const requestedStatus = body.status;
-  const status = isClerkManaged ? MemberStatus.ACTIVE : requestedStatus;
-
-  if (!isClerkManaged && !body.name) {
-    throw createError({ statusCode: 400, statusMessage: 'name is required' });
-  }
+  const status = isClerkManaged ? MemberStatus.ACTIVE : body.status;
 
   const rawDepartments = body.departments;
 
@@ -113,9 +120,21 @@ export default defineEventHandler(async (event) => {
       congregationId: body.congregationId,
       status,
       clerkUserId: undefined,
-      dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
-      memberSince: body.memberSince ? new Date(body.memberSince) : undefined,
-      convertionDate: body.convertionDate ? new Date(body.convertionDate) : undefined,
+      dateOfBirth: new Date(body.dateOfBirth),
+      memberSince: new Date(body.memberSince),
+      convertionDate: new Date(body.convertionDate),
+      ssn: body.ssn,
+      nationalId: body.nationalId,
+      maritalStatus: body.maritalStatus,
+      addressLinePrimary: body.addressLinePrimary,
+      district: body.district,
+      motherName: body.motherName,
+      fatherName: body.fatherName,
+      naturality: body.naturality,
+      nationality: body.nationality,
+      phonePrimary: body.phonePrimary,
+      phoneSecondary: body.phoneSecondary,
+      observations: body.observations,
       departments: {
         deleteMany: {},
         create: departmentsInput,

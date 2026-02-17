@@ -1,4 +1,9 @@
-import type { CongregationType, DepartmentScope, MemberStatus } from '@prisma/client';
+import type {
+  CongregationType,
+  DepartmentScope,
+  MemberStatus,
+  MaritalStatus,
+} from '@prisma/client';
 
 export interface CongregationFormPayload {
   name: string;
@@ -71,6 +76,21 @@ export interface MemberFormData {
   status: MemberStatus;
   clerkUserId?: string | null;
   departments?: MemberDepartmentInput[];
+  dateOfBirth?: string | null;
+  ssn?: string | null;
+  nationalId?: string | null;
+  maritalStatus?: MaritalStatus | null;
+  addressLinePrimary?: string | null;
+  district?: string | null;
+  memberSince?: string | null;
+  motherName?: string | null;
+  fatherName?: string | null;
+  naturality?: string | null;
+  nationality?: string | null;
+  convertionDate?: string | null;
+  phonePrimary?: string | null;
+  phoneSecondary?: string | null;
+  observations?: string | null;
 }
 
 export interface MemberFormPayload {
@@ -83,4 +103,19 @@ export interface MemberFormPayload {
     functionId: string | null;
     congregationId: string | null;
   }[];
+  dateOfBirth?: string | null;
+  ssn?: string | null;
+  nationalId?: string | null;
+  maritalStatus?: MaritalStatus | null;
+  addressLinePrimary?: string | null;
+  district?: string | null;
+  memberSince?: string | null;
+  motherName?: string | null;
+  fatherName?: string | null;
+  naturality?: string | null;
+  nationality?: string | null;
+  convertionDate?: string | null;
+  phonePrimary?: string | null;
+  phoneSecondary?: string | null;
+  observations?: string | null;
 }
