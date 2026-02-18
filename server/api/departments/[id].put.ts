@@ -1,3 +1,4 @@
+import { DepartmentFunctionScope } from '@prisma/client';
 import { z } from 'zod';
 import prisma from '#server/utils/prisma';
 
@@ -12,6 +13,7 @@ const departmentSchema = z.object({
         name: z.string(),
         description: z.string().optional().nullable(),
         sortOrder: z.number().optional(),
+        scope: z.nativeEnum(DepartmentFunctionScope).optional().nullable(),
       }),
     )
     .optional()
@@ -29,6 +31,9 @@ const departmentSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
+  if (!id) {
+    throw createError({ statusCode: 400, statusMessage: 'Department id is required' });
+  }
   const parsed = departmentSchema.safeParse(await readBody(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
@@ -43,15 +48,6 @@ export default defineEventHandler(async (event) => {
   if (!existingDepartment) {
     throw createError({ statusCode: 404, statusMessage: 'Department not found' });
   }
-
-  const functions = body.functions
-    .filter((fn) => fn.name.trim())
-    .map((fn, index) => ({
-      id: fn.id,
-      name: fn.name.trim(),
-      description: fn.description?.trim() || null,
-      sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
-    }));
 
   const localNames = body.localNames
     .filter((entry) => entry.congregationId && entry.name.trim())
@@ -72,6 +68,16 @@ export default defineEventHandler(async (event) => {
   const hasScopeDivision = body.hasScopeDivision !== false;
   const shouldClearScopes = existingDepartment.hasScopeDivision && !hasScopeDivision;
 
+  const functions = body.functions
+    .filter((fn) => fn.name.trim())
+    .map((fn, index) => ({
+      id: fn.id,
+      name: fn.name.trim(),
+      description: fn.description?.trim() || null,
+      scope: hasScopeDivision ? (fn.scope ?? DepartmentFunctionScope.BOTH) : null,
+      sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
+    }));
+
   const existingFunctions = await prisma.departmentFunction.findMany({
     where: { departmentId: id },
   });
@@ -84,9 +90,10 @@ export default defineEventHandler(async (event) => {
   const updates = functions.filter((fn) => fn.id);
   const creations = functions
     .filter((fn) => !fn.id)
-    .map(({ name, description, sortOrder }) => ({
+    .map(({ name, description, scope, sortOrder }) => ({
       name,
       description,
+      scope,
       sortOrder,
       departmentId: id,
     }));
@@ -123,7 +130,12 @@ export default defineEventHandler(async (event) => {
     ...updates.map((fn) =>
       prisma.departmentFunction.update({
         where: { id: fn.id },
-        data: { name: fn.name, description: fn.description, sortOrder: fn.sortOrder },
+        data: {
+          name: fn.name,
+          description: fn.description,
+          scope: fn.scope,
+          sortOrder: fn.sortOrder,
+        },
       }),
     ),
     ...(creations.length ? [prisma.departmentFunction.createMany({ data: creations })] : []),

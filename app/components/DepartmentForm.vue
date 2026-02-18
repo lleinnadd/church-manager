@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-vue-next';
-import type { Congregation } from '@prisma/client';
+import { DepartmentFunctionScope, type Congregation } from '@prisma/client';
 import type {
   DepartmentFormPayload,
   DepartmentFunctionInput,
@@ -12,7 +12,13 @@ const props = defineProps<{
     name: string;
     description?: string | null;
     hasScopeDivision?: boolean;
-    functions?: { id?: string; name: string; description?: string | null; sortOrder?: number }[];
+    functions?: {
+      id?: string;
+      name: string;
+      description?: string | null;
+      sortOrder?: number;
+      scope?: DepartmentFunctionScope | null;
+    }[];
     localNames?: {
       id?: string;
       name: string;
@@ -40,12 +46,20 @@ type LocalNameInput = DepartmentLocalNameInput;
 const { data: congregations, status: congregationsStatus } =
   useFetch<Congregation[]>('/api/congregations');
 
+function resolveFunctionScope(
+  scope: DepartmentFunctionScope | null | undefined,
+  hasScopeDivision: boolean,
+) {
+  return hasScopeDivision ? (scope ?? DepartmentFunctionScope.BOTH) : null;
+}
+
 const functions = ref<FunctionInput[]>(
   props.initialData?.functions
     ?.map((fn, index) => ({
       id: fn.id,
       name: fn.name,
       description: fn.description ?? '',
+      scope: resolveFunctionScope(fn.scope, form.hasScopeDivision),
       sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
     }))
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)) ?? [],
@@ -86,6 +100,7 @@ watch(
           id: fn.id,
           name: fn.name,
           description: fn.description ?? '',
+          scope: resolveFunctionScope(fn.scope, form.hasScopeDivision),
           sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
         }))
         .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)) ?? [];
@@ -100,11 +115,22 @@ watch(
   { immediate: true, deep: true },
 );
 
+watch(
+  () => form.hasScopeDivision,
+  (hasScopeDivision) => {
+    functions.value = functions.value.map((fn) => ({
+      ...fn,
+      scope: resolveFunctionScope(fn.scope, hasScopeDivision),
+    }));
+  },
+);
+
 function addFunction() {
   functions.value.push({
     id: undefined,
     name: '',
     description: '',
+    scope: resolveFunctionScope(null, form.hasScopeDivision),
     sortOrder: functions.value.length,
   });
 }
@@ -156,6 +182,7 @@ function handleSubmit() {
     ...form,
     functions: functions.value.map((fn, index) => ({
       ...fn,
+      scope: resolveFunctionScope(fn.scope, form.hasScopeDivision),
       sortOrder: index,
     })),
     localNames: localNames.value
@@ -288,7 +315,12 @@ function handleSubmit() {
           <div
             v-for="(fn, index) in functions"
             :key="fn.id || index"
-            class="grid gap-3 md:grid-cols-[1fr_1fr_auto] items-end"
+            :class="[
+              'grid gap-3 items-end',
+              form.hasScopeDivision
+                ? 'md:grid-cols-[1fr_1fr_1fr_auto]'
+                : 'md:grid-cols-[1fr_1fr_auto]',
+            ]"
           >
             <Field>
               <FieldLabel>{{ $t('form.department.functionName') }}</FieldLabel>
@@ -304,6 +336,25 @@ function handleSubmit() {
                 v-model="fn.description"
                 :placeholder="$t('form.department.functionDescriptionPlaceholder')"
               />
+            </Field>
+            <Field v-if="form.hasScopeDivision">
+              <FieldLabel>{{ $t('form.department.functionScope') }}</FieldLabel>
+              <Select v-model="fn.scope">
+                <SelectTrigger>
+                  <SelectValue :placeholder="$t('form.department.functionScopePlaceholder')" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem :value="DepartmentFunctionScope.BOTH">
+                    {{ $t('departments.scope.both') }}
+                  </SelectItem>
+                  <SelectItem :value="DepartmentFunctionScope.LOCAL">
+                    {{ $t('departments.scope.local') }}
+                  </SelectItem>
+                  <SelectItem :value="DepartmentFunctionScope.GENERAL">
+                    {{ $t('departments.scope.general') }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </Field>
             <div class="flex items-center justify-end gap-2">
               <Button

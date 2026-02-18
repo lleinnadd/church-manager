@@ -1,3 +1,4 @@
+import { DepartmentFunctionScope } from '@prisma/client';
 import { z } from 'zod';
 import prisma from '#server/utils/prisma';
 
@@ -11,6 +12,7 @@ const departmentSchema = z.object({
         name: z.string(),
         description: z.string().optional().nullable(),
         sortOrder: z.number().optional(),
+        scope: z.nativeEnum(DepartmentFunctionScope).optional().nullable(),
       }),
     )
     .optional()
@@ -33,15 +35,16 @@ export default defineEventHandler(async (event) => {
   }
   const body = parsed.data;
 
+  const hasScopeDivision = body.hasScopeDivision !== false;
+
   const functions = body.functions
     .filter((fn) => fn.name.trim())
     .map((fn, index) => ({
       name: fn.name.trim(),
       description: fn.description?.trim() || null,
+      scope: hasScopeDivision ? (fn.scope ?? DepartmentFunctionScope.BOTH) : null,
       sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
     }));
-
-  const hasScopeDivision = body.hasScopeDivision !== false;
 
   const localNames = body.localNames
     .filter((entry) => entry.congregationId && entry.name.trim())

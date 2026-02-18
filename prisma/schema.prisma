@@ -109,6 +109,7 @@ model DepartmentFunction {
 
   name         String
   description  String?
+  scope        DepartmentFunctionScope?
   sortOrder    Int        @default(0)
   departmentId String     @db.ObjectId
   department   Department @relation(fields: [departmentId], references: [id])
@@ -165,6 +166,12 @@ enum CongregationType {
 }
 
 enum DepartmentScope {
+  LOCAL
+  GENERAL
+}
+
+enum DepartmentFunctionScope {
+  BOTH
   LOCAL
   GENERAL
 }

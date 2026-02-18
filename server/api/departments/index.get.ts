@@ -90,6 +90,7 @@ export default defineEventHandler(async () => {
                 id: { $toString: '$$fn._id' },
                 name: '$$fn.name',
                 description: '$$fn.description',
+                scope: '$$fn.scope',
                 sortOrder: '$$fn.sortOrder',
                 departmentId: { $toString: '$$fn.departmentId' },
                 createdAt: '$$fn.createdAt',

@@ -212,6 +212,8 @@
       "functionNamePlaceholder": "Enter a function name",
       "functionDescription": "Description",
       "functionDescriptionPlaceholder": "Optional function description",
+      "functionScope": "Function scope",
+      "functionScopePlaceholder": "Select a scope",
       "addFunction": "Add function"
     }
   },
@@ -231,6 +233,7 @@
   },
   "departments": {
     "scope": {
+      "both": "Both",
       "local": "Local",
       "general": "General",
       "none": "No division"

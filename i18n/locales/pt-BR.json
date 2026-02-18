@@ -212,6 +212,8 @@
       "functionNamePlaceholder": "Informe o nome da função",
       "functionDescription": "Descrição",
       "functionDescriptionPlaceholder": "Descrição opcional da função",
+      "functionScope": "Escopo da função",
+      "functionScopePlaceholder": "Selecione o escopo",
       "addFunction": "Adicionar função"
     }
   },
@@ -231,6 +233,7 @@
   },
   "departments": {
     "scope": {
+      "both": "Ambos",
       "local": "Local",
       "general": "Geral",
       "none": "Sem divisão"

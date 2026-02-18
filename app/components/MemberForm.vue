@@ -3,6 +3,7 @@ import {
   MemberStatus,
   MaritalStatus,
   DepartmentScope,
+  DepartmentFunctionScope,
   type Congregation,
   type Department,
   type DepartmentFunction,
@@ -168,14 +169,45 @@ const memberships = ref<MembershipInput[]>(
   })) ?? [],
 );
 
+function availableFunctionsForScope(
+  department: DepartmentWithLocalNames,
+  scope: DepartmentScope | null,
+): DepartmentFunction[] {
+  const functions = department.functions
+    ?.slice()
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
+
+  if (department.hasScopeDivision === false) {
+    return functions ?? [];
+  }
+
+  const effectiveScope = scope ?? DepartmentScope.GENERAL;
+
+  return (functions ?? []).filter((fn) => {
+    if (!fn.scope || fn.scope === DepartmentFunctionScope.BOTH) return true;
+    if (fn.scope === DepartmentFunctionScope.LOCAL) {
+      return effectiveScope === DepartmentScope.LOCAL;
+    }
+    if (fn.scope === DepartmentFunctionScope.GENERAL) {
+      return effectiveScope === DepartmentScope.GENERAL;
+    }
+    return true;
+  });
+}
+
 function addMembership() {
   const firstDept = departmentsWithFunctions.value?.[0];
-  const firstFunction = firstDept?.functions
-    ?.slice()
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name))?.[0];
+  const initialScope = firstDept?.hasScopeDivision === false ? null : DepartmentScope.GENERAL;
+  const firstFunction = firstDept
+    ? availableFunctionsForScope(firstDept, initialScope)
+        .slice()
+        .sort(
+          (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name),
+        )?.[0]
+    : undefined;
   memberships.value.push({
     departmentId: firstDept?.id ?? '',
-    scope: firstDept?.hasScopeDivision === false ? null : DepartmentScope.GENERAL,
+    scope: initialScope,
     functionId: firstFunction?.id ?? null,
     congregationId: form.congregationId || undefined,
   });
@@ -185,10 +217,10 @@ function removeMembership(index: number) {
   memberships.value.splice(index, 1);
 }
 
-function functionsByDepartment(departmentId: string): DepartmentFunction[] {
-  return (departmentsWithFunctions.value.find((d) => d.id === departmentId)?.functions ?? [])
-    .slice()
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
+function functionsForMembership(membership: MembershipInput): DepartmentFunction[] {
+  const department = departmentsWithFunctions.value.find((d) => d.id === membership.departmentId);
+  if (!department) return [];
+  return availableFunctionsForScope(department, membership.scope ?? null);
 }
 
 function departmentHasScopeDivision(departmentId: string): boolean {
@@ -228,7 +260,7 @@ watch(
     for (let i = 0; i < current.length; i += 1) {
       const membership = current[i]!;
 
-      const functions = functionsByDepartment(membership.departmentId);
+      const functions = functionsForMembership(membership);
       const hasSelectedFunction = functions.some((fn) => fn.id === membership.functionId);
       if (!hasSelectedFunction) {
         memberships.value[i]!.functionId = functions[0]?.id ?? null;
@@ -658,15 +690,15 @@ function handleSubmit() {
               <Select
                 v-model="membership.functionId"
                 class="w-full"
-                :disabled="!functionsByDepartment(membership.departmentId).length"
-                :required="functionsByDepartment(membership.departmentId).length > 0"
+                :disabled="!functionsForMembership(membership).length"
+                :required="functionsForMembership(membership).length > 0"
               >
                 <SelectTrigger>
                   <SelectValue :placeholder="$t('form.member.departmentFunctionPlaceholder')" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem
-                    v-for="fn in functionsByDepartment(membership.departmentId)"
+                    v-for="fn in functionsForMembership(membership)"
                     :key="fn.id"
                     :value="fn.id"
                   >
@@ -675,7 +707,7 @@ function handleSubmit() {
                 </SelectContent>
               </Select>
               <p
-                v-if="!functionsByDepartment(membership.departmentId).length"
+                v-if="!functionsForMembership(membership).length"
                 class="text-xs text-muted-foreground"
               >
                 {{ $t('form.member.noDepartmentFunctions') }}

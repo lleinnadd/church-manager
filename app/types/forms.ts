@@ -1,6 +1,7 @@
 import type {
   CongregationType,
   DepartmentScope,
+  DepartmentFunctionScope,
   MemberStatus,
   MaritalStatus,
 } from '@prisma/client';
@@ -35,6 +36,7 @@ export interface DepartmentFunctionInput {
   name: string;
   description?: string | null;
   sortOrder?: number;
+  scope?: DepartmentFunctionScope | null;
 }
 
 export interface DepartmentLocalNameInput {
