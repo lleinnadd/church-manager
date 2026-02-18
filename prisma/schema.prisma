@@ -110,9 +110,9 @@ model DepartmentFunction {
   name         String
   description  String?
   scope        DepartmentFunctionScope?
-  sortOrder    Int        @default(0)
-  departmentId String     @db.ObjectId
-  department   Department @relation(fields: [departmentId], references: [id])
+  sortOrder    Int                      @default(0)
+  departmentId String                   @db.ObjectId
+  department   Department               @relation(fields: [departmentId], references: [id])
 
   memberships MemberDepartment[]
 
