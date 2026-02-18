@@ -1,6 +1,5 @@
 import { CongregationType } from '@prisma/client';
 import { z } from 'zod';
-import prisma from '#server/utils/prisma';
 
 const allowedTypes = Object.values(CongregationType);
 const congregationSchema = z.object({

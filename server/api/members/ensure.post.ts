@@ -1,6 +1,5 @@
 import { MemberStatus } from '@prisma/client';
 import { z } from 'zod';
-import prisma from '#server/utils/prisma';
 
 const ensureSchema = z.object({
   clerkUserId: z.string().min(1),

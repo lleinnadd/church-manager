@@ -1,6 +1,5 @@
 import { DepartmentScope, Prisma } from '@prisma/client';
 import { z } from 'zod';
-import prisma from '#server/utils/prisma';
 
 const memberDepartmentSchema = z.object({
   memberId: z.string().min(1),

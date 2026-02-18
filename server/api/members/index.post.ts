@@ -1,6 +1,5 @@
 import { DepartmentScope, MemberStatus, MaritalStatus } from '@prisma/client';
 import { z } from 'zod';
-import prisma from '#server/utils/prisma';
 
 const departmentSchema = z.object({
   departmentId: z.string().min(1),

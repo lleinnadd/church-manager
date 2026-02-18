@@ -1,7 +1,6 @@
 import { MemberStatus } from '@prisma/client';
 import { verifyWebhook } from '@clerk/nuxt/webhooks';
 import { z } from 'zod';
-import prisma from '#server/utils/prisma';
 
 const clerkUserSchema = z
   .object({
