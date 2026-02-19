@@ -13,9 +13,6 @@ import { useForm } from 'vee-validate';
 import { computed, ref, watch, watchEffect, type Ref } from 'vue';
 import type { MemberDepartmentInput, MemberFormData, MemberFormPayload } from '@/types/forms';
 import { buildMemberFormSchema } from '@/lib/validation';
-import { useCpfMask } from '@/composables/useCpfMask';
-import { useRgMask } from '@/composables/useRgMask';
-import { usePhoneMask } from '@/composables/usePhoneMask';
 
 interface MembershipInput {
   departmentId: string;

@@ -3,9 +3,6 @@ import { ArrowLeft, CalendarIcon, TriangleAlertIcon } from 'lucide-vue-next';
 import type { DateValue } from '@internationalized/date';
 import { BRAZIL_STATES } from '@/lib/constants';
 import type { CongregationFormPayload } from '@/types/forms';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useCongregationFormModel } from '@/composables/forms/useCongregationFormModel';
 
 const props = defineProps<{
   initialData?: {

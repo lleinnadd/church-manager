@@ -3,9 +3,6 @@ import { DepartmentScope } from '@prisma/client';
 import { CalendarIcon, Trash2, TriangleAlertIcon } from 'lucide-vue-next';
 import type { DateValue } from '@internationalized/date';
 import type { MemberFormData, MemberFormPayload } from '@/types/forms';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useMemberFormModel } from '@/composables/forms/useMemberFormModel';
 
 const props = defineProps<{
   initialData?: MemberFormData;

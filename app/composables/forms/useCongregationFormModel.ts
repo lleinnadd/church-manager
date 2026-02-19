@@ -4,7 +4,6 @@ import { useForm } from 'vee-validate';
 import { computed, ref, watch, watchEffect, type Ref } from 'vue';
 import type { CongregationFormPayload } from '@/types/forms';
 import { buildCongregationFormSchema } from '@/lib/validation';
-import { useZipCodeMask } from '@/composables/useZipCodeMask';
 
 interface CongregationInitialData {
   name: string;

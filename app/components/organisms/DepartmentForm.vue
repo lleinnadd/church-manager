@@ -2,9 +2,6 @@
 import { ArrowDown, ArrowUp, Plus, Trash2, TriangleAlertIcon } from 'lucide-vue-next';
 import { DepartmentFunctionScope } from '@prisma/client';
 import type { DepartmentFormData, DepartmentFormPayload } from '@/types/forms';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useDepartmentFormModel } from '@/composables/forms/useDepartmentFormModel';
 
 const props = defineProps<{
   initialData?: DepartmentFormData;
