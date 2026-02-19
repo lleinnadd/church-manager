@@ -33,6 +33,15 @@
     "pickADate": "Selecione uma data",
     "refresh": "Recarregar"
   },
+  "validation": {
+    "title": "Existem erros no formulario",
+    "description": "Corrija os campos destacados antes de salvar.",
+    "required": "Este campo e obrigatorio",
+    "cpfInvalid": "Informe um CPF valido",
+    "rgInvalid": "Informe um RG valido",
+    "phoneInvalid": "Informe um telefone valido",
+    "zipInvalid": "Informe um CEP valido"
+  },
   "pages": {
     "home": {
       "title": "Bem-vindo ao Church Manager"

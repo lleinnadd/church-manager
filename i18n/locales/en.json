@@ -33,6 +33,15 @@
     "pickADate": "Pick a date",
     "refresh": "Refresh"
   },
+  "validation": {
+    "title": "There are errors in the form",
+    "description": "Fix the highlighted fields before saving.",
+    "required": "This field is required",
+    "cpfInvalid": "Enter a valid CPF",
+    "rgInvalid": "Enter a valid RG",
+    "phoneInvalid": "Enter a valid phone number",
+    "zipInvalid": "Enter a valid ZIP code"
+  },
   "pages": {
     "home": {
       "title": "Welcome to Church Manager"

@@ -1,31 +1,13 @@
 <script setup lang="ts">
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-vue-next';
-import { DepartmentFunctionScope, type Congregation } from '@prisma/client';
-import type {
-  DepartmentFormPayload,
-  DepartmentFunctionInput,
-  DepartmentLocalNameInput,
-} from '@/types/forms';
+import { ArrowDown, ArrowUp, Plus, Trash2, TriangleAlertIcon } from 'lucide-vue-next';
+import { DepartmentFunctionScope } from '@prisma/client';
+import type { DepartmentFormData, DepartmentFormPayload } from '@/types/forms';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useDepartmentFormModel } from '@/composables/forms/useDepartmentFormModel';
 
 const props = defineProps<{
-  initialData?: {
-    name: string;
-    description?: string | null;
-    hasScopeDivision?: boolean;
-    functions?: {
-      id?: string;
-      name: string;
-      description?: string | null;
-      sortOrder?: number;
-      scope?: DepartmentFunctionScope | null;
-    }[];
-    localNames?: {
-      id?: string;
-      name: string;
-      congregationId: string;
-      congregation?: { id: string; name: string } | null;
-    }[];
-  };
+  initialData?: DepartmentFormData;
   loading?: boolean;
 }>();
 
@@ -33,212 +15,99 @@ const emit = defineEmits<{
   submit: [data: DepartmentFormPayload];
 }>();
 
-const form = reactive({
-  name: props.initialData?.name ?? '',
-  description: props.initialData?.description ?? '',
-  hasScopeDivision: props.initialData?.hasScopeDivision ?? true,
+const model = useDepartmentFormModel(toRef(props, 'initialData'));
+
+const {
+  congregations,
+  congregationsStatus,
+  values,
+  errors,
+  submitCount,
+  functions,
+  localNames,
+  hasAvailableCongregation,
+  handleSubmit,
+  addFunction,
+  removeFunction,
+  moveFunction,
+  addLocalName,
+  removeLocalName,
+  isCongregationTaken,
+  toPayload,
+} = model;
+
+const errorList = computed(() => {
+  const messages = Object.values(errors.value).filter(Boolean) as string[];
+  return [...new Set(messages)];
 });
 
-type FunctionInput = DepartmentFunctionInput & { description: string; sortOrder: number };
-
-type LocalNameInput = DepartmentLocalNameInput;
-
-const { data: congregations, status: congregationsStatus } =
-  useFetch<Congregation[]>('/api/congregations');
-
-function resolveFunctionScope(
-  scope: DepartmentFunctionScope | null | undefined,
-  hasScopeDivision: boolean,
-) {
-  return hasScopeDivision ? (scope ?? DepartmentFunctionScope.BOTH) : null;
-}
-
-const functions = ref<FunctionInput[]>(
-  props.initialData?.functions
-    ?.map((fn, index) => ({
-      id: fn.id,
-      name: fn.name,
-      description: fn.description ?? '',
-      scope: resolveFunctionScope(fn.scope, form.hasScopeDivision),
-      sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
-    }))
-    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)) ?? [],
-);
-
-const localNames = ref<LocalNameInput[]>(
-  props.initialData?.localNames?.map((entry) => ({
-    id: entry.id,
-    congregationId: entry.congregationId,
-    name: entry.name,
-  })) ?? [],
-);
-
-const hasAvailableCongregation = computed(() => {
-  const options = congregations.value ?? [];
-  if (!options.length) return false;
-  const used = new Set(localNames.value.map((entry) => entry.congregationId).filter(Boolean));
-  return options.some((item) => !used.has(item.id));
+const onSubmit = handleSubmit((formValues) => {
+  emit('submit', toPayload(formValues));
 });
-
-function normalizeSortOrder() {
-  functions.value = functions.value.map((fn, index) => ({
-    ...fn,
-    sortOrder: index,
-  }));
-}
-
-watch(
-  () => props.initialData,
-  (value) => {
-    if (!value) return;
-    form.name = value.name ?? '';
-    form.description = value.description ?? '';
-    form.hasScopeDivision = value.hasScopeDivision ?? true;
-    functions.value =
-      value.functions
-        ?.map((fn, index) => ({
-          id: fn.id,
-          name: fn.name,
-          description: fn.description ?? '',
-          scope: resolveFunctionScope(fn.scope, form.hasScopeDivision),
-          sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
-        }))
-        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)) ?? [];
-    localNames.value =
-      value.localNames?.map((entry) => ({
-        id: entry.id,
-        congregationId: entry.congregationId,
-        name: entry.name,
-      })) ?? [];
-    normalizeSortOrder();
-  },
-  { immediate: true, deep: true },
-);
-
-watch(
-  () => form.hasScopeDivision,
-  (hasScopeDivision) => {
-    functions.value = functions.value.map((fn) => ({
-      ...fn,
-      scope: resolveFunctionScope(fn.scope, hasScopeDivision),
-    }));
-  },
-);
-
-function addFunction() {
-  functions.value.push({
-    id: undefined,
-    name: '',
-    description: '',
-    scope: resolveFunctionScope(null, form.hasScopeDivision),
-    sortOrder: functions.value.length,
-  });
-}
-
-function removeFunction(index: number) {
-  functions.value.splice(index, 1);
-  normalizeSortOrder();
-}
-
-function moveFunction(index: number, direction: 'up' | 'down') {
-  const targetIndex = direction === 'up' ? index - 1 : index + 1;
-  if (targetIndex < 0 || targetIndex >= functions.value.length) return;
-  const current = functions.value[index];
-  const target = functions.value[targetIndex];
-  if (!current || !target) return;
-  functions.value.splice(index, 1, target);
-  functions.value.splice(targetIndex, 1, current);
-  normalizeSortOrder();
-}
-
-function nextAvailableCongregationId(): string {
-  const used = new Set(localNames.value.map((entry) => entry.congregationId).filter(Boolean));
-  const options = congregations.value ?? [];
-  const available = options.find((item) => !used.has(item.id));
-  return available?.id ?? options[0]?.id ?? '';
-}
-
-function addLocalName() {
-  localNames.value.push({
-    id: undefined,
-    congregationId: nextAvailableCongregationId(),
-    name: '',
-  });
-}
-
-function removeLocalName(index: number) {
-  localNames.value.splice(index, 1);
-}
-
-function isCongregationTaken(congregationId: string, index: number): boolean {
-  if (!congregationId) return false;
-  return localNames.value.some(
-    (entry, idx) => idx !== index && entry.congregationId === congregationId,
-  );
-}
-
-function handleSubmit() {
-  const payload: DepartmentFormPayload = {
-    ...form,
-    functions: functions.value.map((fn, index) => ({
-      ...fn,
-      scope: resolveFunctionScope(fn.scope, form.hasScopeDivision),
-      sortOrder: index,
-    })),
-    localNames: localNames.value
-      .filter((entry) => entry.congregationId && entry.name.trim())
-      .map((entry) => ({
-        id: entry.id,
-        congregationId: entry.congregationId,
-        name: entry.name.trim(),
-      })),
-  };
-
-  emit('submit', payload);
-}
 </script>
 
 <template>
-  <form class="space-y-8" @submit.prevent="handleSubmit">
+  <form class="space-y-8" @submit.prevent="onSubmit">
+    <Alert v-if="submitCount > 0 && errorList.length" variant="destructive">
+      <TriangleAlertIcon />
+      <AlertTitle>{{ $t('validation.title') }}</AlertTitle>
+      <AlertDescription>
+        <p>{{ $t('validation.description') }}</p>
+        <ul class="ml-4 list-disc space-y-1">
+          <li v-for="(message, index) in errorList" :key="index">
+            {{ message }}
+          </li>
+        </ul>
+      </AlertDescription>
+    </Alert>
+
     <Card>
       <CardHeader>
         <CardTitle>{{ $t('form.department.generalInfo') }}</CardTitle>
         <CardDescription>{{ $t('form.department.generalInfoDescription') }}</CardDescription>
       </CardHeader>
       <CardContent class="grid gap-4">
-        <Field>
-          <FieldLabel for="name">{{ $t('form.department.name') }}</FieldLabel>
-          <Input
-            id="name"
-            v-model="form.name"
-            :placeholder="$t('form.department.namePlaceholder')"
-            required
-          />
-        </Field>
-        <Field>
-          <FieldLabel for="description">{{ $t('form.department.description') }}</FieldLabel>
-          <Textarea
-            id="description"
-            v-model="form.description"
-            :placeholder="$t('form.department.descriptionPlaceholder')"
-            rows="3"
-          />
-        </Field>
-        <div class="flex items-center justify-between rounded-lg border p-4">
-          <div>
-            <p class="text-sm font-medium leading-none">
-              {{ $t('form.department.scopeDivisionLabel') }}
-            </p>
-            <p class="text-sm text-muted-foreground">
-              {{ $t('form.department.scopeDivisionDescription') }}
-            </p>
-          </div>
-          <Switch v-model="form.hasScopeDivision" />
-        </div>
+        <FormField v-slot="{ componentField }" name="name">
+          <FormItem>
+            <FormLabel>{{ $t('form.department.name') }}</FormLabel>
+            <FormControl>
+              <Input v-bind="componentField" :placeholder="$t('form.department.namePlaceholder')" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+        <FormField v-slot="{ componentField }" name="description">
+          <FormItem>
+            <FormLabel>{{ $t('form.department.description') }}</FormLabel>
+            <FormControl>
+              <Textarea
+                v-bind="componentField"
+                :placeholder="$t('form.department.descriptionPlaceholder')"
+                rows="3"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+        <FormField v-slot="{ field }" name="hasScopeDivision">
+          <FormItem class="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p class="text-sm font-medium leading-none">
+                {{ $t('form.department.scopeDivisionLabel') }}
+              </p>
+              <p class="text-sm text-muted-foreground">
+                {{ $t('form.department.scopeDivisionDescription') }}
+              </p>
+            </div>
+            <FormControl>
+              <Switch :checked="field.value" @update:checked="field.onChange" />
+            </FormControl>
+          </FormItem>
+        </FormField>
       </CardContent>
     </Card>
 
-    <Card v-if="form.hasScopeDivision">
+    <Card v-if="values.hasScopeDivision">
       <CardHeader>
         <CardTitle>{{ $t('form.department.localNamesTitle') }}</CardTitle>
         <CardDescription>{{ $t('form.department.localNamesDescription') }}</CardDescription>
@@ -256,33 +125,43 @@ function handleSubmit() {
             :key="entry.id || index"
             class="grid gap-3 items-end md:grid-cols-[1fr_1fr_auto]"
           >
-            <Field>
-              <FieldLabel>{{ $t('form.department.localNameCongregation') }}</FieldLabel>
-              <Select v-model="entry.congregationId">
-                <SelectTrigger>
-                  <SelectValue
-                    :placeholder="$t('form.department.localNameCongregationPlaceholder')"
+            <FormField v-slot="{ field }" :name="`localNames.${index}.congregationId`">
+              <FormItem>
+                <FormLabel>{{ $t('form.department.localNameCongregation') }}</FormLabel>
+                <FormControl>
+                  <Select :model-value="field.value" @update:model-value="field.onChange">
+                    <SelectTrigger>
+                      <SelectValue
+                        :placeholder="$t('form.department.localNameCongregationPlaceholder')"
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem
+                        v-for="c in congregations || []"
+                        :key="c.id"
+                        :value="c.id"
+                        :disabled="isCongregationTaken(c.id, index)"
+                      >
+                        {{ c.name }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+            <FormField v-slot="{ componentField }" :name="`localNames.${index}.name`">
+              <FormItem>
+                <FormLabel>{{ $t('form.department.localNameLabel') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    :placeholder="$t('form.department.localNamePlaceholder')"
                   />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem
-                    v-for="c in congregations || []"
-                    :key="c.id"
-                    :value="c.id"
-                    :disabled="isCongregationTaken(c.id, index)"
-                  >
-                    {{ c.name }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel>{{ $t('form.department.localNameLabel') }}</FieldLabel>
-              <Input
-                v-model="entry.name"
-                :placeholder="$t('form.department.localNamePlaceholder')"
-              />
-            </Field>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
             <div class="flex items-center justify-end">
               <Button type="button" variant="ghost" size="icon" @click="removeLocalName(index)">
                 <Trash2 class="size-4" />
@@ -317,45 +196,63 @@ function handleSubmit() {
             :key="fn.id || index"
             :class="[
               'grid gap-3 items-end',
-              form.hasScopeDivision
+              values.hasScopeDivision
                 ? 'md:grid-cols-[1fr_1fr_1fr_auto]'
                 : 'md:grid-cols-[1fr_1fr_auto]',
             ]"
           >
-            <Field>
-              <FieldLabel>{{ $t('form.department.functionName') }}</FieldLabel>
-              <Input
-                v-model="fn.name"
-                :placeholder="$t('form.department.functionNamePlaceholder')"
-                required
-              />
-            </Field>
-            <Field>
-              <FieldLabel>{{ $t('form.department.functionDescription') }}</FieldLabel>
-              <Input
-                v-model="fn.description"
-                :placeholder="$t('form.department.functionDescriptionPlaceholder')"
-              />
-            </Field>
-            <Field v-if="form.hasScopeDivision">
-              <FieldLabel>{{ $t('form.department.functionScope') }}</FieldLabel>
-              <Select v-model="fn.scope">
-                <SelectTrigger>
-                  <SelectValue :placeholder="$t('form.department.functionScopePlaceholder')" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem :value="DepartmentFunctionScope.BOTH">
-                    {{ $t('departments.scope.both') }}
-                  </SelectItem>
-                  <SelectItem :value="DepartmentFunctionScope.LOCAL">
-                    {{ $t('departments.scope.local') }}
-                  </SelectItem>
-                  <SelectItem :value="DepartmentFunctionScope.GENERAL">
-                    {{ $t('departments.scope.general') }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
+            <FormField v-slot="{ componentField }" :name="`functions.${index}.name`">
+              <FormItem>
+                <FormLabel>{{ $t('form.department.functionName') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    :placeholder="$t('form.department.functionNamePlaceholder')"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+            <FormField v-slot="{ componentField }" :name="`functions.${index}.description`">
+              <FormItem>
+                <FormLabel>{{ $t('form.department.functionDescription') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    :placeholder="$t('form.department.functionDescriptionPlaceholder')"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+            <FormField
+              v-if="values.hasScopeDivision"
+              v-slot="{ field }"
+              :name="`functions.${index}.scope`"
+            >
+              <FormItem>
+                <FormLabel>{{ $t('form.department.functionScope') }}</FormLabel>
+                <FormControl>
+                  <Select :model-value="field.value" @update:model-value="field.onChange">
+                    <SelectTrigger>
+                      <SelectValue :placeholder="$t('form.department.functionScopePlaceholder')" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem :value="DepartmentFunctionScope.BOTH">
+                        {{ $t('departments.scope.both') }}
+                      </SelectItem>
+                      <SelectItem :value="DepartmentFunctionScope.LOCAL">
+                        {{ $t('departments.scope.local') }}
+                      </SelectItem>
+                      <SelectItem :value="DepartmentFunctionScope.GENERAL">
+                        {{ $t('departments.scope.general') }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
             <div class="flex items-center justify-end gap-2">
               <Button
                 type="button"
@@ -395,7 +292,7 @@ function handleSubmit() {
           {{ $t('common.back') }}
         </NuxtLink>
       </Button>
-      <Button type="submit" :disabled="loading || !form.name">
+      <Button type="submit" :disabled="loading">
         <span v-if="loading">{{ $t('common.saving') }}</span>
         <span v-else>{{ $t('common.save') }}</span>
       </Button>
