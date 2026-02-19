@@ -209,11 +209,11 @@ async function handleDelete() {
           </div>
           <div class="space-y-2">
             <p class="text-sm font-medium">{{ $t('pages.members.departments') }}</p>
-            <div v-if="member.departments.length" class="flex items-center gap-2">
+            <div v-if="member.departments.length" class="relative">
               <Button
                 variant="ghost"
                 size="icon-sm"
-                class="h-[22px] w-[22px] shrink-0 rounded-full border bg-background/70 p-0 shadow-sm hover:bg-background/90"
+                class="absolute left-0 top-1/2 z-10 h-5.5 w-5.5 -translate-y-1/2 -translate-x-1 rounded-full border bg-background/70 p-0 shadow-sm opacity-0 transition-all duration-200 pointer-events-none hover:bg-background/90 group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-x-0"
                 aria-label="Scroll left"
                 @click="scrollDepartments(member.id, 'left')"
               >
@@ -221,7 +221,7 @@ async function handleDelete() {
               </Button>
               <div
                 :ref="(el) => setDepartmentScrollRef(member.id, el as HTMLElement | null)"
-                class="no-scrollbar flex-1 overflow-x-auto"
+                class="no-scrollbar w-full overflow-x-auto rounded-full"
               >
                 <div class="flex flex-nowrap gap-2">
                   <Badge
@@ -244,7 +244,7 @@ async function handleDelete() {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                class="h-[22px] w-[22px] shrink-0 rounded-full border bg-background/70 p-0 shadow-sm hover:bg-background/90"
+                class="absolute right-0 top-1/2 z-10 h-5.5 w-5.5 -translate-y-1/2 translate-x-1 rounded-full border bg-background/70 p-0 shadow-sm opacity-0 transition-all duration-200 pointer-events-none hover:bg-background/90 group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-x-0"
                 aria-label="Scroll right"
                 @click="scrollDepartments(member.id, 'right')"
               >
