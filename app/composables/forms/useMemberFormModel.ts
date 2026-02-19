@@ -124,31 +124,31 @@ export const useMemberFormModel = (initialData: Ref<MemberFormData | undefined>)
   });
 
   watchEffect(() => {
-    setFieldValue('ssn', unmaskedSsn.value);
+    setFieldValue('ssn', unmaskedSsn.value, false);
   });
 
   watchEffect(() => {
-    setFieldValue('nationalId', unmaskedNationalId.value);
+    setFieldValue('nationalId', unmaskedNationalId.value, false);
   });
 
   watchEffect(() => {
-    setFieldValue('phonePrimary', unmaskedPhonePrimary.value);
+    setFieldValue('phonePrimary', unmaskedPhonePrimary.value, false);
   });
 
   watchEffect(() => {
-    setFieldValue('phoneSecondary', unmaskedPhoneSecondary.value);
+    setFieldValue('phoneSecondary', unmaskedPhoneSecondary.value, false);
   });
 
   watch(dateOfBirthValue, (value) => {
-    setFieldValue('dateOfBirth', value ? value.toString() : '');
+    setFieldValue('dateOfBirth', value ? value.toString() : '', false);
   });
 
   watch(memberSinceValue, (value) => {
-    setFieldValue('memberSince', value ? value.toString() : '');
+    setFieldValue('memberSince', value ? value.toString() : '', false);
   });
 
   watch(convertionDateValue, (value) => {
-    setFieldValue('convertionDate', value ? value.toString() : '');
+    setFieldValue('convertionDate', value ? value.toString() : '', false);
   });
 
   const { data: congregations, status: congregationsStatus } =

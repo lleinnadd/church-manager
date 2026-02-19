@@ -93,12 +93,12 @@ const onSubmit = handleSubmit((formValues) => {
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField v-slot="{ field }" name="congregationId">
+        <FormField v-slot="{ field, meta }" name="congregationId">
           <FormItem>
             <FormLabel>{{ $t('form.member.congregation') }}</FormLabel>
             <FormControl>
               <Select :model-value="field.value" @update:model-value="field.onChange">
-                <SelectTrigger>
+                <SelectTrigger :aria-invalid="(meta.touched || submitCount > 0) && !meta.valid">
                   <SelectValue :placeholder="$t('form.member.congregationPlaceholder')" />
                 </SelectTrigger>
                 <SelectContent>
@@ -116,7 +116,7 @@ const onSubmit = handleSubmit((formValues) => {
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField v-slot="{ field }" name="status">
+        <FormField v-slot="{ field, meta }" name="status">
           <FormItem>
             <FormLabel>{{ $t('form.member.status') }}</FormLabel>
             <FormControl>
@@ -125,7 +125,7 @@ const onSubmit = handleSubmit((formValues) => {
                 :disabled="isClerkManaged"
                 @update:model-value="field.onChange"
               >
-                <SelectTrigger>
+                <SelectTrigger :aria-invalid="(meta.touched || submitCount > 0) && !meta.valid">
                   <SelectValue :placeholder="$t('form.member.statusPlaceholder')" />
                 </SelectTrigger>
                 <SelectContent>
@@ -151,7 +151,7 @@ const onSubmit = handleSubmit((formValues) => {
         <CardDescription>{{ $t('form.member.personalInfoDescription') }}</CardDescription>
       </CardHeader>
       <CardContent class="grid gap-4 md:grid-cols-2">
-        <FormField v-slot="{ field }" name="dateOfBirth">
+        <FormField v-slot="{ field, meta }" name="dateOfBirth">
           <FormItem>
             <FormLabel>{{ $t('form.member.dateOfBirth') }}</FormLabel>
             <Popover>
@@ -164,6 +164,7 @@ const onSubmit = handleSubmit((formValues) => {
                       'w-full justify-start text-left font-normal',
                       !dateOfBirthValue && 'text-muted-foreground',
                     ]"
+                    :aria-invalid="(meta.touched || submitCount > 0) && !meta.valid"
                     @blur="field.onBlur"
                   >
                     <CalendarIcon class="mr-2 size-4" />
@@ -186,12 +187,12 @@ const onSubmit = handleSubmit((formValues) => {
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField v-slot="{ field }" name="maritalStatus">
+        <FormField v-slot="{ field, meta }" name="maritalStatus">
           <FormItem>
             <FormLabel>{{ $t('form.member.maritalStatus') }}</FormLabel>
             <FormControl>
               <Select :model-value="field.value" @update:model-value="field.onChange">
-                <SelectTrigger>
+                <SelectTrigger :aria-invalid="(meta.touched || submitCount > 0) && !meta.valid">
                   <SelectValue :placeholder="$t('form.member.maritalStatusPlaceholder')" />
                 </SelectTrigger>
                 <SelectContent>
@@ -379,7 +380,7 @@ const onSubmit = handleSubmit((formValues) => {
         <CardDescription>{{ $t('form.member.membershipDatesDescription') }}</CardDescription>
       </CardHeader>
       <CardContent class="grid gap-4 md:grid-cols-2">
-        <FormField v-slot="{ field }" name="memberSince">
+        <FormField v-slot="{ field, meta }" name="memberSince">
           <FormItem>
             <FormLabel>{{ $t('form.member.memberSince') }}</FormLabel>
             <Popover>
@@ -392,6 +393,7 @@ const onSubmit = handleSubmit((formValues) => {
                       'w-full justify-start text-left font-normal',
                       !memberSinceValue && 'text-muted-foreground',
                     ]"
+                    :aria-invalid="(meta.touched || submitCount > 0) && !meta.valid"
                     @blur="field.onBlur"
                   >
                     <CalendarIcon class="mr-2 size-4" />
@@ -414,7 +416,7 @@ const onSubmit = handleSubmit((formValues) => {
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField v-slot="{ field }" name="convertionDate">
+        <FormField v-slot="{ field, meta }" name="convertionDate">
           <FormItem>
             <FormLabel>{{ $t('form.member.convertionDate') }}</FormLabel>
             <Popover>
@@ -427,6 +429,7 @@ const onSubmit = handleSubmit((formValues) => {
                       'w-full justify-start text-left font-normal',
                       !convertionDateValue && 'text-muted-foreground',
                     ]"
+                    :aria-invalid="(meta.touched || submitCount > 0) && !meta.valid"
                     @blur="field.onBlur"
                   >
                     <CalendarIcon class="mr-2 size-4" />
@@ -492,7 +495,7 @@ const onSubmit = handleSubmit((formValues) => {
             :key="index"
             class="grid gap-3 items-end md:grid-cols-[repeat(3,minmax(0,1fr))_36px]"
           >
-            <FormField v-slot="{ field }" :name="`departments.${index}.departmentId`">
+            <FormField v-slot="{ field, meta }" :name="`departments.${index}.departmentId`">
               <FormItem>
                 <FormLabel>{{ $t('form.member.department') }}</FormLabel>
                 <FormControl>
@@ -501,7 +504,7 @@ const onSubmit = handleSubmit((formValues) => {
                     :model-value="field.value"
                     @update:model-value="field.onChange"
                   >
-                    <SelectTrigger>
+                    <SelectTrigger :aria-invalid="(meta.touched || submitCount > 0) && !meta.valid">
                       <SelectValue :placeholder="$t('form.member.departmentPlaceholder')" />
                     </SelectTrigger>
                     <SelectContent>
@@ -514,7 +517,7 @@ const onSubmit = handleSubmit((formValues) => {
                 <FormMessage />
               </FormItem>
             </FormField>
-            <FormField v-slot="{ field }" :name="`departments.${index}.functionId`">
+            <FormField v-slot="{ field, meta }" :name="`departments.${index}.functionId`">
               <FormItem>
                 <FormLabel>{{ $t('form.member.departmentFunction') }}</FormLabel>
                 <FormControl>
@@ -524,7 +527,7 @@ const onSubmit = handleSubmit((formValues) => {
                     :disabled="!functionsForMembership(membership).length"
                     @update:model-value="field.onChange"
                   >
-                    <SelectTrigger>
+                    <SelectTrigger :aria-invalid="(meta.touched || submitCount > 0) && !meta.valid">
                       <SelectValue :placeholder="$t('form.member.departmentFunctionPlaceholder')" />
                     </SelectTrigger>
                     <SelectContent>
@@ -549,14 +552,14 @@ const onSubmit = handleSubmit((formValues) => {
             </FormField>
             <FormField
               v-if="membershipHasScopeDivision(membership)"
-              v-slot="{ field }"
+              v-slot="{ field, meta }"
               :name="`departments.${index}.scope`"
             >
               <FormItem>
                 <FormLabel>{{ $t('form.member.scope') }}</FormLabel>
                 <FormControl>
                   <Select :model-value="field.value" @update:model-value="field.onChange">
-                    <SelectTrigger>
+                    <SelectTrigger :aria-invalid="(meta.touched || submitCount > 0) && !meta.valid">
                       <SelectValue :placeholder="$t('form.member.scopePlaceholder')" />
                     </SelectTrigger>
                     <SelectContent>
