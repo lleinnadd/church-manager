@@ -1,3 +1,32 @@
+<script setup lang="ts">
+import { ArrowLeft } from 'lucide-vue-next';
+
+const { t } = useI18n();
+const route = useRoute();
+
+const sectionFallbacks: Record<string, string> = {
+  members: '/members',
+  departments: '/departments',
+  congregations: '/congregations',
+};
+
+const topLevelSegment = computed(() => route.path.split('/').filter(Boolean)[0] ?? '');
+const sectionFallback = computed<string>(() => {
+  const segment = topLevelSegment.value;
+  return sectionFallbacks[segment] ?? '/';
+});
+const isRoot = computed(() => route.path === '/');
+const isSectionRoot = computed(() => {
+  const fallback = sectionFallback.value;
+  return fallback !== '/' && route.path === fallback;
+});
+const showBackButton = computed(() => !isRoot.value && !isSectionRoot.value);
+
+async function handleBack() {
+  await navigateTo(sectionFallback.value);
+}
+</script>
+
 <template>
   <SidebarProvider>
     <AppSidebar />
@@ -11,6 +40,16 @@
             class="-ml-1 h-8 w-8 rounded-md bg-muted/40 text-muted-foreground hover:bg-muted"
           />
           <Separator orientation="vertical" class="mr-1 h-4" />
+          <Button
+            v-if="showBackButton"
+            variant="ghost"
+            size="sm"
+            class="h-8 rounded-md bg-muted/40 text-muted-foreground hover:bg-muted"
+            @click="handleBack"
+          >
+            <ArrowLeft class="size-4" />
+            <span>{{ t('common.back') }}</span>
+          </Button>
           <div class="ml-auto">
             <SettingsMenu />
           </div>
