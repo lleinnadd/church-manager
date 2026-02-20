@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Home, Users, CalendarDays, Settings, ChevronUp, Church, Building2 } from 'lucide-vue-next';
+import { Home, Users, CalendarDays, ChevronUp, Church, Building2 } from 'lucide-vue-next';
 import { dark } from '@clerk/themes';
 import { useSidebar } from '@/components/ui/sidebar/utils';
 
@@ -16,7 +16,6 @@ const menuItems = computed(() => [
   { title: t('sidebar.departments'), icon: Building2, url: '/departments' },
   { title: t('sidebar.members'), icon: Users, url: '/members' },
   { title: t('sidebar.events'), icon: CalendarDays, url: '/events' },
-  { title: t('sidebar.settings'), icon: Settings, url: '/settings' },
 ]);
 
 async function handleSignOut() {
