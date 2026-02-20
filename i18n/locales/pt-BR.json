@@ -40,13 +40,13 @@
     "refresh": "Recarregar"
   },
   "validation": {
-    "title": "Existem erros no formulario",
+    "title": "Existem erros no formulário",
     "description": "Corrija os campos destacados antes de salvar.",
-    "required": "Este campo e obrigatorio",
-    "cpfInvalid": "Informe um CPF valido",
-    "rgInvalid": "Informe um RG valido",
-    "phoneInvalid": "Informe um telefone valido",
-    "zipInvalid": "Informe um CEP valido"
+    "required": "Este campo é obrigatório",
+    "cpfInvalid": "Informe um CPF válido",
+    "rgInvalid": "Informe um RG válido",
+    "phoneInvalid": "Informe um telefone válido",
+    "zipInvalid": "Informe um CEP válido"
   },
   "pages": {
     "home": {
