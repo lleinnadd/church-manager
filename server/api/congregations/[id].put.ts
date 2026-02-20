@@ -1,10 +1,9 @@
 import { CongregationType } from '@prisma/client';
 import { z } from 'zod';
 
-const allowedTypes = Object.values(CongregationType);
 const congregationSchema = z.object({
   name: z.string().min(1),
-  type: z.string().optional(),
+  type: z.nativeEnum(CongregationType).optional(),
   since: z.string().optional().nullable(),
   zipCode: z.string().optional().nullable(),
   addressLinePrimary: z.string().optional().nullable(),
@@ -22,9 +21,7 @@ export default defineEventHandler(async (event) => {
   }
   const body = parsed.data;
 
-  const type = allowedTypes.includes(body.type)
-    ? (body.type as CongregationType)
-    : CongregationType.HEADQUARTERS;
+  const type = body.type ?? CongregationType.HEADQUARTERS;
 
   const congregation = await prisma.congregation.update({
     where: { id },
