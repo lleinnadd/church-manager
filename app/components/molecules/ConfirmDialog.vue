@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { cn } from '~/lib/utils';
-
-defineProps<{
+const props = defineProps<{
   open: boolean;
   title: string;
   description: string;
@@ -16,8 +14,30 @@ const emit = defineEmits<{
   cancel: [];
 }>();
 
+const isConfirming = ref(false);
+
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) {
+      isConfirming.value = false;
+    }
+  },
+);
+
 function handleOpenChange(value: boolean) {
-  if (!value) emit('cancel');
+  if (!value && !isConfirming.value) emit('cancel');
+}
+
+function handleConfirm() {
+  if (isConfirming.value || props.loading) return;
+  isConfirming.value = true;
+  emit('confirm');
+}
+
+function handleCancel() {
+  if (isConfirming.value) return;
+  emit('cancel');
 }
 </script>
 
@@ -31,21 +51,17 @@ function handleOpenChange(value: boolean) {
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel :disabled="loading" @click="emit('cancel')">
+        <Button type="button" variant="outline" :disabled="loading" @click="handleCancel">
           {{ cancelLabel ?? $t('common.cancel') }}
-        </AlertDialogCancel>
-        <AlertDialogAction
-          :class="
-            cn(
-              variant === 'destructive' &&
-                'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-            )
-          "
+        </Button>
+        <Button
+          type="button"
+          :variant="variant === 'destructive' ? 'destructive' : 'default'"
           :disabled="loading"
-          @click="emit('confirm')"
+          @click="handleConfirm"
         >
           {{ loading ? $t('common.loading') : (confirmLabel ?? $t('common.confirm')) }}
-        </AlertDialogAction>
+        </Button>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>

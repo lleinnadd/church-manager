@@ -129,7 +129,7 @@ async function handleDelete() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   class="text-destructive"
-                  @click="confirmDelete(department.id, department.name)"
+                  @select="confirmDelete(department.id, department.name)"
                 >
                   <Trash2 class="mr-2 size-4" />
                   {{ $t('common.delete') }}

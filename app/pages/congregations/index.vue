@@ -145,7 +145,7 @@ function formatType(type: CongregationType) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   class="text-destructive"
-                  @click="confirmDelete(congregation.id, congregation.name)"
+                  @select="confirmDelete(congregation.id, congregation.name)"
                 >
                   <Trash2 class="mr-2 size-4" />
                   {{ $t('common.delete') }}
