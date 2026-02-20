@@ -170,19 +170,23 @@ export const useMemberFormModel = (initialData: Ref<MemberFormData | undefined>)
     () => departments.value ?? [],
   );
 
-  const statusOptions = computed(() => [
-    { value: MemberStatus.ACTIVE, label: t('members.status.active') },
-    { value: MemberStatus.TRANSFERRED, label: t('members.status.transferred') },
-    { value: MemberStatus.WITHDRAWN, label: t('members.status.withdrawn') },
-  ]);
+  const statusOptions = computed(() => {
+    return [
+      { value: MemberStatus.ACTIVE, label: t('members.status.active') },
+      { value: MemberStatus.TRANSFERRED, label: t('members.status.transferred') },
+      { value: MemberStatus.WITHDRAWN, label: t('members.status.withdrawn') },
+    ];
+  });
 
-  const maritalStatusOptions = computed(() => [
-    { value: MaritalStatus.SINGLE, label: t('members.maritalStatus.single') },
-    { value: MaritalStatus.MARRIED, label: t('members.maritalStatus.married') },
-    { value: MaritalStatus.DIVORCED, label: t('members.maritalStatus.divorced') },
-    { value: MaritalStatus.WIDOWED, label: t('members.maritalStatus.widowed') },
-    { value: MaritalStatus.SEPARATED, label: t('members.maritalStatus.separated') },
-  ]);
+  const maritalStatusOptions = computed(() => {
+    return [
+      { value: MaritalStatus.SINGLE, label: t('members.maritalStatus.single') },
+      { value: MaritalStatus.MARRIED, label: t('members.maritalStatus.married') },
+      { value: MaritalStatus.DIVORCED, label: t('members.maritalStatus.divorced') },
+      { value: MaritalStatus.WIDOWED, label: t('members.maritalStatus.widowed') },
+      { value: MaritalStatus.SEPARATED, label: t('members.maritalStatus.separated') },
+    ];
+  });
 
   const showDepartments = computed(() => values.status === MemberStatus.ACTIVE);
 

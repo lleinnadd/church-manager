@@ -19,6 +19,8 @@ const props = defineProps<{
   loading?: boolean;
 }>();
 
+const { locale } = useI18n();
+
 const emit = defineEmits<{
   submit: [data: CongregationFormPayload];
 }>();
@@ -84,7 +86,7 @@ const onSubmit = handleSubmit((formValues) => {
           <FormItem>
             <FormLabel>{{ $t('form.congregation.type.label') }}</FormLabel>
             <FormControl>
-              <Select :model-value="field.value" @update:model-value="field.onChange">
+              <Select :key="locale" :model-value="field.value" @update:model-value="field.onChange">
                 <SelectTrigger>
                   <SelectValue :placeholder="$t('form.congregation.type.placeholder')" />
                 </SelectTrigger>

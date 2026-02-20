@@ -6,7 +6,7 @@
         <SidebarTrigger class="-ml-1" />
         <Separator orientation="vertical" class="mr-2 h-4" />
         <div class="ml-auto">
-          <LanguageSwitcher />
+          <SettingsMenu />
         </div>
       </header>
       <div class="flex-1 p-4">

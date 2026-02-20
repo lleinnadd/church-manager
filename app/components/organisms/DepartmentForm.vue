@@ -12,6 +12,8 @@ const emit = defineEmits<{
   submit: [data: DepartmentFormPayload];
 }>();
 
+const { locale } = useI18n();
+
 const model = useDepartmentFormModel(toRef(props, 'initialData'));
 
 const {
@@ -126,7 +128,11 @@ const onSubmit = handleSubmit((formValues) => {
               <FormItem>
                 <FormLabel>{{ $t('form.department.localNameCongregation') }}</FormLabel>
                 <FormControl>
-                  <Select :model-value="field.value" @update:model-value="field.onChange">
+                  <Select
+                    :key="locale"
+                    :model-value="field.value"
+                    @update:model-value="field.onChange"
+                  >
                     <SelectTrigger>
                       <SelectValue
                         :placeholder="$t('form.department.localNameCongregationPlaceholder')"

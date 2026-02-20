@@ -68,11 +68,13 @@ export const useCongregationFormModel = (initialData: Ref<CongregationInitialDat
     setFieldValue('since', since);
   });
 
-  const congregationTypes = computed(() => [
-    { value: 'HEADQUARTERS', label: t('form.congregation.type.headquarters') },
-    { value: 'BRANCH', label: t('form.congregation.type.branch') },
-    { value: 'SUB_BRANCH', label: t('form.congregation.type.subBranch') },
-  ]);
+  const congregationTypes = computed(() => {
+    return [
+      { value: 'HEADQUARTERS', label: t('form.congregation.type.headquarters') },
+      { value: 'BRANCH', label: t('form.congregation.type.branch') },
+      { value: 'SUB_BRANCH', label: t('form.congregation.type.subBranch') },
+    ];
+  });
 
   function formatDateDisplay(date: DateValue | undefined) {
     if (!date) return '';

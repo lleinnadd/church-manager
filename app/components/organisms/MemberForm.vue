@@ -9,6 +9,8 @@ const props = defineProps<{
   loading?: boolean;
 }>();
 
+const { locale } = useI18n();
+
 const emit = defineEmits<{
   submit: [data: MemberFormPayload];
 }>();
@@ -121,6 +123,7 @@ const onSubmit = handleSubmit((formValues) => {
             <FormLabel>{{ $t('form.member.status') }}</FormLabel>
             <FormControl>
               <Select
+                :key="locale"
                 :model-value="field.value"
                 :disabled="isClerkManaged"
                 @update:model-value="field.onChange"
@@ -191,7 +194,7 @@ const onSubmit = handleSubmit((formValues) => {
           <FormItem>
             <FormLabel>{{ $t('form.member.maritalStatus') }}</FormLabel>
             <FormControl>
-              <Select :model-value="field.value" @update:model-value="field.onChange">
+              <Select :key="locale" :model-value="field.value" @update:model-value="field.onChange">
                 <SelectTrigger :aria-invalid="(meta.touched || submitCount > 0) && !meta.valid">
                   <SelectValue :placeholder="$t('form.member.maritalStatusPlaceholder')" />
                 </SelectTrigger>
@@ -558,7 +561,11 @@ const onSubmit = handleSubmit((formValues) => {
               <FormItem>
                 <FormLabel>{{ $t('form.member.scope') }}</FormLabel>
                 <FormControl>
-                  <Select :model-value="field.value" @update:model-value="field.onChange">
+                  <Select
+                    :key="locale"
+                    :model-value="field.value"
+                    @update:model-value="field.onChange"
+                  >
                     <SelectTrigger :aria-invalid="(meta.touched || submitCount > 0) && !meta.valid">
                       <SelectValue :placeholder="$t('form.member.scopePlaceholder')" />
                     </SelectTrigger>
