@@ -26,7 +26,11 @@ async function switchLocale(value: unknown) {
 <template>
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
-      <Button variant="ghost" size="icon-sm">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        class="h-8 w-8 rounded-md bg-muted/40 text-muted-foreground hover:bg-muted"
+      >
         <Settings class="size-4" />
         <span class="sr-only">{{ t('common.settings') }}</span>
       </Button>
