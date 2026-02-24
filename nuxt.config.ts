@@ -5,11 +5,6 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
   devServer: { port: 3333 },
-  app: {
-    head: {
-      script: [{ src: '/theme-init.js', tagPosition: 'head' }],
-    },
-  },
   modules: [
     '@clerk/nuxt',
     '@nuxtjs/tailwindcss',
@@ -17,7 +12,14 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@nuxt/fonts',
     '@nuxtjs/i18n',
+    '@nuxtjs/color-mode',
   ],
+  colorMode: {
+    classSuffix: '',
+    preference: 'system',
+    fallback: 'light',
+    storageKey: 'color-mode',
+  },
   i18n: {
     locales: [
       { code: 'en', name: 'English', file: 'en.json' },
