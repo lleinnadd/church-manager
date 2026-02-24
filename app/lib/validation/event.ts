@@ -6,22 +6,6 @@ const requiredMessage = (t: Composer['t']) => t('validation.required');
 
 const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-const dayScheduleSchema = z.object({
-  date: z.string().min(1),
-  startTime: z.string().regex(timePattern),
-});
-
-const monthlyRuleSchema = z.object({
-  weekday: z.number().int().min(0).max(6),
-  ordinal: z
-    .number()
-    .int()
-    .min(-1)
-    .max(4)
-    .refine((value) => value !== 0),
-  startTime: z.string().regex(timePattern),
-});
-
 const parseMinutes = (value: string) => {
   const [hours = 0, minutes = 0] = value.split(':').map(Number);
   return hours * 60 + minutes;
@@ -30,14 +14,43 @@ const parseMinutes = (value: string) => {
 export const buildEventFormSchema = (t: Composer['t']) => {
   const required = requiredMessage(t);
 
+  const dayScheduleSchema = z.object({
+    date: z.string({ required_error: required }).min(1, { message: required }),
+    startTime: z
+      .string({ required_error: required })
+      .min(1, { message: required })
+      .regex(timePattern, { message: required }),
+  });
+
+  const monthlyRuleSchema = z.object({
+    weekday: z
+      .number({ required_error: required, invalid_type_error: required })
+      .int()
+      .min(0)
+      .max(6),
+    ordinal: z
+      .number({ required_error: required, invalid_type_error: required })
+      .int()
+      .min(-1)
+      .max(4)
+      .refine((value) => value !== 0),
+    startTime: z
+      .string({ required_error: required })
+      .min(1, { message: required })
+      .regex(timePattern, { message: required }),
+  });
+
   return z
     .object({
-      title: z.string().min(1, { message: required }),
+      title: z.string({ required_error: required }).min(1, { message: required }),
       description: z.string().optional().nullable(),
-      congregationId: z.string().min(1, { message: required }),
+      congregationId: z.string({ required_error: required }).min(1, { message: required }),
       departmentId: z.string().optional().nullable(),
-      eventType: z.nativeEnum(EventSeriesType, { required_error: required }),
-      startsOn: z.string().min(1, { message: required }),
+      eventType: z.nativeEnum(EventSeriesType, {
+        required_error: required,
+        invalid_type_error: required,
+      }),
+      startsOn: z.string({ required_error: required }).min(1, { message: required }),
       endsOn: z.string().optional().nullable(),
       sameTimeStart: z.string().optional().nullable(),
       daySchedules: z.array(dayScheduleSchema).optional().default([]),
