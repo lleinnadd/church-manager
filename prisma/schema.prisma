@@ -26,6 +26,8 @@ model Congregation {
   members              Member[]
   memberDepartments    MemberDepartment[]
   departmentLocalNames DepartmentLocalName[]
+  eventSeries          EventSeries[]
+  eventOccurrences     EventOccurrence[]
 
   @@map("congregations")
 }
@@ -81,6 +83,8 @@ model Department {
   memberships MemberDepartment[]
   functions   DepartmentFunction[]
   localNames  DepartmentLocalName[]
+  eventSeries EventSeries[]
+  events      EventOccurrence[]
 
   @@map("departments")
 }
@@ -145,6 +149,90 @@ model MemberDepartment {
   @@map("member_departments")
 }
 
+model EventSeries {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  title       String
+  description String?
+  timezone    String  @default("America/Sao_Paulo")
+
+  congregationId String       @db.ObjectId
+  congregation   Congregation @relation(fields: [congregationId], references: [id])
+  departmentId   String?      @db.ObjectId
+  department     Department?  @relation(fields: [departmentId], references: [id])
+
+  eventType EventSeriesType
+
+  startsOn DateTime
+  endsOn   DateTime?
+
+  sameTimeStartMinutes Int?
+
+  monthlyWeekday Int?
+  monthlyOrdinal Int?
+
+  daySchedules EventSeriesDaySchedule[]
+  occurrences  EventOccurrence[]
+
+  @@index([congregationId])
+  @@index([departmentId])
+  @@index([eventType])
+  @@map("event_series")
+}
+
+model EventSeriesDaySchedule {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  seriesId String      @db.ObjectId
+  series   EventSeries @relation(fields: [seriesId], references: [id])
+
+  date         DateTime
+  startMinutes Int
+  endMinutes   Int
+
+  @@index([seriesId])
+  @@index([date])
+  @@map("event_series_day_schedules")
+}
+
+model EventOccurrence {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  seriesId String      @db.ObjectId
+  series   EventSeries @relation(fields: [seriesId], references: [id])
+
+  congregationId String       @db.ObjectId
+  congregation   Congregation @relation(fields: [congregationId], references: [id])
+  departmentId   String?      @db.ObjectId
+  department     Department?  @relation(fields: [departmentId], references: [id])
+
+  title       String
+  description String?
+  timezone    String
+
+  startAt DateTime
+  endAt   DateTime
+
+  occurrenceDate DateTime
+
+  isException Boolean @default(false)
+  cancelled   Boolean @default(false)
+
+  @@index([seriesId])
+  @@index([congregationId])
+  @@index([departmentId])
+  @@index([startAt, endAt])
+  @@index([occurrenceDate])
+  @@index([cancelled])
+  @@map("event_occurrences")
+}
+
 enum MaritalStatus {
   SINGLE
   MARRIED
@@ -174,4 +262,10 @@ enum DepartmentFunctionScope {
   BOTH
   LOCAL
   GENERAL
+}
+
+enum EventSeriesType {
+  SINGLE_DAY
+  MULTI_DAY
+  MONTHLY_RECURRING
 }

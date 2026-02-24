@@ -37,6 +37,7 @@ const props = withDefaults(
   },
 );
 const emits = defineEmits<CalendarRootEmits>();
+const { locale: appLocale } = useI18n();
 
 const delegatedProps = reactiveOmit(props, 'class', 'layout', 'placeholder');
 
@@ -45,7 +46,13 @@ const placeholder = useVModel(props, 'placeholder', emits, {
   defaultValue: props.defaultPlaceholder ?? today(getLocalTimeZone()),
 }) as Ref<DateValue>;
 
-const formatter = useDateFormatter(props.locale ?? 'en');
+const resolvedLocale = computed(() => props.locale ?? appLocale.value);
+const formatter = computed(() => useDateFormatter(resolvedLocale.value));
+
+const formatMonthLabel = (date: DateValue) => {
+  const label = formatter.value.custom(toDate(date), { month: 'short' }).replace(/\.$/, '');
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
 
 const yearRange = computed(() => {
   return (
@@ -71,7 +78,13 @@ const yearRange = computed(() => {
 const [DefineMonthTemplate, ReuseMonthTemplate] = createReusableTemplate<{ date: DateValue }>();
 const [DefineYearTemplate, ReuseYearTemplate] = createReusableTemplate<{ date: DateValue }>();
 
-const forwarded = useForwardPropsEmits(delegatedProps, emits);
+const forwarded = useForwardPropsEmits(
+  computed(() => ({
+    ...delegatedProps,
+    locale: resolvedLocale.value,
+  })),
+  emits,
+);
 </script>
 
 <template>
@@ -79,7 +92,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     <div class="**:data-[slot=native-select-icon]:right-1">
       <div class="relative">
         <div class="absolute inset-0 flex h-full items-center text-sm pl-2 pointer-events-none">
-          {{ formatter.custom(toDate(date), { month: 'short' }) }}
+          {{ formatMonthLabel(date) }}
         </div>
         <NativeSelect
           class="text-xs h-8 pr-6 pl-2 text-transparent relative"
@@ -97,7 +110,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
             :value="month.month"
             :selected="date.month === month.month"
           >
-            {{ formatter.custom(toDate(month), { month: 'short' }) }}
+            {{ formatMonthLabel(month) }}
           </NativeSelectOption>
         </NativeSelect>
       </div>
@@ -170,7 +183,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
         </template>
         <template v-else-if="layout === 'year-only'">
           <div class="flex items-center justify-center gap-1">
-            {{ formatter.custom(toDate(date), { month: 'short' }) }}
+            {{ formatMonthLabel(date) }}
             <ReuseYearTemplate :date="date" />
           </div>
         </template>

@@ -21,9 +21,10 @@ export default defineEventHandler(async (event) => {
   }
   const body = parsed.data;
 
-  const type = allowedTypes.includes(body.type)
-    ? (body.type as CongregationType)
-    : CongregationType.HEADQUARTERS;
+  const type =
+    body.type && allowedTypes.includes(body.type as CongregationType)
+      ? (body.type as CongregationType)
+      : CongregationType.HEADQUARTERS;
 
   const congregation = await prisma.congregation.create({
     data: {

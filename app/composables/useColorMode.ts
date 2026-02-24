@@ -9,7 +9,14 @@ function isValidMode(value: string | null): value is ColorMode {
 }
 
 export function useColorMode() {
-  const mode = useState<ColorMode>('color-mode', () => 'system');
+  const persistedMode = useCookie<ColorMode>(STORAGE_KEY, {
+    default: () => 'system',
+    sameSite: 'lax',
+  });
+
+  const mode = useState<ColorMode>('color-mode', () => {
+    return isValidMode(persistedMode.value) ? persistedMode.value : 'system';
+  });
   const prefersDark = useMediaQuery('(prefers-color-scheme: dark)');
 
   if (import.meta.client) {
@@ -29,10 +36,12 @@ export function useColorMode() {
   watch(
     mode,
     (value) => {
-      if (!import.meta.client) return;
-      localStorage.setItem(STORAGE_KEY, value);
+      persistedMode.value = value;
+      if (import.meta.client) {
+        localStorage.setItem(STORAGE_KEY, value);
+      }
     },
-    { flush: 'post' },
+    { flush: 'post', immediate: true },
   );
 
   return {

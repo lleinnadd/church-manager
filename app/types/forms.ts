@@ -4,6 +4,7 @@ import type {
   DepartmentFunctionScope,
   MemberStatus,
   MaritalStatus,
+  EventSeriesType,
 } from '@prisma/client';
 
 export interface CongregationFormPayload {
@@ -120,4 +121,32 @@ export interface MemberFormPayload {
   phonePrimary?: string | null;
   phoneSecondary?: string | null;
   observations?: string | null;
+}
+
+export interface EventDayScheduleInput {
+  date: string;
+  startTime: string;
+}
+
+export interface EventMonthlyRuleInput {
+  weekday: number;
+  ordinal: number;
+  startTime: string;
+}
+
+export interface EventFormPayload {
+  title: string;
+  description?: string | null;
+  congregationId: string;
+  departmentId?: string | null;
+  eventType: EventSeriesType;
+  startsOn: string;
+  endsOn?: string | null;
+  sameTimeStart?: string | null;
+  daySchedules?: EventDayScheduleInput[];
+  monthlyRule?: EventMonthlyRuleInput | null;
+}
+
+export interface EventFormData extends EventFormPayload {
+  id?: string;
 }

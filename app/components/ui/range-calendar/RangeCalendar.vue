@@ -3,6 +3,7 @@ import type { RangeCalendarRootEmits, RangeCalendarRootProps } from 'reka-ui';
 import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
 import { RangeCalendarRoot, useForwardPropsEmits } from 'reka-ui';
+import { computed } from 'vue';
 import { cn } from '@/lib/utils';
 import {
   RangeCalendarCell,
@@ -21,10 +22,17 @@ import {
 const props = defineProps<RangeCalendarRootProps & { class?: HTMLAttributes['class'] }>();
 
 const emits = defineEmits<RangeCalendarRootEmits>();
+const { locale: appLocale } = useI18n();
 
 const delegatedProps = reactiveOmit(props, 'class');
 
-const forwarded = useForwardPropsEmits(delegatedProps, emits);
+const forwarded = useForwardPropsEmits(
+  computed(() => ({
+    ...delegatedProps,
+    locale: props.locale ?? appLocale.value,
+  })),
+  emits,
+);
 </script>
 
 <template>

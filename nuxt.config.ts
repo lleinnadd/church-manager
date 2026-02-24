@@ -5,6 +5,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
   devServer: { port: 3333 },
+  app: {
+    head: {
+      script: [{ src: '/theme-init.js', tagPosition: 'head' }],
+    },
+  },
   modules: [
     '@clerk/nuxt',
     '@nuxtjs/tailwindcss',

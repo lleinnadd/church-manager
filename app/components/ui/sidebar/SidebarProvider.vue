@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes, Ref } from 'vue';
-import { defaultDocument, useEventListener, useMediaQuery, useVModel } from '@vueuse/core';
+import { useEventListener, useMediaQuery, useVModel } from '@vueuse/core';
 import { TooltipProvider } from 'reka-ui';
 import { computed, ref } from 'vue';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,13 @@ import {
   SIDEBAR_WIDTH_ICON,
 } from './utils';
 
+const persistedOpen = useCookie<string | null>(SIDEBAR_COOKIE_NAME, {
+  default: () => null,
+  sameSite: 'lax',
+});
+
+const defaultOpenFromCookie = computed(() => persistedOpen.value !== 'false');
+
 const props = withDefaults(
   defineProps<{
     defaultOpen?: boolean;
@@ -20,7 +27,7 @@ const props = withDefaults(
     class?: HTMLAttributes['class'];
   }>(),
   {
-    defaultOpen: !defaultDocument?.cookie.includes(`${SIDEBAR_COOKIE_NAME}=false`),
+    defaultOpen: undefined,
     open: undefined,
   },
 );
@@ -33,12 +40,13 @@ const isMobile = useMediaQuery('(max-width: 768px)');
 const openMobile = ref(false);
 
 const open = useVModel(props, 'open', emits, {
-  defaultValue: props.defaultOpen ?? false,
+  defaultValue: props.defaultOpen ?? defaultOpenFromCookie.value,
   passive: (props.open === undefined) as false,
 }) as Ref<boolean>;
 
 function setOpen(value: boolean) {
   open.value = value;
+  persistedOpen.value = String(open.value);
   document.cookie = `${SIDEBAR_COOKIE_NAME}=${open.value}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
 }
 

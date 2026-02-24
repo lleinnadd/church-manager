@@ -1,0 +1,1346 @@
+<script setup lang="ts">
+import FullCalendar from '@fullcalendar/vue3';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import ptBrLocale from '@fullcalendar/core/locales/pt-br';
+import enLocale from '@fullcalendar/core/locales/en-gb';
+import type { CalendarOptions, EventChangeArg, EventInput } from '@fullcalendar/core';
+import { CalendarDays, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-vue-next';
+import { toast } from 'vue-sonner';
+import { EventSeriesType } from '@prisma/client';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+interface EventOccurrence {
+  id: string;
+  title: string;
+  description?: string | null;
+  startAt: string;
+  endAt: string;
+  occurrenceDate: string;
+  isException?: boolean;
+  seriesId: string;
+  congregation?: { id: string; name: string } | null;
+  department?: { id: string; name: string } | null;
+  series: {
+    id: string;
+    eventType?: string;
+    startsOn?: string;
+    endsOn?: string | null;
+    monthlyWeekday?: number | null;
+    monthlyOrdinal?: number | null;
+  };
+}
+
+interface CalendarExtendedProps {
+  seriesId?: string;
+  occurrenceDate?: string;
+  description?: string | null;
+  congregationName?: string;
+  departmentName?: string;
+  eventType?: string;
+  startsOn?: string;
+  endsOn?: string | null;
+  monthlyWeekday?: number | null;
+  monthlyOrdinal?: number | null;
+}
+
+interface SelectedCalendarOccurrence {
+  id: string;
+  seriesId: string;
+  title: string;
+  description: string | null;
+  occurrenceDate: string;
+  startAt: string;
+  endAt: string;
+  congregationName?: string;
+  departmentName?: string;
+  eventType?: string;
+}
+
+interface EventSeriesDetails {
+  id: string;
+  title: string;
+  description: string | null;
+  congregationId: string;
+  departmentId: string | null;
+  eventType: EventSeriesType;
+  startsOn: string;
+  endsOn: string | null;
+  sameTimeStartMinutes: number | null;
+  monthlyWeekday: number | null;
+  monthlyOrdinal: number | null;
+  daySchedules: { date: string; startMinutes: number; endMinutes: number }[];
+}
+
+type EventActionType = 'delete-occurrence' | 'delete-series' | 'end-recurrence' | null;
+
+const { t, locale } = useI18n();
+
+const loading = ref(false);
+const occurrenceCount = ref(0);
+const calendarRef = ref<InstanceType<typeof FullCalendar> | null>(null);
+const editScopeDialogOpen = ref(false);
+const pendingEventChange = shallowRef<EventChangeArg | null>(null);
+const detailsOpen = ref(false);
+const detailsLoading = ref(false);
+const actionLoading = ref(false);
+const detailsPosition = ref({ x: 0, y: 0 });
+const detailsSide = ref<'left' | 'right'>('right');
+const selectedOccurrence = ref<SelectedCalendarOccurrence | null>(null);
+const selectedSeries = ref<EventSeriesDetails | null>(null);
+const confirmAction = ref<EventActionType>(null);
+const confirmDialogOpen = ref(false);
+
+const POPOVER_VIEWPORT_MARGIN = 12;
+const POPOVER_ESTIMATED_WIDTH = 416;
+
+let resolveEditScope: ((scope: 'series' | 'occurrence') => void) | null = null;
+
+function getCalendarLocale() {
+  return locale.value === 'pt-BR' ? ptBrLocale : enLocale;
+}
+
+function refetchCalendarEvents() {
+  calendarRef.value?.getApi().refetchEvents();
+}
+
+function closeDetails() {
+  detailsOpen.value = false;
+  selectedOccurrence.value = null;
+  selectedSeries.value = null;
+}
+
+function resolveDetailsPlacement({
+  clientX,
+  clientY,
+  eventElement,
+}: {
+  clientX: number;
+  clientY: number;
+  eventElement?: HTMLElement;
+}) {
+  if (typeof window === 'undefined') {
+    return {
+      position: { x: clientX, y: clientY },
+      side: 'right' as const,
+    };
+  }
+
+  let anchorX = clientX;
+  let anchorY = clientY;
+
+  let rightSpace = window.innerWidth - clientX - POPOVER_VIEWPORT_MARGIN;
+  let leftSpace = clientX - POPOVER_VIEWPORT_MARGIN;
+
+  if (eventElement) {
+    const rect = eventElement.getBoundingClientRect();
+    anchorY = rect.top + rect.height / 2;
+    rightSpace = window.innerWidth - rect.right - POPOVER_VIEWPORT_MARGIN;
+    leftSpace = rect.left - POPOVER_VIEWPORT_MARGIN;
+  }
+
+  let side: 'left' | 'right' = rightSpace >= leftSpace ? 'right' : 'left';
+  if (side === 'right' && rightSpace < POPOVER_ESTIMATED_WIDTH && leftSpace >= rightSpace) {
+    side = 'left';
+  }
+
+  if (side === 'left' && leftSpace < POPOVER_ESTIMATED_WIDTH && rightSpace >= leftSpace) {
+    side = 'right';
+  }
+
+  if (eventElement) {
+    const rect = eventElement.getBoundingClientRect();
+    anchorX = side === 'right' ? rect.right : rect.left;
+  }
+
+  const maxX = window.innerWidth - POPOVER_VIEWPORT_MARGIN;
+  const maxY = window.innerHeight - POPOVER_VIEWPORT_MARGIN;
+  const x = Math.min(Math.max(anchorX, POPOVER_VIEWPORT_MARGIN), maxX);
+  const y = Math.min(Math.max(anchorY, POPOVER_VIEWPORT_MARGIN), maxY);
+
+  return {
+    position: { x, y },
+    side,
+  };
+}
+
+function handleEscapeKey(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return;
+
+  if (confirmDialogOpen.value) {
+    confirmDialogOpen.value = false;
+    confirmAction.value = null;
+  }
+
+  if (detailsOpen.value) {
+    closeDetails();
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleEscapeKey);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleEscapeKey);
+});
+
+function toDateOnly(value?: string | null) {
+  return value?.slice(0, 10) || '';
+}
+
+function minutesToTime(value: number | null | undefined) {
+  if (value === null || value === undefined) return '';
+  const hours = Math.floor(value / 60);
+  const minutes = value % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+function getTimeFromIso(value: string) {
+  const date = new Date(value);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+function formatDateLabel(value?: string | null) {
+  if (!value) return '-';
+
+  const dateOnly = toDateOnly(value);
+  const sourceDate = /^\d{4}-\d{2}-\d{2}$/.test(dateOnly)
+    ? new Date(`${dateOnly}T12:00:00.000Z`)
+    : new Date(value);
+
+  return sourceDate.toLocaleDateString(locale.value, {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+function formatStartTimeLabel(startAt: string) {
+  return getTimeFromIso(startAt);
+}
+
+function formatEventTypeLabel(eventType?: string) {
+  if (eventType === EventSeriesType.MULTI_DAY) return t('form.event.typeMultiDay');
+  if (eventType === EventSeriesType.MONTHLY_RECURRING) return t('form.event.typeMonthly');
+  return t('form.event.typeSingle');
+}
+
+function formatOrdinalLabel(ordinal: number) {
+  if (locale.value === 'pt-BR') {
+    if (ordinal === -1) return 'Última';
+    if (ordinal === 1) return '1ª';
+    if (ordinal === 2) return '2ª';
+    if (ordinal === 3) return '3ª';
+    if (ordinal === 4) return '4ª';
+    return '-';
+  }
+
+  if (ordinal === -1) return 'Last';
+  if (ordinal === 1) return '1st';
+  if (ordinal === 2) return '2nd';
+  if (ordinal === 3) return '3rd';
+  if (ordinal === 4) return '4th';
+  return '-';
+}
+
+function formatWeekdayLabel(weekday: number) {
+  const base = new Date(Date.UTC(2023, 0, 1 + weekday, 12, 0, 0));
+  return new Intl.DateTimeFormat(locale.value, { weekday: 'long', timeZone: 'UTC' }).format(base);
+}
+
+const recurrenceLabel = computed(() => {
+  const occurrence = selectedOccurrence.value;
+  if (!occurrence) return '-';
+
+  const series = selectedSeries.value;
+  const eventType = series?.eventType || occurrence.eventType;
+
+  if (eventType !== EventSeriesType.MONTHLY_RECURRING) {
+    return t('pages.events.notRecurring');
+  }
+
+  const weekday = series?.monthlyWeekday;
+  const ordinal = series?.monthlyOrdinal;
+  if (weekday === null || weekday === undefined || ordinal === null || ordinal === undefined) {
+    return t('pages.events.monthlyRecurring');
+  }
+
+  return `${formatOrdinalLabel(ordinal)} ${formatWeekdayLabel(weekday)}`;
+});
+
+const recurrenceRangeLabel = computed(() => {
+  const series = selectedSeries.value;
+  if (!series || series.eventType !== EventSeriesType.MONTHLY_RECURRING) return '-';
+
+  const startsOn = formatDateLabel(series.startsOn);
+  if (!series.endsOn) {
+    return `${startsOn} • ${t('pages.events.noEndDate')}`;
+  }
+
+  return `${startsOn} • ${formatDateLabel(series.endsOn)}`;
+});
+
+const canEndRecurrence = computed(() => {
+  const series = selectedSeries.value;
+  const occurrence = selectedOccurrence.value;
+  if (!series || !occurrence) return false;
+  if (series.eventType !== EventSeriesType.MONTHLY_RECURRING) return false;
+
+  if (!series.endsOn) return true;
+
+  const endsOnDate = toDateOnly(series.endsOn);
+  return endsOnDate > occurrence.occurrenceDate;
+});
+
+const canDeleteOccurrence = computed(() => {
+  const series = selectedSeries.value;
+  const occurrence = selectedOccurrence.value;
+  if (!occurrence) return false;
+  if (!series) return true;
+
+  if (series.eventType !== EventSeriesType.MONTHLY_RECURRING) return true;
+  if (!series.endsOn) return true;
+
+  const endsOnDate = toDateOnly(series.endsOn);
+  return endsOnDate > occurrence.occurrenceDate;
+});
+
+const confirmTitle = computed(() => {
+  if (confirmAction.value === 'delete-occurrence') return t('pages.events.deleteOccurrenceTitle');
+  if (confirmAction.value === 'delete-series') return t('pages.events.deleteSeriesTitle');
+  if (confirmAction.value === 'end-recurrence') return t('pages.events.endRecurrenceTitle');
+  return '';
+});
+
+const confirmDescription = computed(() => {
+  if (confirmAction.value === 'delete-occurrence') {
+    return t('pages.events.deleteOccurrenceDescription');
+  }
+
+  if (confirmAction.value === 'delete-series') {
+    return t('pages.events.deleteSeriesDescription', {
+      name: selectedOccurrence.value?.title || '',
+    });
+  }
+
+  if (confirmAction.value === 'end-recurrence') {
+    return t('pages.events.endRecurrenceDescription', {
+      date: formatDateLabel(selectedOccurrence.value?.occurrenceDate),
+    });
+  }
+
+  return '';
+});
+
+const confirmLabel = computed(() => {
+  if (confirmAction.value === 'delete-occurrence') return t('pages.events.deleteOccurrenceLabel');
+  if (confirmAction.value === 'delete-series') return t('pages.events.deleteSeriesLabel');
+  if (confirmAction.value === 'end-recurrence') return t('pages.events.endRecurrenceLabel');
+  return t('common.confirm');
+});
+
+async function loadSeriesDetails(seriesId: string) {
+  detailsLoading.value = true;
+  try {
+    selectedSeries.value = await $fetch<EventSeriesDetails>(`/api/events/${seriesId}`);
+  } catch {
+    selectedSeries.value = null;
+    toast.error(t('pages.events.loadError'));
+  } finally {
+    detailsLoading.value = false;
+  }
+}
+
+function openActionConfirmation(action: Exclude<EventActionType, null>) {
+  confirmAction.value = action;
+  confirmDialogOpen.value = true;
+}
+
+function closeActionConfirmation() {
+  confirmDialogOpen.value = false;
+  confirmAction.value = null;
+}
+
+async function handleEditSelected() {
+  const occurrence = selectedOccurrence.value;
+  if (!occurrence?.seriesId) return;
+
+  detailsOpen.value = false;
+  await navigateTo(`/events/${occurrence.seriesId}/edit`);
+}
+
+async function deleteOccurrence() {
+  const occurrence = selectedOccurrence.value;
+  if (!occurrence) return;
+
+  await $fetch(`/api/events/occurrences/${occurrence.id}`, {
+    method: 'PUT',
+    body: {
+      seriesId: occurrence.seriesId,
+      originalOccurrenceDate: toDateOnly(occurrence.occurrenceDate),
+      cancelled: true,
+    },
+  });
+
+  toast.success(t('pages.events.deleteOccurrenceSuccess'));
+  closeDetails();
+  refetchCalendarEvents();
+}
+
+async function deleteSeries() {
+  const occurrence = selectedOccurrence.value;
+  if (!occurrence) return;
+
+  await $fetch(`/api/events/${occurrence.seriesId}`, { method: 'DELETE' });
+  toast.success(t('pages.events.deleteSuccess'));
+  closeDetails();
+  refetchCalendarEvents();
+}
+
+async function endRecurrence() {
+  const occurrence = selectedOccurrence.value;
+  const series = selectedSeries.value;
+  if (!occurrence || !series) return;
+
+  const monthlyStartTime =
+    minutesToTime(series.sameTimeStartMinutes) || getTimeFromIso(occurrence.startAt);
+
+  await $fetch(`/api/events/${series.id}`, {
+    method: 'PUT',
+    body: {
+      title: series.title,
+      description: series.description,
+      congregationId: series.congregationId,
+      departmentId: series.departmentId,
+      eventType: series.eventType,
+      startsOn: toDateOnly(series.startsOn),
+      endsOn: toDateOnly(occurrence.occurrenceDate),
+      sameTimeStart:
+        series.eventType === EventSeriesType.MONTHLY_RECURRING ? null : monthlyStartTime,
+      daySchedules: series.daySchedules.map((entry) => ({
+        date: toDateOnly(entry.date),
+        startTime: minutesToTime(entry.startMinutes),
+      })),
+      monthlyRule:
+        series.eventType === EventSeriesType.MONTHLY_RECURRING
+          ? {
+              weekday: series.monthlyWeekday ?? 0,
+              ordinal: series.monthlyOrdinal ?? 1,
+              startTime: monthlyStartTime,
+            }
+          : null,
+    },
+  });
+
+  toast.success(t('pages.events.endRecurrenceSuccess'));
+  closeDetails();
+  refetchCalendarEvents();
+}
+
+async function handleConfirmAction() {
+  if (!confirmAction.value) return;
+
+  actionLoading.value = true;
+
+  try {
+    if (confirmAction.value === 'delete-occurrence') {
+      await deleteOccurrence();
+    }
+
+    if (confirmAction.value === 'delete-series') {
+      await deleteSeries();
+    }
+
+    if (confirmAction.value === 'end-recurrence') {
+      await endRecurrence();
+    }
+
+    closeActionConfirmation();
+  } catch {
+    toast.error(t('pages.events.updateError'));
+  } finally {
+    actionLoading.value = false;
+  }
+}
+
+async function loadCalendarEvents(
+  fetchInfo: { startStr: string; endStr: string },
+  successCallback: (events: EventInput[]) => void,
+  failureCallback: (error: Error) => void,
+) {
+  loading.value = true;
+
+  try {
+    const apiEvents = await $fetch<EventOccurrence[]>('/api/events', {
+      query: {
+        start: fetchInfo.startStr,
+        end: fetchInfo.endStr,
+      },
+    });
+
+    occurrenceCount.value = apiEvents.length;
+
+    const mapped: EventInput[] = apiEvents.map((item) => ({
+      id: item.id,
+      title: item.title,
+      start: item.startAt,
+      end: item.endAt,
+      extendedProps: {
+        seriesId: item.series?.id || item.seriesId,
+        occurrenceDate: item.occurrenceDate,
+        description: item.description,
+        congregationName: item.congregation?.name,
+        departmentName: item.department?.name,
+        eventType: item.series?.eventType,
+        startsOn: item.series?.startsOn,
+        endsOn: item.series?.endsOn,
+        monthlyWeekday: item.series?.monthlyWeekday,
+        monthlyOrdinal: item.series?.monthlyOrdinal,
+      },
+    }));
+
+    successCallback(mapped);
+  } catch {
+    failureCallback(new Error(t('pages.events.loadError')));
+    toast.error(t('pages.events.loadError'));
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function updateOccurrence(change: EventChangeArg) {
+  const startAt = change.event.start;
+  const endAt = change.event.end;
+  const props = change.event.extendedProps as CalendarExtendedProps;
+  const seriesId = String(props.seriesId || '');
+  const originalOccurrenceDate = toDateOnly(String(props.occurrenceDate || ''));
+
+  if (!startAt || !endAt || !seriesId || !originalOccurrenceDate) {
+    change.revert();
+    return;
+  }
+
+  loading.value = true;
+  try {
+    await $fetch(`/api/events/occurrences/${change.event.id}`, {
+      method: 'PUT',
+      body: {
+        seriesId,
+        originalOccurrenceDate,
+        startAt: startAt.toISOString(),
+        endAt: endAt.toISOString(),
+      },
+    });
+    toast.success(t('pages.events.occurrenceUpdateSuccess'));
+    refetchCalendarEvents();
+  } catch {
+    change.revert();
+    toast.error(t('pages.events.occurrenceUpdateError'));
+  } finally {
+    loading.value = false;
+  }
+}
+
+function askEditScope(): Promise<'series' | 'occurrence'> {
+  editScopeDialogOpen.value = true;
+  return new Promise((resolve) => {
+    resolveEditScope = resolve;
+  });
+}
+
+function handleEditScopeChoice(scope: 'series' | 'occurrence') {
+  editScopeDialogOpen.value = false;
+  const resolve = resolveEditScope;
+  resolveEditScope = null;
+  if (resolve) resolve(scope);
+}
+
+async function handleEventChange(change: EventChangeArg) {
+  pendingEventChange.value = change;
+  const scope = await askEditScope();
+  const pendingChange = pendingEventChange.value;
+  pendingEventChange.value = null;
+
+  if (!pendingChange) return;
+
+  const seriesId = String(pendingChange.event.extendedProps.seriesId || '');
+
+  if (scope === 'series') {
+    pendingChange.revert();
+    await navigateTo(`/events/${seriesId}/edit`);
+    return;
+  }
+
+  await updateOccurrence(pendingChange);
+}
+
+function getEventTypeStyles(eventType: string) {
+  if (eventType === 'MONTHLY_RECURRING') {
+    return {
+      dot: 'var(--chart-2)',
+      border: 'var(--chart-2)',
+      bg: 'color-mix(in oklab, var(--chart-2) 18%, transparent)',
+      bgHover: 'color-mix(in oklab, var(--chart-2) 26%, transparent)',
+    };
+  }
+
+  if (eventType === 'MULTI_DAY') {
+    return {
+      dot: 'var(--chart-1)',
+      border: 'var(--chart-1)',
+      bg: 'color-mix(in oklab, var(--chart-1) 18%, transparent)',
+      bgHover: 'color-mix(in oklab, var(--chart-1) 26%, transparent)',
+    };
+  }
+
+  return {
+    dot: 'var(--chart-5)',
+    border: 'var(--chart-5)',
+    bg: 'color-mix(in oklab, var(--chart-5) 18%, transparent)',
+    bgHover: 'color-mix(in oklab, var(--chart-5) 26%, transparent)',
+  };
+}
+
+function buildDayHeaderLabel(date: Date) {
+  const ptBrShort = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+  const enShort = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const weekdayIndex = date.getUTCDay();
+  return locale.value === 'pt-BR' ? ptBrShort[weekdayIndex] : enShort[weekdayIndex];
+}
+
+const calendarOptions = computed<CalendarOptions>(() => ({
+  plugins: [dayGridPlugin, interactionPlugin],
+  initialView: 'dayGridMonth',
+  fixedWeekCount: false,
+  locale: getCalendarLocale(),
+  locales: [ptBrLocale, enLocale],
+  height: '100%',
+  editable: true,
+  eventDisplay: 'auto',
+  eventTimeFormat: {
+    hour: '2-digit',
+    minute: '2-digit',
+    meridiem: false,
+    hour12: false,
+  },
+  dayHeaderContent: (arg) => buildDayHeaderLabel(arg.date),
+  eventStartEditable: true,
+  eventDurationEditable: true,
+  headerToolbar: {
+    left: 'prev,next today',
+    center: 'title',
+    right: 'loadingBadge',
+  },
+  customButtons: {
+    loadingBadge: {
+      text: t('common.loading'),
+      click: () => {},
+    },
+  },
+  buttonText: {
+    today: t('common.today'),
+    month: t('pages.events.monthView'),
+  },
+  events: (fetchInfo, successCallback, failureCallback) => {
+    loadCalendarEvents(fetchInfo, successCallback, failureCallback).catch(() => {
+      failureCallback(new Error(t('pages.events.loadError')));
+    });
+  },
+  datesSet: () => {
+    if (detailsOpen.value) {
+      closeDetails();
+    }
+  },
+  dateClick: () => {
+    if (detailsOpen.value) {
+      closeDetails();
+    }
+  },
+  select: () => {
+    if (detailsOpen.value) {
+      closeDetails();
+    }
+  },
+  eventChange: (arg) => {
+    handleEventChange(arg).catch(() => {
+      arg.revert();
+      toast.error(t('pages.events.occurrenceUpdateError'));
+    });
+  },
+  eventClick: (info) => {
+    info.jsEvent.preventDefault();
+
+    const props = info.event.extendedProps as CalendarExtendedProps;
+    const seriesId = String(props.seriesId || '');
+    const occurrenceDate = String(props.occurrenceDate || '');
+
+    if (!seriesId || !occurrenceDate || !info.event.start || !info.event.end) {
+      toast.error(t('pages.events.loadError'));
+      return;
+    }
+
+    const placement = resolveDetailsPlacement({
+      clientX: info.jsEvent.clientX,
+      clientY: info.jsEvent.clientY,
+      eventElement: info.el,
+    });
+    detailsPosition.value = placement.position;
+    detailsSide.value = placement.side;
+
+    selectedOccurrence.value = {
+      id: info.event.id,
+      seriesId,
+      title: info.event.title,
+      description: props.description || null,
+      occurrenceDate: toDateOnly(occurrenceDate),
+      startAt: info.event.start.toISOString(),
+      endAt: info.event.end.toISOString(),
+      congregationName: props.congregationName,
+      departmentName: props.departmentName,
+      eventType: props.eventType,
+    };
+
+    detailsOpen.value = true;
+    loadSeriesDetails(seriesId).catch(() => {
+      toast.error(t('pages.events.loadError'));
+    });
+  },
+  eventDidMount: (info) => {
+    const props = info.event.extendedProps as CalendarExtendedProps;
+    const eventType = String(props.eventType || 'SINGLE_DAY');
+    const typeStyles = getEventTypeStyles(eventType);
+    info.el.style.setProperty('--event-dot-color', typeStyles.dot);
+    info.el.style.setProperty('--event-border-color', typeStyles.border);
+    info.el.style.setProperty('--event-bg-color', typeStyles.bg);
+    info.el.style.setProperty('--event-bg-hover-color', typeStyles.bgHover);
+    info.el.classList.add('fc-event-has-type-dot');
+
+    const congregationName = props.congregationName;
+    const departmentName = props.departmentName;
+    const tooltip = [info.event.title, congregationName, departmentName]
+      .filter(Boolean)
+      .join(' • ');
+    const element = info.el;
+    element.title = tooltip;
+  },
+}));
+</script>
+
+<template>
+  <div class="h-full min-h-0">
+    <div class="relative flex h-full min-h-0 flex-col rounded-lg border bg-card">
+      <div class="flex items-center justify-between border-b px-4 py-3 md:px-6">
+        <div>
+          <h1 class="text-xl font-semibold tracking-tight md:text-2xl">
+            {{ $t('pages.events.title') }}
+          </h1>
+          <p class="text-muted-foreground text-sm">{{ $t('pages.events.description') }}</p>
+        </div>
+        <Button as-child>
+          <NuxtLink to="/events/new">
+            <Plus class="mr-2 size-4" />
+            {{ $t('pages.events.new') }}
+          </NuxtLink>
+        </Button>
+      </div>
+
+      <div class="min-h-0 flex-1 p-2 md:p-4">
+        <ClientOnly>
+          <div
+            :class="[
+              'fc-shadcn-theme h-full overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm',
+              { 'is-calendar-loading': loading },
+            ]"
+          >
+            <FullCalendar ref="calendarRef" :options="calendarOptions" />
+          </div>
+          <template #fallback>
+            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Skeleton v-for="i in 3" :key="i" class="h-40 w-full rounded-xl" />
+            </div>
+          </template>
+        </ClientOnly>
+      </div>
+
+      <div
+        v-if="!loading && occurrenceCount === 0"
+        class="pointer-events-none absolute inset-x-6 top-1/2 z-10 -translate-y-1/2"
+      >
+        <Empty class="mx-auto max-w-md rounded-lg border bg-card/95 backdrop-blur">
+          <EmptyMedia variant="icon">
+            <CalendarDays class="size-8" />
+          </EmptyMedia>
+          <EmptyHeader>
+            <EmptyTitle>{{ $t('pages.events.emptyTitle') }}</EmptyTitle>
+            <EmptyDescription>{{ $t('pages.events.emptyDescription') }}</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent class="pointer-events-auto">
+            <Button as-child>
+              <NuxtLink to="/events/new">
+                <Plus class="mr-2 size-4" />
+                {{ $t('pages.events.new') }}
+              </NuxtLink>
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
+    </div>
+  </div>
+
+  <Popover v-model:open="detailsOpen">
+    <PopoverAnchor as-child>
+      <span
+        class="pointer-events-none fixed z-40 size-2"
+        :style="{
+          left: `${detailsPosition.x}px`,
+          top: `${detailsPosition.y}px`,
+        }"
+      />
+    </PopoverAnchor>
+    <PopoverContent
+      align="center"
+      :side="detailsSide"
+      :side-offset="10"
+      :collision-padding="12"
+      class="w-104 max-w-[calc(100vw-1rem)] p-0"
+      @open-auto-focus.prevent
+    >
+      <div class="space-y-2 border-b px-4 py-3">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 space-y-1">
+            <div class="line-clamp-2 text-lg font-semibold leading-tight">
+              {{ selectedOccurrence?.title || '-' }}
+            </div>
+            <p class="text-muted-foreground text-xs">
+              {{ formatEventTypeLabel(selectedSeries?.eventType || selectedOccurrence?.eventType) }}
+            </p>
+          </div>
+
+          <TooltipProvider :delay-duration="120">
+            <div class="flex shrink-0 items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    :disabled="actionLoading"
+                    :title="$t('pages.events.editAction')"
+                    :aria-label="$t('pages.events.editAction')"
+                    @click="handleEditSelected"
+                  >
+                    <Pencil class="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">{{ $t('pages.events.editAction') }}</TooltipContent>
+              </Tooltip>
+
+              <Tooltip v-if="canDeleteOccurrence">
+                <TooltipTrigger as-child>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    :disabled="actionLoading"
+                    :title="$t('pages.events.deleteOccurrenceLabel')"
+                    :aria-label="$t('pages.events.deleteOccurrenceLabel')"
+                    @click="openActionConfirmation('delete-occurrence')"
+                  >
+                    <Trash2 class="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {{ $t('pages.events.deleteOccurrenceLabel') }}
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip v-if="canEndRecurrence">
+                <TooltipTrigger as-child>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    :disabled="actionLoading"
+                    :title="$t('pages.events.endRecurrenceLabel')"
+                    :aria-label="$t('pages.events.endRecurrenceLabel')"
+                    @click="openActionConfirmation('end-recurrence')"
+                  >
+                    <RotateCcw class="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {{ $t('pages.events.endRecurrenceLabel') }}
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    class="text-destructive hover:text-destructive"
+                    :disabled="actionLoading"
+                    :title="$t('pages.events.deleteSeriesLabel')"
+                    :aria-label="$t('pages.events.deleteSeriesLabel')"
+                    @click="openActionConfirmation('delete-series')"
+                  >
+                    <Trash2 class="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">{{
+                  $t('pages.events.deleteSeriesLabel')
+                }}</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    :title="$t('common.close')"
+                    :aria-label="$t('common.close')"
+                    @click="closeDetails"
+                  >
+                    <X class="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">{{ $t('common.close') }}</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
+        </div>
+      </div>
+
+      <div v-if="detailsLoading" class="space-y-2 px-4 py-4">
+        <Skeleton class="h-4 w-full" />
+        <Skeleton class="h-4 w-10/12" />
+        <Skeleton class="h-4 w-8/12" />
+      </div>
+
+      <div v-else class="space-y-3 px-4 py-4">
+        <div class="space-y-2 text-sm">
+          <div class="rounded-md border bg-muted/20 px-3 py-2">
+            <p class="text-muted-foreground text-xs">{{ $t('pages.events.detailsDate') }}</p>
+            <p class="mt-1 font-medium">
+              {{ formatDateLabel(selectedOccurrence?.occurrenceDate) }}
+            </p>
+          </div>
+          <div class="rounded-md border bg-muted/20 px-3 py-2">
+            <p class="text-muted-foreground text-xs">{{ $t('pages.events.detailsTime') }}</p>
+            <p class="mt-1 font-medium">
+              {{ selectedOccurrence ? formatStartTimeLabel(selectedOccurrence.startAt) : '-' }}
+            </p>
+          </div>
+          <div class="rounded-md border bg-muted/20 px-3 py-2">
+            <p class="text-muted-foreground text-xs">{{ $t('pages.events.detailsRecurrence') }}</p>
+            <p class="mt-1 font-medium">{{ recurrenceLabel }}</p>
+          </div>
+          <div class="rounded-md border bg-muted/20 px-3 py-2">
+            <p class="text-muted-foreground text-xs">
+              {{ $t('pages.events.detailsRecurrenceRange') }}
+            </p>
+            <p class="mt-1 font-medium">{{ recurrenceRangeLabel }}</p>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="rounded-md border bg-muted/20 px-3 py-2">
+              <p class="text-muted-foreground text-xs">
+                {{ $t('pages.events.detailsCongregation') }}
+              </p>
+              <p class="mt-1 font-medium">{{ selectedOccurrence?.congregationName || '-' }}</p>
+            </div>
+            <div class="rounded-md border bg-muted/20 px-3 py-2">
+              <p class="text-muted-foreground text-xs">
+                {{ $t('pages.events.detailsDepartment') }}
+              </p>
+              <p class="mt-1 font-medium">{{ selectedOccurrence?.departmentName || '-' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="selectedOccurrence?.description" class="rounded-md border bg-muted/20 px-3 py-2">
+          <p class="text-muted-foreground text-xs">{{ $t('form.event.description') }}</p>
+          <p class="mt-1 text-sm whitespace-pre-wrap">{{ selectedOccurrence.description }}</p>
+        </div>
+      </div>
+    </PopoverContent>
+  </Popover>
+
+  <ConfirmDialog
+    :open="editScopeDialogOpen"
+    :title="$t('pages.events.editScopeTitle')"
+    :description="$t('pages.events.applySeriesQuestion')"
+    :confirm-label="$t('pages.events.applySeriesLabel')"
+    :cancel-label="$t('pages.events.applyOccurrenceLabel')"
+    @confirm="handleEditScopeChoice('series')"
+    @cancel="handleEditScopeChoice('occurrence')"
+  />
+
+  <ConfirmDialog
+    :open="confirmDialogOpen"
+    :title="confirmTitle"
+    :description="confirmDescription"
+    :confirm-label="confirmLabel"
+    :loading="actionLoading"
+    :variant="confirmAction === 'end-recurrence' ? 'default' : 'destructive'"
+    @confirm="handleConfirmAction"
+    @cancel="closeActionConfirmation"
+  />
+</template>
+
+<style scoped>
+:deep(.fc-shadcn-theme) {
+  --calendar-toolbar-height: 3.25rem;
+}
+
+:deep(.fc-shadcn-theme .fc) {
+  height: 100%;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  --fc-border-color: var(--border);
+}
+
+:deep(.fc-shadcn-theme .fc-theme-standard .fc-scrollgrid),
+:deep(.fc-shadcn-theme .fc-theme-standard td),
+:deep(.fc-shadcn-theme .fc-theme-standard th),
+:deep(.fc-shadcn-theme .fc .fc-scrollgrid-section > *) {
+  border-color: var(--fc-border-color) !important;
+  border-style: solid;
+}
+
+:deep(.fc-shadcn-theme .fc-scrollgrid) {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 0 !important;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-scrollgrid > thead > tr.fc-scrollgrid-section-header > th) {
+  border: none !important;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-scrollgrid > tbody > tr.fc-scrollgrid-section-body > td) {
+  border: none !important;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-toolbar.fc-header-toolbar) {
+  margin: 0;
+  min-height: var(--calendar-toolbar-height);
+  padding: 0.75rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--muted-foreground) 20%, transparent);
+  background: color-mix(in oklab, var(--card) 92%, transparent);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-toolbar.fc-header-toolbar .fc-toolbar-chunk:first-child) {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-self: start;
+}
+
+:deep(
+  .fc-shadcn-theme .fc .fc-toolbar.fc-header-toolbar .fc-toolbar-chunk:first-child .fc-button-group
+) {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+:deep(
+  .fc-shadcn-theme
+    .fc
+    .fc-toolbar.fc-header-toolbar
+    .fc-toolbar-chunk:first-child
+    .fc-button-group
+    > .fc-button
+) {
+  margin: 0;
+  border-radius: calc(var(--radius) - 2px) !important;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-toolbar.fc-header-toolbar .fc-toolbar-chunk:nth-child(2)) {
+  justify-self: center;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-toolbar.fc-header-toolbar .fc-toolbar-chunk:last-child) {
+  justify-self: end;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-loadingBadge-button.fc-button) {
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-color: var(--border);
+  background: color-mix(in oklab, var(--card) 92%, transparent);
+  font-size: 0.75rem;
+  padding-inline: 0.55rem;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-loadingBadge-button.fc-button::before) {
+  content: '';
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in oklab, var(--foreground) 80%, transparent);
+  border-right-color: transparent;
+  animation: calendar-loading-spin 0.7s linear infinite;
+}
+
+:deep(.fc-shadcn-theme:not(.is-calendar-loading) .fc .fc-loadingBadge-button.fc-button) {
+  display: none;
+}
+
+:deep(.fc-shadcn-theme.is-calendar-loading .fc .fc-loadingBadge-button.fc-button) {
+  display: inline-flex;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-toolbar-title) {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-toolbar-title::first-letter) {
+  text-transform: uppercase;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-button) {
+  border: 1px solid var(--input);
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: none;
+  border-radius: calc(var(--radius) - 2px);
+  padding: 0.4rem 0.65rem;
+  font-size: 0.8125rem;
+  line-height: 1.1;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-button:hover) {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  border-color: var(--accent);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-button-primary:not(:disabled).fc-button-active),
+:deep(.fc-shadcn-theme .fc .fc-button-primary:not(:disabled):active) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-foreground);
+  box-shadow: none;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-button:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-daygrid-day-frame),
+:deep(.fc-shadcn-theme .fc .fc-list-table tr),
+:deep(.fc-shadcn-theme .fc .fc-list-day-cushion) {
+  background: color-mix(in oklab, var(--card) 95%, transparent);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-daygrid-day-number),
+:deep(.fc-shadcn-theme .fc .fc-col-header-cell-cushion),
+:deep(.fc-shadcn-theme .fc .fc-list-day-text),
+:deep(.fc-shadcn-theme .fc .fc-list-day-side-text) {
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-daygrid-day-top) {
+  justify-content: center;
+  padding-top: 0.2rem;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-daygrid-day-number) {
+  float: none;
+  margin-inline: auto;
+  text-align: center;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-col-header-cell-cushion) {
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 0.675rem;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-day-today) {
+  background: color-mix(in oklab, var(--accent) 14%, transparent) !important;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-day-other .fc-daygrid-day-number) {
+  color: var(--muted-foreground);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-empty) {
+  background: var(--card);
+  color: var(--muted-foreground);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-event) {
+  border: 1px solid var(--event-border-color, color-mix(in oklab, var(--primary) 38%, transparent));
+  background: var(--event-bg-color, color-mix(in oklab, var(--primary) 14%, transparent));
+  color: var(--foreground);
+  border-radius: 0.45rem;
+  padding: 0;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-event:hover) {
+  background: var(--event-bg-hover-color, color-mix(in oklab, var(--primary) 19%, transparent));
+}
+
+:deep(.fc-shadcn-theme .fc .fc-daygrid-event-dot) {
+  display: inline-block;
+  border-color: var(--event-dot-color, var(--chart-1)) !important;
+  border-width: 0.34rem;
+  margin-right: 0.35rem;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-event-main) {
+  padding: 0;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-daygrid-dot-event) {
+  border: 0;
+  background: transparent;
+  padding: 0.1rem 0;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-daygrid-more-link) {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-table) {
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list) {
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-table > tbody > tr:first-child > *) {
+  border-top-width: 0 !important;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-table > tbody > tr:first-child > *:first-child) {
+  border-top-left-radius: 0.75rem;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-table > tbody > tr:first-child > *:last-child) {
+  border-top-right-radius: 0.75rem;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-day) {
+  background: transparent;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-day > *) {
+  background: transparent !important;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-day-cushion) {
+  background: color-mix(in oklab, var(--muted) 25%, transparent) !important;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.75rem;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-day-cushion.fc-cell-shaded) {
+  background: color-mix(in oklab, var(--muted) 25%, transparent) !important;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-day-cushion a) {
+  text-decoration: none;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-day-text) {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-day-side-text) {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-event td) {
+  background: color-mix(in oklab, var(--card) 95%, transparent);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding-block: 0.45rem;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-event td:first-child) {
+  border-top-left-radius: 0.45rem;
+  border-bottom-left-radius: 0.45rem;
+  border-left: 3px solid
+    var(--event-border-color, color-mix(in oklab, var(--primary) 60%, transparent));
+  padding-left: 0.65rem;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-event td:last-child) {
+  border-top-right-radius: 0.45rem;
+  border-bottom-right-radius: 0.45rem;
+  border-right: 1px solid var(--border);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-empty) {
+  border-radius: 0.75rem;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-event:hover td) {
+  background: color-mix(in oklab, var(--accent) 25%, transparent);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-event-time) {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  width: 6.5rem;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-event-title) {
+  font-weight: 500;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-list-event-title a) {
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-highlight) {
+  background: color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-timegrid-now-indicator-line) {
+  border-color: var(--destructive);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-timegrid-now-indicator-arrow) {
+  border-color: var(--destructive);
+}
+
+@keyframes calendar-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

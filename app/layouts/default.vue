@@ -8,6 +8,7 @@ const sectionFallbacks: Record<string, string> = {
   members: '/members',
   departments: '/departments',
   congregations: '/congregations',
+  events: '/events',
 };
 
 const topLevelSegment = computed(() => route.path.split('/').filter(Boolean)[0] ?? '');
