@@ -5,7 +5,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import enLocale from '@fullcalendar/core/locales/en-gb';
 import type { CalendarOptions, EventChangeArg, EventInput } from '@fullcalendar/core';
-import { CalendarDays, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-vue-next';
+import { Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
 import { EventSeriesType } from '@prisma/client';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -77,7 +77,6 @@ type EventActionType = 'delete-occurrence' | 'delete-series' | 'end-recurrence' 
 const { t, locale } = useI18n();
 
 const loading = ref(false);
-const occurrenceCount = ref(0);
 const calendarRef = ref<InstanceType<typeof FullCalendar> | null>(null);
 const editScopeDialogOpen = ref(false);
 const pendingEventChange = shallowRef<EventChangeArg | null>(null);
@@ -483,8 +482,6 @@ async function loadCalendarEvents(
       },
     });
 
-    occurrenceCount.value = apiEvents.length;
-
     const mapped: EventInput[] = apiEvents.map((item) => ({
       id: item.id,
       title: item.title,
@@ -760,34 +757,11 @@ const calendarOptions = computed<CalendarOptions>(() => ({
             <FullCalendar ref="calendarRef" :options="calendarOptions" />
           </div>
           <template #fallback>
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Skeleton v-for="i in 3" :key="i" class="h-40 w-full rounded-xl" />
+            <div class="flex h-full min-h-60 items-center justify-center rounded-xl border bg-card">
+              <Spinner class="text-muted-foreground size-6" />
             </div>
           </template>
         </ClientOnly>
-      </div>
-
-      <div
-        v-if="!loading && occurrenceCount === 0"
-        class="pointer-events-none absolute inset-x-6 top-1/2 z-10 -translate-y-1/2"
-      >
-        <Empty class="mx-auto max-w-md rounded-lg border bg-card/95 backdrop-blur">
-          <EmptyMedia variant="icon">
-            <CalendarDays class="size-8" />
-          </EmptyMedia>
-          <EmptyHeader>
-            <EmptyTitle>{{ $t('pages.events.emptyTitle') }}</EmptyTitle>
-            <EmptyDescription>{{ $t('pages.events.emptyDescription') }}</EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent class="pointer-events-auto">
-            <Button as-child>
-              <NuxtLink to="/events/new">
-                <Plus class="mr-2 size-4" />
-                {{ $t('pages.events.new') }}
-              </NuxtLink>
-            </Button>
-          </EmptyContent>
-        </Empty>
       </div>
     </div>
   </div>
