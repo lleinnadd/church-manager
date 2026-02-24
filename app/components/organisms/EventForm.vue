@@ -7,6 +7,7 @@ import type { EventFormData, EventFormPayload } from '@/types/forms';
 const props = defineProps<{
   initialData?: EventFormData;
   loading?: boolean;
+  hideBackButton?: boolean;
 }>();
 
 const { locale } = useI18n();
@@ -510,7 +511,7 @@ const onSubmit = handleSubmit((formValues) => {
     </Card>
 
     <div class="flex items-center gap-3">
-      <Button type="button" variant="outline" as-child>
+      <Button v-if="!hideBackButton" type="button" variant="outline" as-child>
         <NuxtLink to="/events">
           {{ $t('common.back') }}
         </NuxtLink>

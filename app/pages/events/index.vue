@@ -5,9 +5,11 @@ import interactionPlugin from '@fullcalendar/interaction';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import enLocale from '@fullcalendar/core/locales/en-gb';
 import type { CalendarOptions, EventChangeArg, EventInput } from '@fullcalendar/core';
+import type { DateClickArg } from '@fullcalendar/interaction';
 import { Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
 import { EventSeriesType } from '@prisma/client';
+import type { EventFormData, EventFormPayload } from '@/types/forms';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EventOccurrence {
@@ -90,6 +92,16 @@ const selectedSeries = ref<EventSeriesDetails | null>(null);
 const confirmAction = ref<EventActionType>(null);
 const confirmDialogOpen = ref(false);
 
+const createOpen = ref(false);
+const createPosition = ref({ x: 0, y: 0 });
+const createSide = ref<'left' | 'right'>('right');
+const createInitialDate = ref<string | undefined>();
+const createLoading = ref(false);
+
+const createInitialData = computed<EventFormData | undefined>(() =>
+  createInitialDate.value ? ({ startsOn: createInitialDate.value } as EventFormData) : undefined,
+);
+
 const POPOVER_VIEWPORT_MARGIN = 12;
 const POPOVER_ESTIMATED_WIDTH = 416;
 
@@ -107,6 +119,25 @@ function closeDetails() {
   detailsOpen.value = false;
   selectedOccurrence.value = null;
   selectedSeries.value = null;
+}
+
+function closeCreate() {
+  createOpen.value = false;
+  createInitialDate.value = undefined;
+}
+
+async function handleCreateSubmit(data: EventFormPayload) {
+  createLoading.value = true;
+  try {
+    await $fetch('/api/events', { method: 'POST', body: data });
+    toast.success(t('pages.events.createSuccess'));
+    closeCreate();
+    refetchCalendarEvents();
+  } catch {
+    toast.error(t('pages.events.createError'));
+  } finally {
+    createLoading.value = false;
+  }
 }
 
 function resolveDetailsPlacement({
@@ -169,6 +200,10 @@ function handleEscapeKey(event: KeyboardEvent) {
   if (confirmDialogOpen.value) {
     confirmDialogOpen.value = false;
     confirmAction.value = null;
+  }
+
+  if (createOpen.value) {
+    closeCreate();
   }
 
   if (detailsOpen.value) {
@@ -652,11 +687,24 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     if (detailsOpen.value) {
       closeDetails();
     }
+    if (createOpen.value) {
+      closeCreate();
+    }
   },
-  dateClick: () => {
+  dateClick: (arg: DateClickArg) => {
     if (detailsOpen.value) {
       closeDetails();
     }
+
+    const placement = resolveDetailsPlacement({
+      clientX: arg.jsEvent.clientX,
+      clientY: arg.jsEvent.clientY,
+      eventElement: arg.dayEl,
+    });
+    createPosition.value = placement.position;
+    createSide.value = placement.side;
+    createInitialDate.value = arg.dateStr;
+    createOpen.value = true;
   },
   select: () => {
     if (detailsOpen.value) {
@@ -671,6 +719,10 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   },
   eventClick: (info) => {
     info.jsEvent.preventDefault();
+
+    if (createOpen.value) {
+      closeCreate();
+    }
 
     const props = info.event.extendedProps as CalendarExtendedProps;
     const seriesId = String(props.seriesId || '');
@@ -942,6 +994,59 @@ const calendarOptions = computed<CalendarOptions>(() => ({
           <p class="text-muted-foreground text-xs">{{ $t('form.event.description') }}</p>
           <p class="mt-1 text-sm whitespace-pre-wrap">{{ selectedOccurrence.description }}</p>
         </div>
+      </div>
+    </PopoverContent>
+  </Popover>
+
+  <Popover v-model:open="createOpen">
+    <PopoverAnchor as-child>
+      <span
+        class="pointer-events-none fixed z-40 size-2"
+        :style="{
+          left: `${createPosition.x}px`,
+          top: `${createPosition.y}px`,
+        }"
+      />
+    </PopoverAnchor>
+    <PopoverContent
+      align="center"
+      :side="createSide"
+      :side-offset="10"
+      :collision-padding="12"
+      class="w-140 max-w-[calc(100vw-1rem)] max-h-[calc(100vh-2rem)] overflow-y-auto p-0"
+      @open-auto-focus.prevent
+    >
+      <div class="space-y-1 border-b px-4 py-3">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 space-y-1">
+            <div class="text-lg font-semibold leading-tight">
+              {{ $t('pages.events.new') }}
+            </div>
+            <p class="text-muted-foreground text-xs">
+              {{ $t('pages.events.newDescription') }}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            :title="$t('common.close')"
+            :aria-label="$t('common.close')"
+            @click="closeCreate"
+          >
+            <X class="size-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div class="px-4 py-4">
+        <EventForm
+          v-if="createOpen"
+          :initial-data="createInitialData"
+          :loading="createLoading"
+          :hide-back-button="true"
+          @submit="handleCreateSubmit"
+        />
       </div>
     </PopoverContent>
   </Popover>
