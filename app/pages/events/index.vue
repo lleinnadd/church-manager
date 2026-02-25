@@ -714,6 +714,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   locale: getCalendarLocale(),
   locales: [ptBrLocale, enLocale],
   height: '100%',
+  dayMaxEvents: true,
   editable: true,
   eventDisplay: 'auto',
   eventTimeFormat: {
@@ -754,6 +755,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     }
   },
   dateClick: (arg: DateClickArg) => {
+    if (arg.dayEl.closest('.fc-day-other')) return;
+
     if (detailsOpen.value) {
       closeDetails();
     }
@@ -783,6 +786,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   },
   eventClick: (info) => {
     info.jsEvent.preventDefault();
+
+    if (info.el.closest('.fc-day-other')) return;
 
     if (createOpen.value) {
       closeCreate();
@@ -1160,6 +1165,18 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   --fc-border-color: var(--border);
 }
 
+:deep(.fc-shadcn-theme .fc .fc-scrollgrid-section-body > td) {
+  height: 1px;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-daygrid-body) {
+  height: 100%;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-daygrid-body table) {
+  height: 100%;
+}
+
 :deep(.fc-shadcn-theme .fc-theme-standard .fc-scrollgrid),
 :deep(.fc-shadcn-theme .fc-theme-standard td),
 :deep(.fc-shadcn-theme .fc-theme-standard th),
@@ -1337,6 +1354,15 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 
 :deep(.fc-shadcn-theme .fc .fc-day-other .fc-daygrid-day-number) {
   color: var(--muted-foreground);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-day-other .fc-event) {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-day-other) {
+  cursor: default;
 }
 
 :deep(.fc-shadcn-theme .fc .fc-list-empty) {
