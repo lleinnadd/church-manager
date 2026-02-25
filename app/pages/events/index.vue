@@ -98,6 +98,13 @@ const createSide = ref<'left' | 'right'>('right');
 const createInitialDate = ref<string | undefined>();
 const createLoading = ref(false);
 
+const PLACEHOLDER_EVENT_ID = '__create_placeholder__';
+const createPreview = ref<{ title: string; eventType: string; sameTimeStart: string | null }>({
+  title: '',
+  eventType: 'SINGLE_DAY',
+  sameTimeStart: null,
+});
+
 const createInitialData = computed<EventFormData | undefined>(() =>
   createInitialDate.value ? ({ startsOn: createInitialDate.value } as EventFormData) : undefined,
 );
@@ -121,10 +128,65 @@ function closeDetails() {
   selectedSeries.value = null;
 }
 
+function removePlaceholderEvent() {
+  const api = calendarRef.value?.getApi();
+  if (!api) return;
+  const existing = api.getEventById(PLACEHOLDER_EVENT_ID);
+  if (existing) existing.remove();
+}
+
+function addPlaceholderEvent(dateStr: string) {
+  const api = calendarRef.value?.getApi();
+  if (!api) return;
+  removePlaceholderEvent();
+
+  const preview = createPreview.value;
+  const title = preview.title || t('pages.events.new');
+  const eventType = preview.eventType || 'SINGLE_DAY';
+  const time = preview.sameTimeStart;
+  const hasTime = !!time;
+  const start = hasTime ? `${dateStr}T${time}:00` : `${dateStr}T00:00:00`;
+  const hasTitle = !!preview.title;
+  const classNames = ['fc-placeholder-event'];
+  if (!hasTime) classNames.push('fc-placeholder-no-time');
+  if (hasTitle) classNames.push('fc-placeholder-has-title');
+  if (hasTime) classNames.push('fc-placeholder-has-time');
+
+  api.addEvent({
+    id: PLACEHOLDER_EVENT_ID,
+    title,
+    start,
+    allDay: false,
+    editable: false,
+    classNames,
+    extendedProps: { eventType },
+  });
+}
+
+function updatePlaceholderEvent(preview: {
+  title: string;
+  eventType: string;
+  sameTimeStart: string | null;
+}) {
+  createPreview.value = preview;
+  if (!createOpen.value || !createInitialDate.value) return;
+  addPlaceholderEvent(createInitialDate.value);
+}
+
 function closeCreate() {
   createOpen.value = false;
   createInitialDate.value = undefined;
+  createPreview.value = { title: '', eventType: 'SINGLE_DAY', sameTimeStart: null };
+  removePlaceholderEvent();
 }
+
+watch(createOpen, (open) => {
+  if (!open) {
+    createInitialDate.value = undefined;
+    createPreview.value = { title: '', eventType: 'SINGLE_DAY', sameTimeStart: null };
+    removePlaceholderEvent();
+  }
+});
 
 async function handleCreateSubmit(data: EventFormPayload) {
   createLoading.value = true;
@@ -696,6 +758,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       closeDetails();
     }
 
+    addPlaceholderEvent(arg.dateStr);
+
     const placement = resolveDetailsPlacement({
       clientX: arg.jsEvent.clientX,
       clientY: arg.jsEvent.clientY,
@@ -839,7 +903,17 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       <div class="space-y-2 border-b px-4 py-3">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0 space-y-1">
-            <div class="line-clamp-2 text-lg font-semibold leading-tight">
+            <div
+              class="line-clamp-2 text-lg font-semibold leading-tight flex flex-row items-center gap-2"
+            >
+              <span
+                class="size-2.5 block rounded"
+                :style="{
+                  backgroundColor: getEventTypeStyles(
+                    selectedSeries?.eventType || selectedOccurrence?.eventType || 'SINGLE_DAY',
+                  ).dot,
+                }"
+              />
               {{ selectedOccurrence?.title || '-' }}
             </div>
             <p class="text-muted-foreground text-xs">
@@ -1046,6 +1120,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
           :loading="createLoading"
           :hide-back-button="true"
           @submit="handleCreateSubmit"
+          @preview="updatePlaceholderEvent"
         />
       </div>
     </PopoverContent>
@@ -1407,6 +1482,28 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 
 :deep(.fc-shadcn-theme .fc .fc-highlight) {
   background: color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-placeholder-event) {
+  background: var(--muted) !important;
+  border-color: var(--muted) !important;
+  pointer-events: none;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-placeholder-no-time .fc-event-time) {
+  display: none;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-placeholder-event:not(.fc-placeholder-has-title) .fc-event-title) {
+  color: var(--muted-foreground);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-placeholder-has-title .fc-event-title) {
+  color: var(--primary);
+}
+
+:deep(.fc-shadcn-theme .fc .fc-placeholder-has-time .fc-event-time) {
+  color: var(--primary);
 }
 
 :deep(.fc-shadcn-theme .fc .fc-timegrid-now-indicator-line) {

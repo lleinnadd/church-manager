@@ -14,6 +14,7 @@ const { locale } = useI18n();
 
 const emit = defineEmits<{
   submit: [data: EventFormPayload];
+  preview: [data: { title: string; eventType: string; sameTimeStart: string | null }];
 }>();
 
 const model = useEventFormModel(toRef(props, 'initialData'));
@@ -96,6 +97,18 @@ function formatDateDisplay(value: DateValue | undefined): string {
 const onSubmit = handleSubmit((formValues) => {
   emit('submit', toPayload(formValues));
 });
+
+watch(
+  () => ({ title: values.title, eventType: values.eventType, sameTimeStart: values.sameTimeStart }),
+  (val) => {
+    emit('preview', {
+      title: val.title || '',
+      eventType: val.eventType || 'SINGLE_DAY',
+      sameTimeStart: val.sameTimeStart || null,
+    });
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
