@@ -653,13 +653,8 @@ function getEventTypeStyles(eventType: string) {
   };
 }
 
-function buildDayHeaderLabel(date: Date) {
-  return new Intl.DateTimeFormat(locale.value, {
-    weekday: 'short',
-    timeZone: timezone.value,
-  })
-    .format(date)
-    .toUpperCase();
+function buildDayHeaderLabel(label: string) {
+  return label.toUpperCase();
 }
 
 const calendarOptions = computed<CalendarOptions>(() => ({
@@ -679,7 +674,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     hour12: false,
   },
   timeZone: 'local',
-  dayHeaderContent: (arg) => buildDayHeaderLabel(arg.date),
+  dayHeaderContent: (arg) => buildDayHeaderLabel(arg.text),
   headerToolbar: {
     left: 'prev,next today',
     center: 'title',

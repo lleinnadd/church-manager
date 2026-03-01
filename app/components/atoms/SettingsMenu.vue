@@ -2,6 +2,7 @@
 import { Laptop, Moon, Settings, Sun } from 'lucide-vue-next';
 import { useColorMode } from '@/composables/useColorMode';
 import { useTimezone } from '@/composables/useTimezone';
+import { formatCurrentTimeForTimeZone, formatTimeZoneOffsetCompact } from '@/lib/timezone';
 
 const { t } = useI18n();
 const { $i18n } = useNuxtApp();
@@ -9,6 +10,23 @@ const { mode } = useColorMode();
 const { timezone, deviceTimezone, options: timezones } = useTimezone();
 
 const currentLocale = computed(() => $i18n.locale.value);
+const now = ref(new Date());
+
+let timePreviewInterval: ReturnType<typeof setInterval> | undefined;
+
+onMounted(() => {
+  timePreviewInterval = setInterval(() => {
+    now.value = new Date();
+  }, 60_000);
+});
+
+onBeforeUnmount(() => {
+  if (!timePreviewInterval) {
+    return;
+  }
+
+  clearInterval(timePreviewInterval);
+});
 
 type LocaleOption = string | { code: string; name: string };
 
@@ -18,6 +36,14 @@ const availableLocales = computed(() => {
     typeof locale === 'string' ? { code: locale, name: locale } : locale,
   );
 });
+
+const timezoneItems = computed(() =>
+  timezones.value.map((item) => ({
+    value: item,
+    offsetLabel: formatTimeZoneOffsetCompact(item, now.value),
+    currentTimeLabel: formatCurrentTimeForTimeZone(item, currentLocale.value, now.value),
+  })),
+);
 
 async function switchLocale(value: unknown) {
   if (typeof value !== 'string') return;
@@ -79,11 +105,26 @@ function switchTimezone(value: unknown) {
             <SelectValue :placeholder="t('common.timezonePlaceholder')" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem v-for="item in timezones" :key="item" :value="item">
-              <span>{{ item }}</span>
-              <span v-if="item === deviceTimezone" class="ml-2 text-muted-foreground">
-                ({{ t('common.deviceDefault') }})
+            <SelectItem
+              v-for="item in timezoneItems"
+              :key="item.value"
+              :value="item.value"
+              :text-value="item.value"
+            >
+              <span class="flex min-w-0 items-center gap-2">
+                <span class="truncate">{{ item.value }}</span>
+                <span class="shrink-0 text-xs text-muted-foreground">
+                  ({{ item.offsetLabel }}) · {{ item.currentTimeLabel }}
+                </span>
               </span>
+              <template #meta>
+                <span
+                  v-if="item.value === deviceTimezone"
+                  class="ml-2 text-xs text-muted-foreground"
+                >
+                  ({{ t('common.deviceDefault') }})
+                </span>
+              </template>
             </SelectItem>
           </SelectContent>
         </Select>

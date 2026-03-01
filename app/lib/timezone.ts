@@ -9,6 +9,71 @@ const DEFAULT_TIMEZONE_OPTIONS = [
   'UTC',
 ];
 
+function parseOffsetToMinutes(value: string): number | null {
+  if (value === 'GMT' || value === 'UTC') {
+    return 0;
+  }
+
+  const match = value.match(/^(?:GMT|UTC)([+-])(\d{1,2})(?::?(\d{2}))?$/);
+  if (!match) {
+    return null;
+  }
+
+  const sign = match[1] === '-' ? -1 : 1;
+  const hours = Number(match[2]);
+  const minutes = Number(match[3] ?? '0');
+  return sign * (hours * 60 + minutes);
+}
+
+export function getTimeZoneOffsetMinutes(timeZone: string, date: Date = new Date()): number {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      timeZoneName: 'shortOffset',
+    });
+
+    const offsetPart = formatter.formatToParts(date).find((part) => part.type === 'timeZoneName');
+    const parsed = offsetPart ? parseOffsetToMinutes(offsetPart.value) : null;
+    if (parsed !== null) {
+      return parsed;
+    }
+  } catch {
+    return 0;
+  }
+
+  return 0;
+}
+
+export function formatTimeZoneOffsetCompact(timeZone: string, date: Date = new Date()): string {
+  const minutes = getTimeZoneOffsetMinutes(timeZone, date);
+  const sign = minutes < 0 ? '-' : '+';
+  const absoluteMinutes = Math.abs(minutes);
+  const hours = Math.floor(absoluteMinutes / 60);
+  const remainderMinutes = absoluteMinutes % 60;
+
+  if (remainderMinutes === 0) {
+    return `${sign}${hours}`;
+  }
+
+  return `${sign}${hours}:${String(remainderMinutes).padStart(2, '0')}`;
+}
+
+export function formatCurrentTimeForTimeZone(
+  timeZone: string,
+  locale: string,
+  date: Date = new Date(),
+): string {
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  } catch {
+    return '--:--';
+  }
+}
+
 function hasValidIntlTimeZone(value: string): boolean {
   try {
     Intl.DateTimeFormat(undefined, { timeZone: value });
@@ -49,5 +114,12 @@ export function listTimeZoneOptions(): string[] {
   })();
 
   const merged = [...DEFAULT_TIMEZONE_OPTIONS, resolveDeviceTimeZone(), ...dynamic];
-  return Array.from(new Set(merged)).sort((left, right) => left.localeCompare(right));
+  return Array.from(new Set(merged)).sort((left, right) => {
+    const offsetDifference = getTimeZoneOffsetMinutes(left) - getTimeZoneOffsetMinutes(right);
+    if (offsetDifference !== 0) {
+      return offsetDifference;
+    }
+
+    return left.localeCompare(right);
+  });
 }
