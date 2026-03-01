@@ -4,9 +4,9 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import enLocale from '@fullcalendar/core/locales/en-gb';
-import type { CalendarOptions, EventChangeArg, EventInput } from '@fullcalendar/core';
+import type { CalendarOptions, EventInput } from '@fullcalendar/core';
 import type { DateClickArg } from '@fullcalendar/interaction';
-import { Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-vue-next';
+import { CalendarMinus, CalendarX2, Pencil, Plus, Trash2, X } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
 import { EventSeriesType } from '@prisma/client';
 import type { EventFormData, EventFormPayload } from '@/types/forms';
@@ -80,8 +80,7 @@ const { t, locale } = useI18n();
 
 const loading = ref(false);
 const calendarRef = ref<InstanceType<typeof FullCalendar> | null>(null);
-const editScopeDialogOpen = ref(false);
-const pendingEventChange = shallowRef<EventChangeArg | null>(null);
+
 const detailsOpen = ref(false);
 const detailsLoading = ref(false);
 const actionLoading = ref(false);
@@ -111,8 +110,6 @@ const createInitialData = computed<EventFormData | undefined>(() =>
 
 const POPOVER_VIEWPORT_MARGIN = 12;
 const POPOVER_ESTIMATED_WIDTH = 416;
-
-let resolveEditScope: ((scope: 'series' | 'occurrence') => void) | null = null;
 
 function getCalendarLocale() {
   return locale.value === 'pt-BR' ? ptBrLocale : enLocale;
@@ -387,10 +384,7 @@ const canEndRecurrence = computed(() => {
   if (!series || !occurrence) return false;
   if (series.eventType !== EventSeriesType.MONTHLY_RECURRING) return false;
 
-  if (!series.endsOn) return true;
-
-  const endsOnDate = toDateOnly(series.endsOn);
-  return endsOnDate > occurrence.occurrenceDate;
+  return !series.endsOn;
 });
 
 const canDeleteOccurrence = computed(() => {
@@ -399,11 +393,7 @@ const canDeleteOccurrence = computed(() => {
   if (!occurrence) return false;
   if (!series) return true;
 
-  if (series.eventType !== EventSeriesType.MONTHLY_RECURRING) return true;
-  if (!series.endsOn) return true;
-
-  const endsOnDate = toDateOnly(series.endsOn);
-  return endsOnDate > occurrence.occurrenceDate;
+  return series.eventType === EventSeriesType.MONTHLY_RECURRING;
 });
 
 const confirmTitle = computed(() => {
@@ -607,72 +597,6 @@ async function loadCalendarEvents(
   }
 }
 
-async function updateOccurrence(change: EventChangeArg) {
-  const startAt = change.event.start;
-  const endAt = change.event.end;
-  const props = change.event.extendedProps as CalendarExtendedProps;
-  const seriesId = String(props.seriesId || '');
-  const originalOccurrenceDate = toDateOnly(String(props.occurrenceDate || ''));
-
-  if (!startAt || !endAt || !seriesId || !originalOccurrenceDate) {
-    change.revert();
-    return;
-  }
-
-  loading.value = true;
-  try {
-    await $fetch(`/api/events/occurrences/${change.event.id}`, {
-      method: 'PUT',
-      body: {
-        seriesId,
-        originalOccurrenceDate,
-        startAt: startAt.toISOString(),
-        endAt: endAt.toISOString(),
-      },
-    });
-    toast.success(t('pages.events.occurrenceUpdateSuccess'));
-    refetchCalendarEvents();
-  } catch {
-    change.revert();
-    toast.error(t('pages.events.occurrenceUpdateError'));
-  } finally {
-    loading.value = false;
-  }
-}
-
-function askEditScope(): Promise<'series' | 'occurrence'> {
-  editScopeDialogOpen.value = true;
-  return new Promise((resolve) => {
-    resolveEditScope = resolve;
-  });
-}
-
-function handleEditScopeChoice(scope: 'series' | 'occurrence') {
-  editScopeDialogOpen.value = false;
-  const resolve = resolveEditScope;
-  resolveEditScope = null;
-  if (resolve) resolve(scope);
-}
-
-async function handleEventChange(change: EventChangeArg) {
-  pendingEventChange.value = change;
-  const scope = await askEditScope();
-  const pendingChange = pendingEventChange.value;
-  pendingEventChange.value = null;
-
-  if (!pendingChange) return;
-
-  const seriesId = String(pendingChange.event.extendedProps.seriesId || '');
-
-  if (scope === 'series') {
-    pendingChange.revert();
-    await navigateTo(`/events/${seriesId}/edit`);
-    return;
-  }
-
-  await updateOccurrence(pendingChange);
-}
-
 function getEventTypeStyles(eventType: string) {
   if (eventType === 'MONTHLY_RECURRING') {
     return {
@@ -715,7 +639,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   locales: [ptBrLocale, enLocale],
   height: '100%',
   dayMaxEvents: true,
-  editable: true,
+  editable: false,
   eventDisplay: 'auto',
   eventTimeFormat: {
     hour: '2-digit',
@@ -724,8 +648,6 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     hour12: false,
   },
   dayHeaderContent: (arg) => buildDayHeaderLabel(arg.date),
-  eventStartEditable: true,
-  eventDurationEditable: true,
   headerToolbar: {
     left: 'prev,next today',
     center: 'title',
@@ -777,12 +699,6 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     if (detailsOpen.value) {
       closeDetails();
     }
-  },
-  eventChange: (arg) => {
-    handleEventChange(arg).catch(() => {
-      arg.revert();
-      toast.error(t('pages.events.occurrenceUpdateError'));
-    });
   },
   eventClick: (info) => {
     info.jsEvent.preventDefault();
@@ -956,7 +872,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
                     :aria-label="$t('pages.events.deleteOccurrenceLabel')"
                     @click="openActionConfirmation('delete-occurrence')"
                   >
-                    <Trash2 class="size-4" />
+                    <CalendarMinus class="size-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
@@ -975,7 +891,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
                     :aria-label="$t('pages.events.endRecurrenceLabel')"
                     @click="openActionConfirmation('end-recurrence')"
                   >
-                    <RotateCcw class="size-4" />
+                    <CalendarX2 class="size-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
@@ -1132,16 +1048,6 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   </Popover>
 
   <ConfirmDialog
-    :open="editScopeDialogOpen"
-    :title="$t('pages.events.editScopeTitle')"
-    :description="$t('pages.events.applySeriesQuestion')"
-    :confirm-label="$t('pages.events.applySeriesLabel')"
-    :cancel-label="$t('pages.events.applyOccurrenceLabel')"
-    @confirm="handleEditScopeChoice('series')"
-    @cancel="handleEditScopeChoice('occurrence')"
-  />
-
-  <ConfirmDialog
     :open="confirmDialogOpen"
     :title="confirmTitle"
     :description="confirmDescription"
@@ -1163,6 +1069,10 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   color: var(--foreground);
   font-size: 0.875rem;
   --fc-border-color: var(--border);
+}
+
+:deep(.fc-shadcn-theme .fc-event) {
+  cursor: pointer;
 }
 
 :deep(.fc-shadcn-theme .fc .fc-scrollgrid-section-body > td) {
