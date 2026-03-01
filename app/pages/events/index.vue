@@ -679,6 +679,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   dateClick: (arg: DateClickArg) => {
     if (arg.dayEl.closest('.fc-day-other')) return;
 
+    if (createOpen.value) return;
+
     if (detailsOpen.value) {
       closeDetails();
     }
@@ -803,6 +805,10 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     </div>
   </div>
 
+  <Teleport to="body">
+    <div v-if="detailsOpen" class="fixed inset-0 z-40" @click="closeDetails" />
+  </Teleport>
+
   <Popover v-model:open="detailsOpen">
     <PopoverAnchor as-child>
       <span
@@ -820,6 +826,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       :collision-padding="12"
       class="w-104 max-w-[calc(100vw-1rem)] p-0"
       @open-auto-focus.prevent
+      @interact-outside.prevent
     >
       <div class="space-y-2 border-b px-4 py-3">
         <div class="flex items-start justify-between gap-3">
@@ -993,6 +1000,10 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     </PopoverContent>
   </Popover>
 
+  <Teleport to="body">
+    <div v-if="createOpen" class="fixed inset-0 z-40" @click="closeCreate" />
+  </Teleport>
+
   <Popover v-model:open="createOpen">
     <PopoverAnchor as-child>
       <span
@@ -1010,6 +1021,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       :collision-padding="12"
       class="w-140 max-w-[calc(100vw-1rem)] max-h-[calc(100vh-2rem)] overflow-y-auto p-0"
       @open-auto-focus.prevent
+      @interact-outside.prevent
     >
       <div class="space-y-1 border-b px-4 py-3">
         <div class="flex items-start justify-between gap-3">
