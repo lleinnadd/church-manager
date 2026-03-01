@@ -164,6 +164,15 @@
       "monthlyRecurring": "Monthly recurring",
       "notRecurring": "Not recurring",
       "noEndDate": "no end date",
+      "weekdaysShort": {
+        "sun": "SUN",
+        "mon": "MON",
+        "tue": "TUE",
+        "wed": "WED",
+        "thu": "THU",
+        "fri": "FRI",
+        "sat": "SAT"
+      },
       "monthView": "Month",
       "agendaView": "Agenda",
       "applySeriesQuestion": "Choose how to apply this change.",

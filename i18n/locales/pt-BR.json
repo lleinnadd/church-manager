@@ -164,6 +164,15 @@
       "monthlyRecurring": "Recorrente mensal",
       "notRecurring": "Não recorrente",
       "noEndDate": "sem data final",
+      "weekdaysShort": {
+        "sun": "DOM",
+        "mon": "SEG",
+        "tue": "TER",
+        "wed": "QUA",
+        "thu": "QUI",
+        "fri": "SEX",
+        "sat": "SÁB"
+      },
       "monthView": "Mês",
       "agendaView": "Agenda",
       "applySeriesQuestion": "Escolha como deseja aplicar esta alteração.",

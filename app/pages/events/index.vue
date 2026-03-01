@@ -653,8 +653,10 @@ function getEventTypeStyles(eventType: string) {
   };
 }
 
-function buildDayHeaderLabel(label: string) {
-  return label.toUpperCase();
+function buildDayHeaderLabel(date: Date) {
+  const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+  const dayKey = dayKeys[date.getUTCDay()];
+  return t(`pages.events.weekdaysShort.${dayKey}`);
 }
 
 const calendarOptions = computed<CalendarOptions>(() => ({
@@ -674,7 +676,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     hour12: false,
   },
   timeZone: 'local',
-  dayHeaderContent: (arg) => buildDayHeaderLabel(arg.text),
+  dayHeaderContent: (arg) => buildDayHeaderLabel(arg.date),
   headerToolbar: {
     left: 'prev,next today',
     center: 'title',
