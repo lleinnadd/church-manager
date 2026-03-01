@@ -1,18 +1,7 @@
 import { CongregationType } from '@prisma/client';
-import { z } from 'zod';
+import { createCongregationSchema } from '#shared/validation/congregation';
 
-const allowedTypes = Object.values(CongregationType);
-const congregationSchema = z.object({
-  name: z.string().min(1),
-  type: z.string().optional(),
-  since: z.string().optional().nullable(),
-  zipCode: z.string().optional().nullable(),
-  addressLinePrimary: z.string().optional().nullable(),
-  addressLineSecondary: z.string().optional().nullable(),
-  district: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-  state: z.string().optional().nullable(),
-});
+const congregationSchema = createCongregationSchema();
 
 export default defineEventHandler(async (event) => {
   const parsed = congregationSchema.safeParse(await readBody(event));
@@ -21,10 +10,7 @@ export default defineEventHandler(async (event) => {
   }
   const body = parsed.data;
 
-  const type =
-    body.type && allowedTypes.includes(body.type as CongregationType)
-      ? (body.type as CongregationType)
-      : CongregationType.HEADQUARTERS;
+  const type = body.type ?? CongregationType.HEADQUARTERS;
 
   const congregation = await prisma.congregation.create({
     data: {

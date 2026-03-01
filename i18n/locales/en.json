@@ -25,9 +25,17 @@
     "delete": "Delete",
     "actions": "Actions",
     "remove": "Remove",
+    "more": "More",
+    "breadcrumb": "Breadcrumb",
+    "toggleSidebar": "Toggle sidebar",
+    "scrollLeft": "Scroll left",
+    "scrollRight": "Scroll right",
     "settings": "Settings",
     "theme": "Theme",
     "language": "Language",
+    "timezone": "Time zone",
+    "timezonePlaceholder": "Select a time zone",
+    "deviceDefault": "device default",
     "light": "Light",
     "dark": "Dark",
     "system": "System",
@@ -280,7 +288,9 @@
       "functionDescriptionPlaceholder": "Optional function description",
       "functionScope": "Function scope",
       "functionScopePlaceholder": "Select a scope",
-      "addFunction": "Add function"
+      "addFunction": "Add function",
+      "moveUp": "Move up",
+      "moveDown": "Move down"
     },
     "event": {
       "generalInfo": "Event Information",
@@ -299,6 +309,22 @@
       "typeSingle": "Single day",
       "typeMultiDay": "Multiple days",
       "typeMonthly": "Monthly recurring",
+      "weekdayOptions": {
+        "sunday": "Sunday",
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday"
+      },
+      "ordinalOptions": {
+        "firstWeek": "1st week",
+        "secondWeek": "2nd week",
+        "thirdWeek": "3rd week",
+        "fourthWeek": "4th week",
+        "lastWeek": "Last week"
+      },
       "startsOn": "Start date",
       "hasEndDate": "Has end date",
       "endsOn": "End date",

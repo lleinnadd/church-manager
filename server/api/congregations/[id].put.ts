@@ -1,17 +1,7 @@
 import { CongregationType } from '@prisma/client';
-import { z } from 'zod';
+import { createCongregationSchema } from '#shared/validation/congregation';
 
-const congregationSchema = z.object({
-  name: z.string().min(1),
-  type: z.nativeEnum(CongregationType).optional(),
-  since: z.string().optional().nullable(),
-  zipCode: z.string().optional().nullable(),
-  addressLinePrimary: z.string().optional().nullable(),
-  addressLineSecondary: z.string().optional().nullable(),
-  district: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-  state: z.string().optional().nullable(),
-});
+const congregationSchema = createCongregationSchema();
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');

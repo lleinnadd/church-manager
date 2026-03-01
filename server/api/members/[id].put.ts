@@ -1,34 +1,8 @@
-import { DepartmentScope, MemberStatus, MaritalStatus } from '@prisma/client';
-import { z } from 'zod';
+import { MemberStatus } from '@prisma/client';
+import { createMemberSchema } from '#shared/validation/member';
+import { resolveMemberDepartmentsInput } from '../../utils/member-departments';
 
-const departmentSchema = z.object({
-  departmentId: z.string().min(1),
-  scope: z.nativeEnum(DepartmentScope).optional().nullable(),
-  functionId: z.string().optional().nullable(),
-  congregationId: z.string().optional().nullable(),
-});
-
-const memberSchema = z.object({
-  name: z.string().min(1),
-  congregationId: z.string().min(1),
-  status: z.nativeEnum(MemberStatus),
-  dateOfBirth: z.string().min(1),
-  memberSince: z.string().min(1),
-  convertionDate: z.string().min(1),
-  ssn: z.string().min(1),
-  nationalId: z.string().min(1),
-  maritalStatus: z.nativeEnum(MaritalStatus),
-  addressLinePrimary: z.string().min(1),
-  district: z.string().min(1),
-  motherName: z.string().min(1),
-  fatherName: z.string().min(1),
-  naturality: z.string().min(1),
-  nationality: z.string().min(1),
-  phonePrimary: z.string().min(1),
-  phoneSecondary: z.string().min(1),
-  observations: z.string().min(1),
-  departments: z.array(departmentSchema).optional().default([]),
-});
+const memberSchema = createMemberSchema();
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
@@ -47,70 +21,11 @@ export default defineEventHandler(async (event) => {
 
   const status = isClerkManaged ? MemberStatus.ACTIVE : body.status;
 
-  const rawDepartments = body.departments;
-
-  const departmentIds = rawDepartments.map((d) => d.departmentId).filter(Boolean);
-  const departments = await prisma.department.findMany({
-    where: { id: { in: departmentIds } },
-    select: { id: true, hasScopeDivision: true },
-  });
-  const departmentById = new Map(departments.map((d) => [d.id, d.hasScopeDivision]));
-
-  const departmentsInput = rawDepartments.map((d) => {
-    if (!departmentById.has(d.departmentId)) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid departmentId' });
-    }
-
-    const hasScopeDivision = departmentById.get(d.departmentId) ?? true;
-    const scope = hasScopeDivision ? (d.scope ?? null) : null;
-
-    if (hasScopeDivision && !scope) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'scope is required for this department',
-      });
-    }
-
-    const congregationId =
-      hasScopeDivision && scope === DepartmentScope.LOCAL
-        ? d.congregationId || body.congregationId
-        : null;
-
-    if (hasScopeDivision && scope === DepartmentScope.LOCAL && !congregationId) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'congregationId is required for local scope',
-      });
-    }
-
-    return {
-      departmentId: d.departmentId,
-      scope,
-      functionId: d.functionId || null,
-      congregationId,
-    };
-  });
-
-  const functionIds = departmentsInput.map((d) => d.functionId).filter(Boolean) as string[];
-  if (functionIds.length) {
-    const functions = await prisma.departmentFunction.findMany({
-      where: { id: { in: functionIds } },
-      select: { id: true, departmentId: true },
-    });
-    if (functions.length !== functionIds.length) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid functionId' });
-    }
-    const fnById = new Map(functions.map((f) => [f.id, f.departmentId]));
-    const mismatch = departmentsInput.find(
-      (d) => d.functionId && fnById.get(d.functionId) !== d.departmentId,
-    );
-    if (mismatch) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Function does not belong to department',
-      });
-    }
-  }
+  const departmentsInput = await resolveMemberDepartmentsInput(
+    prisma,
+    body.departments,
+    body.congregationId,
+  );
 
   const member = await prisma.member.update({
     where: { id },

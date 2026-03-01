@@ -10,7 +10,7 @@ const props = defineProps<{
   hideBackButton?: boolean;
 }>();
 
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 
 const emit = defineEmits<{
   submit: [data: EventFormPayload];
@@ -44,21 +44,21 @@ const errorList = computed(() => {
 });
 
 const weekdayOptions = computed(() => [
-  { label: 'Domingo', value: 0 },
-  { label: 'Segunda-feira', value: 1 },
-  { label: 'Terça-feira', value: 2 },
-  { label: 'Quarta-feira', value: 3 },
-  { label: 'Quinta-feira', value: 4 },
-  { label: 'Sexta-feira', value: 5 },
-  { label: 'Sábado', value: 6 },
+  { label: t('form.event.weekdayOptions.sunday'), value: 0 },
+  { label: t('form.event.weekdayOptions.monday'), value: 1 },
+  { label: t('form.event.weekdayOptions.tuesday'), value: 2 },
+  { label: t('form.event.weekdayOptions.wednesday'), value: 3 },
+  { label: t('form.event.weekdayOptions.thursday'), value: 4 },
+  { label: t('form.event.weekdayOptions.friday'), value: 5 },
+  { label: t('form.event.weekdayOptions.saturday'), value: 6 },
 ]);
 
 const ordinalOptions = computed(() => [
-  { label: '1ª semana', value: 1 },
-  { label: '2ª semana', value: 2 },
-  { label: '3ª semana', value: 3 },
-  { label: '4ª semana', value: 4 },
-  { label: 'Última semana', value: -1 },
+  { label: t('form.event.ordinalOptions.firstWeek'), value: 1 },
+  { label: t('form.event.ordinalOptions.secondWeek'), value: 2 },
+  { label: t('form.event.ordinalOptions.thirdWeek'), value: 3 },
+  { label: t('form.event.ordinalOptions.fourthWeek'), value: 4 },
+  { label: t('form.event.ordinalOptions.lastWeek'), value: -1 },
 ]);
 
 const isMonthly = computed(() => values.eventType === EventSeriesType.MONTHLY_RECURRING);

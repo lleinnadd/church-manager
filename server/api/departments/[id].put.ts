@@ -1,5 +1,10 @@
 import { DepartmentFunctionScope } from '@prisma/client';
 import { z } from 'zod';
+import {
+  type NormalizedDepartmentFunction,
+  normalizeDepartmentFunctions,
+  normalizeDepartmentLocalNames,
+} from '../../utils/departments';
 
 const departmentSchema = z.object({
   name: z.string().min(1),
@@ -48,45 +53,26 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Department not found' });
   }
 
-  const localNames = body.localNames
-    .filter((entry) => entry.congregationId && entry.name.trim())
-    .map((entry) => ({
-      congregationId: entry.congregationId,
-      name: entry.name.trim(),
-    }));
-
-  const localNamesByCongregation = new Map<string, string>();
-  localNames.forEach((entry) => {
-    localNamesByCongregation.set(entry.congregationId, entry.name);
-  });
-  const normalizedLocalNames = Array.from(localNamesByCongregation, ([congregationId, name]) => ({
-    congregationId,
-    name,
-  }));
+  const normalizedLocalNames = normalizeDepartmentLocalNames(body.localNames);
 
   const hasScopeDivision = body.hasScopeDivision !== false;
   const shouldClearScopes = existingDepartment.hasScopeDivision && !hasScopeDivision;
 
-  const functions = body.functions
-    .filter((fn) => fn.name.trim())
-    .map((fn, index) => ({
-      id: fn.id,
-      name: fn.name.trim(),
-      description: fn.description?.trim() || null,
-      scope: hasScopeDivision ? (fn.scope ?? DepartmentFunctionScope.BOTH) : null,
-      sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
-    }));
+  const functions = normalizeDepartmentFunctions(body.functions, hasScopeDivision);
 
   const existingFunctions = await prisma.departmentFunction.findMany({
     where: { departmentId: id },
   });
 
-  const incomingIds = functions.filter((fn) => fn.id).map((fn) => fn.id!);
+  const updates = functions.filter((fn): fn is NormalizedDepartmentFunction & { id: string } =>
+    Boolean(fn.id),
+  );
+
+  const incomingIds = updates.map((fn) => fn.id);
   const toDeleteIds = existingFunctions
     .filter((fn) => !incomingIds.includes(fn.id))
     .map((fn) => fn.id);
 
-  const updates = functions.filter((fn) => fn.id);
   const creations = functions
     .filter((fn) => !fn.id)
     .map(({ name, description, scope, sortOrder }) => ({

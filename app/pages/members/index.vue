@@ -214,7 +214,7 @@ async function handleDelete() {
                 variant="ghost"
                 size="icon-sm"
                 class="absolute left-0 top-1/2 z-10 h-5.5 w-5.5 -translate-y-1/2 -translate-x-1 rounded-full border bg-background/70 p-0 shadow-sm opacity-0 transition-all duration-200 pointer-events-none hover:bg-background/90 group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-x-0"
-                aria-label="Scroll left"
+                :aria-label="$t('common.scrollLeft')"
                 @click="scrollDepartments(member.id, 'left')"
               >
                 <ChevronLeft class="size-3" />
@@ -245,7 +245,7 @@ async function handleDelete() {
                 variant="ghost"
                 size="icon-sm"
                 class="absolute right-0 top-1/2 z-10 h-5.5 w-5.5 -translate-y-1/2 translate-x-1 rounded-full border bg-background/70 p-0 shadow-sm opacity-0 transition-all duration-200 pointer-events-none hover:bg-background/90 group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-x-0"
-                aria-label="Scroll right"
+                :aria-label="$t('common.scrollRight')"
                 @click="scrollDepartments(member.id, 'right')"
               >
                 <ChevronRight class="size-3" />

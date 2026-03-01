@@ -262,7 +262,7 @@ const onSubmit = handleSubmit((formValues) => {
                 variant="ghost"
                 size="icon"
                 :disabled="index === 0"
-                aria-label="Mover acima"
+                :aria-label="$t('form.department.moveUp')"
                 @click="moveFunction(index, 'up')"
               >
                 <ArrowUp class="size-4" />
@@ -272,7 +272,7 @@ const onSubmit = handleSubmit((formValues) => {
                 variant="ghost"
                 size="icon"
                 :disabled="index === functions.length - 1"
-                aria-label="Mover abaixo"
+                :aria-label="$t('form.department.moveDown')"
                 @click="moveFunction(index, 'down')"
               >
                 <ArrowDown class="size-4" />

@@ -1,9 +1,7 @@
-import { EventSeriesType } from '@prisma/client';
 import {
   eventSeriesSchema,
-  parseDateOnlyToUtc,
-  parseTimeToMinutes,
-  resolveEndMinutesFromStart,
+  mapEventSeriesDaySchedules,
+  resolveEventSeriesBaseData,
 } from '../../utils/events';
 
 export default defineEventHandler(async (event) => {
@@ -19,6 +17,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = parsed.data;
+  const baseData = resolveEventSeriesBaseData(body);
+  const daySchedulesData = mapEventSeriesDaySchedules(body.daySchedules);
 
   const existing = await prisma.eventSeries.findUnique({ where: { id } });
   if (!existing) {
@@ -37,26 +37,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const startsOn = parseDateOnlyToUtc(body.startsOn);
-  if (body.eventType === EventSeriesType.MULTI_DAY && !body.endsOn) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'endsOn is required for multi-day events',
-    });
-  }
-
-  const endsOn = (() => {
-    if (body.eventType === EventSeriesType.SINGLE_DAY) {
-      return startsOn;
-    }
-
-    if (body.eventType === EventSeriesType.MULTI_DAY) {
-      return parseDateOnlyToUtc(body.endsOn as string);
-    }
-
-    return body.endsOn ? parseDateOnlyToUtc(body.endsOn) : null;
-  })();
-
   const updated = await prisma.$transaction(async (tx) => {
     await tx.eventSeriesDaySchedule.deleteMany({ where: { seriesId: id } });
     await tx.eventOccurrence.deleteMany({ where: { seriesId: id, isException: false } });
@@ -64,32 +44,17 @@ export default defineEventHandler(async (event) => {
     const nextSeries = await tx.eventSeries.update({
       where: { id },
       data: {
-        title: body.title.trim(),
-        description: body.description?.trim() || null,
-        congregationId: body.congregationId,
-        departmentId: body.departmentId || null,
-        timezone: 'America/Sao_Paulo',
-        eventType: body.eventType,
-        startsOn,
-        endsOn,
-        sameTimeStartMinutes: (() => {
-          if (body.eventType === EventSeriesType.MONTHLY_RECURRING) {
-            return body.monthlyRule ? parseTimeToMinutes(body.monthlyRule.startTime) : null;
-          }
-          return body.sameTimeStart ? parseTimeToMinutes(body.sameTimeStart) : null;
-        })(),
-        monthlyWeekday: body.monthlyRule?.weekday ?? null,
-        monthlyOrdinal: body.monthlyRule?.ordinal ?? null,
+        ...baseData,
       },
     });
 
-    if (body.daySchedules?.length) {
+    if (daySchedulesData.length) {
       await tx.eventSeriesDaySchedule.createMany({
-        data: body.daySchedules.map((entry) => ({
+        data: daySchedulesData.map((entry) => ({
           seriesId: id,
-          date: parseDateOnlyToUtc(entry.date),
-          startMinutes: parseTimeToMinutes(entry.startTime),
-          endMinutes: resolveEndMinutesFromStart(parseTimeToMinutes(entry.startTime)),
+          date: entry.date,
+          startMinutes: entry.startMinutes,
+          endMinutes: entry.endMinutes,
         })),
       });
     }

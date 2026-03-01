@@ -1,5 +1,9 @@
 import { DepartmentFunctionScope } from '@prisma/client';
 import { z } from 'zod';
+import {
+  normalizeDepartmentFunctions,
+  normalizeDepartmentLocalNames,
+} from '../../utils/departments';
 
 const departmentSchema = z.object({
   name: z.string().min(1),
@@ -36,30 +40,16 @@ export default defineEventHandler(async (event) => {
 
   const hasScopeDivision = body.hasScopeDivision !== false;
 
-  const functions = body.functions
-    .filter((fn) => fn.name.trim())
-    .map((fn, index) => ({
-      name: fn.name.trim(),
-      description: fn.description?.trim() || null,
-      scope: hasScopeDivision ? (fn.scope ?? DepartmentFunctionScope.BOTH) : null,
-      sortOrder: Number.isFinite(fn.sortOrder) ? Number(fn.sortOrder) : index,
-    }));
+  const functions = normalizeDepartmentFunctions(body.functions, hasScopeDivision).map(
+    ({ name, description, scope, sortOrder }) => ({
+      name,
+      description,
+      scope,
+      sortOrder,
+    }),
+  );
 
-  const localNames = body.localNames
-    .filter((entry) => entry.congregationId && entry.name.trim())
-    .map((entry) => ({
-      congregationId: entry.congregationId,
-      name: entry.name.trim(),
-    }));
-
-  const localNamesByCongregation = new Map<string, string>();
-  localNames.forEach((entry) => {
-    localNamesByCongregation.set(entry.congregationId, entry.name);
-  });
-  const localNamesPayload = Array.from(localNamesByCongregation, ([congregationId, name]) => ({
-    congregationId,
-    name,
-  }));
+  const localNamesPayload = normalizeDepartmentLocalNames(body.localNames);
 
   const department = await prisma.department.create({
     data: {

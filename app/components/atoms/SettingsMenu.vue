@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { Laptop, Moon, Settings, Sun } from 'lucide-vue-next';
 import { useColorMode } from '@/composables/useColorMode';
+import { useTimezone } from '@/composables/useTimezone';
 
 const { t } = useI18n();
 const { $i18n } = useNuxtApp();
 const { mode } = useColorMode();
+const { timezone, deviceTimezone, options: timezones } = useTimezone();
 
 const currentLocale = computed(() => $i18n.locale.value);
 
@@ -20,6 +22,11 @@ const availableLocales = computed(() => {
 async function switchLocale(value: unknown) {
   if (typeof value !== 'string') return;
   await $i18n.setLocale(value as 'en' | 'pt-BR');
+}
+
+function switchTimezone(value: unknown) {
+  if (typeof value !== 'string') return;
+  timezone.value = value;
 }
 </script>
 
@@ -60,6 +67,23 @@ async function switchLocale(value: unknown) {
           <SelectContent>
             <SelectItem v-for="loc in availableLocales" :key="loc.code" :value="loc.code">
               {{ loc.name }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <DropdownMenuSeparator class="my-2" />
+      <div class="grid gap-2">
+        <span class="text-xs font-medium text-muted-foreground">{{ t('common.timezone') }}</span>
+        <Select :model-value="timezone" @update:model-value="switchTimezone">
+          <SelectTrigger size="sm" class="w-full">
+            <SelectValue :placeholder="t('common.timezonePlaceholder')" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="item in timezones" :key="item" :value="item">
+              <span>{{ item }}</span>
+              <span v-if="item === deviceTimezone" class="ml-2 text-muted-foreground">
+                ({{ t('common.deviceDefault') }})
+              </span>
             </SelectItem>
           </SelectContent>
         </Select>

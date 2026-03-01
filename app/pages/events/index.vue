@@ -10,6 +10,7 @@ import { CalendarMinus, CalendarX2, Pencil, Plus, Trash2, X } from 'lucide-vue-n
 import { toast } from 'vue-sonner';
 import { EventSeriesType } from '@prisma/client';
 import type { EventFormData, EventFormPayload } from '@/types/forms';
+import { useTimezone } from '@/composables/useTimezone';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EventOccurrence {
@@ -36,6 +37,8 @@ interface EventOccurrence {
 interface CalendarExtendedProps {
   seriesId?: string;
   occurrenceDate?: string;
+  rawStartAt?: string;
+  rawEndAt?: string;
   description?: string | null;
   congregationName?: string;
   departmentName?: string;
@@ -77,6 +80,7 @@ interface EventSeriesDetails {
 type EventActionType = 'delete-occurrence' | 'delete-series' | 'end-recurrence' | null;
 
 const { t, locale } = useI18n();
+const { timezone } = useTimezone();
 
 const loading = ref(false);
 const calendarRef = ref<InstanceType<typeof FullCalendar> | null>(null);
@@ -185,6 +189,10 @@ watch(createOpen, (open) => {
   }
 });
 
+watch(timezone, () => {
+  refetchCalendarEvents();
+});
+
 async function handleCreateSubmit(data: EventFormPayload) {
   createLoading.value = true;
   try {
@@ -290,10 +298,12 @@ function minutesToTime(value: number | null | undefined) {
 }
 
 function getTimeFromIso(value: string) {
-  const date = new Date(value);
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${hours}:${minutes}`;
+  return new Intl.DateTimeFormat(locale.value, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: timezone.value,
+  }).format(new Date(value));
 }
 
 function formatDateLabel(value?: string | null) {
@@ -309,12 +319,35 @@ function formatDateLabel(value?: string | null) {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
-    timeZone: 'UTC',
+    timeZone: timezone.value,
   });
 }
 
 function formatStartTimeLabel(startAt: string) {
   return getTimeFromIso(startAt);
+}
+
+function toCalendarWallDateTime(value: string) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone.value,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date(value));
+
+  const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const year = map.year || '1970';
+  const month = map.month || '01';
+  const day = map.day || '01';
+  const hour = map.hour || '00';
+  const minute = map.minute || '00';
+  const second = map.second || '00';
+
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
 }
 
 function formatEventTypeLabel(eventType?: string) {
@@ -324,26 +357,20 @@ function formatEventTypeLabel(eventType?: string) {
 }
 
 function formatOrdinalLabel(ordinal: number) {
-  if (locale.value === 'pt-BR') {
-    if (ordinal === -1) return 'Última';
-    if (ordinal === 1) return '1ª';
-    if (ordinal === 2) return '2ª';
-    if (ordinal === 3) return '3ª';
-    if (ordinal === 4) return '4ª';
-    return '-';
-  }
-
-  if (ordinal === -1) return 'Last';
-  if (ordinal === 1) return '1st';
-  if (ordinal === 2) return '2nd';
-  if (ordinal === 3) return '3rd';
-  if (ordinal === 4) return '4th';
+  if (ordinal === -1) return t('form.event.ordinalOptions.lastWeek');
+  if (ordinal === 1) return t('form.event.ordinalOptions.firstWeek');
+  if (ordinal === 2) return t('form.event.ordinalOptions.secondWeek');
+  if (ordinal === 3) return t('form.event.ordinalOptions.thirdWeek');
+  if (ordinal === 4) return t('form.event.ordinalOptions.fourthWeek');
   return '-';
 }
 
 function formatWeekdayLabel(weekday: number) {
   const base = new Date(Date.UTC(2023, 0, 1 + weekday, 12, 0, 0));
-  return new Intl.DateTimeFormat(locale.value, { weekday: 'long', timeZone: 'UTC' }).format(base);
+  return new Intl.DateTimeFormat(locale.value, {
+    weekday: 'long',
+    timeZone: timezone.value,
+  }).format(base);
 }
 
 const recurrenceLabel = computed(() => {
@@ -572,11 +599,13 @@ async function loadCalendarEvents(
     const mapped: EventInput[] = apiEvents.map((item) => ({
       id: item.id,
       title: item.title,
-      start: item.startAt,
-      end: item.endAt,
+      start: toCalendarWallDateTime(item.startAt),
+      end: toCalendarWallDateTime(item.endAt),
       extendedProps: {
         seriesId: item.series?.id || item.seriesId,
         occurrenceDate: item.occurrenceDate,
+        rawStartAt: item.startAt,
+        rawEndAt: item.endAt,
         description: item.description,
         congregationName: item.congregation?.name,
         departmentName: item.department?.name,
@@ -625,10 +654,12 @@ function getEventTypeStyles(eventType: string) {
 }
 
 function buildDayHeaderLabel(date: Date) {
-  const ptBrShort = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
-  const enShort = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-  const weekdayIndex = date.getUTCDay();
-  return locale.value === 'pt-BR' ? ptBrShort[weekdayIndex] : enShort[weekdayIndex];
+  return new Intl.DateTimeFormat(locale.value, {
+    weekday: 'short',
+    timeZone: timezone.value,
+  })
+    .format(date)
+    .toUpperCase();
 }
 
 const calendarOptions = computed<CalendarOptions>(() => ({
@@ -647,6 +678,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     meridiem: false,
     hour12: false,
   },
+  timeZone: 'local',
   dayHeaderContent: (arg) => buildDayHeaderLabel(arg.date),
   headerToolbar: {
     left: 'prev,next today',
@@ -715,7 +747,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     const seriesId = String(props.seriesId || '');
     const occurrenceDate = String(props.occurrenceDate || '');
 
-    if (!seriesId || !occurrenceDate || !info.event.start || !info.event.end) {
+    if (!seriesId || !occurrenceDate || !props.rawStartAt || !props.rawEndAt) {
       toast.error(t('pages.events.loadError'));
       return;
     }
@@ -734,8 +766,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       title: info.event.title,
       description: props.description || null,
       occurrenceDate: toDateOnly(occurrenceDate),
-      startAt: info.event.start.toISOString(),
-      endAt: info.event.end.toISOString(),
+      startAt: props.rawStartAt,
+      endAt: props.rawEndAt,
       congregationName: props.congregationName,
       departmentName: props.departmentName,
       eventType: props.eventType,

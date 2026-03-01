@@ -87,6 +87,20 @@ export const eventSeriesSchema = z
 
 export type EventSeriesInput = z.infer<typeof eventSeriesSchema>;
 
+export interface EventSeriesBaseData {
+  title: string;
+  description: string | null;
+  congregationId: string;
+  departmentId: string | null;
+  timezone: string;
+  eventType: EventSeriesType;
+  startsOn: Date;
+  endsOn: Date | null;
+  sameTimeStartMinutes: number | null;
+  monthlyWeekday: number | null;
+  monthlyOrdinal: number | null;
+}
+
 export interface EventOccurrenceDraft {
   seriesId?: string;
   title: string;
@@ -120,6 +134,64 @@ export interface EventSeriesLike {
 export function parseDateOnlyToUtc(dateString: string): Date {
   const [year = 1970, month = 1, day = 1] = dateString.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+}
+
+export function resolveEventSeriesEndsOn(input: EventSeriesInput, startsOn: Date): Date | null {
+  if (input.eventType === EventSeriesType.SINGLE_DAY) {
+    return startsOn;
+  }
+
+  if (input.eventType === EventSeriesType.MULTI_DAY) {
+    return parseDateOnlyToUtc(input.endsOn as string);
+  }
+
+  return input.endsOn ? parseDateOnlyToUtc(input.endsOn) : null;
+}
+
+export function resolveEventSeriesSameTimeStartMinutes(input: EventSeriesInput): number | null {
+  if (input.eventType === EventSeriesType.MONTHLY_RECURRING) {
+    return input.monthlyRule ? parseTimeToMinutes(input.monthlyRule.startTime) : null;
+  }
+
+  return input.sameTimeStart ? parseTimeToMinutes(input.sameTimeStart) : null;
+}
+
+export function resolveEventSeriesBaseData(
+  input: EventSeriesInput,
+  timezone = BRT_TIMEZONE,
+): EventSeriesBaseData {
+  const startsOn = parseDateOnlyToUtc(input.startsOn);
+
+  return {
+    title: input.title.trim(),
+    description: input.description?.trim() || null,
+    congregationId: input.congregationId,
+    departmentId: input.departmentId || null,
+    timezone,
+    eventType: input.eventType,
+    startsOn,
+    endsOn: resolveEventSeriesEndsOn(input, startsOn),
+    sameTimeStartMinutes: resolveEventSeriesSameTimeStartMinutes(input),
+    monthlyWeekday: input.monthlyRule?.weekday ?? null,
+    monthlyOrdinal: input.monthlyRule?.ordinal ?? null,
+  };
+}
+
+export function mapEventSeriesDaySchedules(
+  daySchedules: EventSeriesInput['daySchedules'],
+): { date: Date; startMinutes: number; endMinutes: number }[] {
+  if (!daySchedules?.length) {
+    return [];
+  }
+
+  return daySchedules.map((entry) => {
+    const startMinutes = parseTimeToMinutes(entry.startTime);
+    return {
+      date: parseDateOnlyToUtc(entry.date),
+      startMinutes,
+      endMinutes: resolveEndMinutesFromStart(startMinutes),
+    };
+  });
 }
 
 function dateToDateOnlyString(date: Date): string {

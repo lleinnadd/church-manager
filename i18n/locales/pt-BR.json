@@ -25,9 +25,17 @@
     "delete": "Excluir",
     "actions": "Ações",
     "remove": "Remover",
+    "more": "Mais",
+    "breadcrumb": "Trilha de navegação",
+    "toggleSidebar": "Alternar barra lateral",
+    "scrollLeft": "Rolar para a esquerda",
+    "scrollRight": "Rolar para a direita",
     "settings": "Configurações",
     "theme": "Tema",
     "language": "Idioma",
+    "timezone": "Fuso horário",
+    "timezonePlaceholder": "Selecione um fuso horário",
+    "deviceDefault": "padrão do dispositivo",
     "light": "Claro",
     "dark": "Escuro",
     "system": "Sistema",
@@ -280,7 +288,9 @@
       "functionDescriptionPlaceholder": "Descrição opcional da função",
       "functionScope": "Escopo da função",
       "functionScopePlaceholder": "Selecione o escopo",
-      "addFunction": "Adicionar função"
+      "addFunction": "Adicionar função",
+      "moveUp": "Mover acima",
+      "moveDown": "Mover abaixo"
     },
     "event": {
       "generalInfo": "Informações do Evento",
@@ -299,6 +309,22 @@
       "typeSingle": "Dia único",
       "typeMultiDay": "Múltiplos dias",
       "typeMonthly": "Recorrente mensal",
+      "weekdayOptions": {
+        "sunday": "Domingo",
+        "monday": "Segunda-feira",
+        "tuesday": "Terça-feira",
+        "wednesday": "Quarta-feira",
+        "thursday": "Quinta-feira",
+        "friday": "Sexta-feira",
+        "saturday": "Sábado"
+      },
+      "ordinalOptions": {
+        "firstWeek": "1ª semana",
+        "secondWeek": "2ª semana",
+        "thirdWeek": "3ª semana",
+        "fourthWeek": "4ª semana",
+        "lastWeek": "Última semana"
+      },
       "startsOn": "Data inicial",
       "hasEndDate": "Há data final",
       "endsOn": "Data final",
