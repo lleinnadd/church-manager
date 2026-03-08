@@ -106,6 +106,8 @@ export const createMemberSchema = (messages?: MemberValidationMessageOverrides) 
       .refine((value) => isValidPhoneNumber(value), {
         message: resolved.phoneInvalid,
       }),
+    photoUrl: z.string().url().optional().nullable(),
+    photoBlobPath: z.string().min(1).optional().nullable(),
     observations: z.string().min(1, { message: resolved.required }),
     departments: z.array(departmentSchema).optional().default([]),
   });

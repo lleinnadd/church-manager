@@ -17,6 +17,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Member not found' });
   }
 
+  if (existing.photoBlobPath && existing.photoBlobPath !== body.photoBlobPath) {
+    await safeDeleteBlob(existing.photoBlobPath);
+  }
+
   const isClerkManaged = Boolean(existing.clerkUserId);
 
   const status = isClerkManaged ? MemberStatus.ACTIVE : body.status;
@@ -48,6 +52,8 @@ export default defineEventHandler(async (event) => {
       nationality: body.nationality,
       phonePrimary: body.phonePrimary,
       phoneSecondary: body.phoneSecondary,
+      photoUrl: body.photoUrl ?? null,
+      photoBlobPath: body.photoBlobPath ?? null,
       observations: body.observations,
       departments: {
         deleteMany: {},

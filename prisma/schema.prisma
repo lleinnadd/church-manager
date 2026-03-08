@@ -60,6 +60,8 @@ model Member {
 
   phonePrimary   String?
   phoneSecondary String?
+  photoUrl       String?
+  photoBlobPath  String?
 
   status       MemberStatus @default(ACTIVE)
   observations String?

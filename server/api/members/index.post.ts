@@ -38,6 +38,8 @@ export default defineEventHandler(async (event) => {
       nationality: body.nationality,
       phonePrimary: body.phonePrimary,
       phoneSecondary: body.phoneSecondary,
+      photoUrl: body.photoUrl ?? null,
+      photoBlobPath: body.photoBlobPath ?? null,
       observations: body.observations,
       departments: {
         create: departmentsInput,

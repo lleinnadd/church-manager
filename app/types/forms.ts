@@ -78,6 +78,8 @@ export interface MemberFormData {
   congregationId: string;
   status: MemberStatus;
   clerkUserId?: string | null;
+  photoUrl?: string | null;
+  photoBlobPath?: string | null;
   departments?: MemberDepartmentInput[];
   dateOfBirth?: string | null;
   ssn?: string | null;
@@ -100,6 +102,8 @@ export interface MemberFormPayload {
   name: string;
   congregationId: string;
   status: MemberStatus;
+  photoUrl?: string | null;
+  photoBlobPath?: string | null;
   departments: {
     departmentId: string;
     scope: DepartmentScope | null;

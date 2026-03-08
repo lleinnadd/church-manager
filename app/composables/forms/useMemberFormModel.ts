@@ -57,6 +57,8 @@ export const useMemberFormModel = (initialData: Ref<MemberFormData | undefined>)
       data?.clerkUserId || data?.status === MemberStatus.ACTIVE
         ? MemberStatus.ACTIVE
         : (data?.status ?? MemberStatus.ACTIVE),
+    photoUrl: data?.photoUrl ?? null,
+    photoBlobPath: data?.photoBlobPath ?? null,
     dateOfBirth: normalizeDate(data?.dateOfBirth ?? null),
     ssn: data?.ssn ?? '',
     nationalId: data?.nationalId ?? '',
@@ -332,6 +334,8 @@ export const useMemberFormModel = (initialData: Ref<MemberFormData | undefined>)
 
   const toPayload = (formValues: MemberFormPayload): MemberFormPayload => ({
     ...formValues,
+    photoUrl: emptyToNull(formValues.photoUrl),
+    photoBlobPath: emptyToNull(formValues.photoBlobPath),
     dateOfBirth: emptyToNull(formValues.dateOfBirth) ?? '',
     memberSince: emptyToNull(formValues.memberSince) ?? '',
     convertionDate: emptyToNull(formValues.convertionDate) ?? '',
@@ -387,6 +391,7 @@ export const useMemberFormModel = (initialData: Ref<MemberFormData | undefined>)
     errors,
     submitCount,
     handleSubmit,
+    setFieldValue,
     formatDateDisplay,
     addMembership,
     removeMembership,

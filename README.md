@@ -20,6 +20,14 @@ yarn install
 bun install
 ```
 
+Create a `.env` file based on `.env.example` and configure at least:
+
+- `DATABASE_URL`
+- `NUXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- `NUXT_CLERK_SECRET_KEY`
+- `NUXT_CLERK_WEBHOOK_SIGNING_SECRET`
+- `BLOB_READ_WRITE_TOKEN` (required for member 3x4 photo upload)
+
 ## Development Server
 
 Start the development server on `http://localhost:3000`:
