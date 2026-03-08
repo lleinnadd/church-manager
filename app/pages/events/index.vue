@@ -11,6 +11,7 @@ import { toast } from 'vue-sonner';
 import { EventSeriesType } from '@prisma/client';
 import type { EventFormData, EventFormPayload } from '@/types/forms';
 import { useTimezone } from '@/composables/useTimezone';
+import { useSidebar } from '@/components/ui/sidebar/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EventOccurrence {
@@ -81,9 +82,14 @@ type EventActionType = 'delete-occurrence' | 'delete-series' | 'end-recurrence' 
 
 const { t, locale } = useI18n();
 const { timezone } = useTimezone();
+const { open: sidebarOpen, openMobile: sidebarOpenMobile, isMobile } = useSidebar();
 
 const loading = ref(false);
 const calendarRef = ref<InstanceType<typeof FullCalendar> | null>(null);
+const calendarContainerRef = ref<HTMLElement | null>(null);
+let calendarResizeObserver: ResizeObserver | null = null;
+let calendarResizeRafId: number | null = null;
+let calendarResizeTimeoutId: number | null = null;
 
 const detailsOpen = ref(false);
 const detailsLoading = ref(false);
@@ -121,6 +127,46 @@ function getCalendarLocale() {
 
 function refetchCalendarEvents() {
   calendarRef.value?.getApi().refetchEvents();
+}
+
+function updateCalendarSize() {
+  calendarRef.value?.getApi().updateSize();
+}
+
+function scheduleCalendarResize() {
+  if (!import.meta.client) return;
+
+  if (calendarResizeRafId !== null) {
+    window.cancelAnimationFrame(calendarResizeRafId);
+  }
+
+  calendarResizeRafId = window.requestAnimationFrame(() => {
+    calendarResizeRafId = null;
+    updateCalendarSize();
+  });
+
+  // Keep one delayed pass to catch width transitions (sidebar collapse/expand).
+  if (calendarResizeTimeoutId !== null) {
+    window.clearTimeout(calendarResizeTimeoutId);
+  }
+
+  calendarResizeTimeoutId = window.setTimeout(() => {
+    calendarResizeTimeoutId = null;
+    updateCalendarSize();
+  }, 280);
+}
+
+function scheduleCalendarResizeBurst() {
+  if (!import.meta.client) return;
+
+  scheduleCalendarResize();
+
+  const followUps = [120, 240, 360];
+  followUps.forEach((delay) => {
+    window.setTimeout(() => {
+      updateCalendarSize();
+    }, delay);
+  });
 }
 
 function closeDetails() {
@@ -193,6 +239,14 @@ watch(timezone, () => {
   refetchCalendarEvents();
 });
 
+watch(
+  [sidebarOpen, sidebarOpenMobile, isMobile],
+  () => {
+    scheduleCalendarResizeBurst();
+  },
+  { flush: 'post' },
+);
+
 async function handleCreateSubmit(data: EventFormPayload) {
   createLoading.value = true;
   try {
@@ -216,7 +270,7 @@ function resolveDetailsPlacement({
   clientY: number;
   eventElement?: HTMLElement;
 }) {
-  if (typeof window === 'undefined') {
+  if (!import.meta.client) {
     return {
       position: { x: clientX, y: clientY },
       side: 'right' as const,
@@ -280,10 +334,37 @@ function handleEscapeKey(event: KeyboardEvent) {
 
 onMounted(() => {
   window.addEventListener('keydown', handleEscapeKey);
+
+  if (typeof ResizeObserver !== 'undefined' && calendarContainerRef.value) {
+    calendarResizeObserver = new ResizeObserver(() => {
+      scheduleCalendarResize();
+    });
+
+    calendarResizeObserver.observe(calendarContainerRef.value);
+  }
+
+  scheduleCalendarResizeBurst();
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleEscapeKey);
+
+  if (calendarResizeObserver) {
+    calendarResizeObserver.disconnect();
+    calendarResizeObserver = null;
+  }
+
+  if (import.meta.client) {
+    if (calendarResizeRafId !== null) {
+      window.cancelAnimationFrame(calendarResizeRafId);
+      calendarResizeRafId = null;
+    }
+
+    if (calendarResizeTimeoutId !== null) {
+      window.clearTimeout(calendarResizeTimeoutId);
+      calendarResizeTimeoutId = null;
+    }
+  }
 });
 
 function toDateOnly(value?: string | null) {
@@ -817,6 +898,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       <div class="min-h-0 flex-1 p-2 md:p-4">
         <ClientOnly>
           <div
+            ref="calendarContainerRef"
             :class="[
               'fc-shadcn-theme h-full overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm',
               { 'is-calendar-loading': loading },
