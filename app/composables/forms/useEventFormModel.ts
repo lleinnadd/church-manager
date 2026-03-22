@@ -1,7 +1,7 @@
 import { EventSeriesType, type Congregation, type Department } from '@prisma/client';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useForm } from 'vee-validate';
-import { computed, type Ref, watch } from 'vue';
+import type { Ref } from 'vue';
 import type { EventFormData, EventFormPayload } from '@/types/forms';
 import { buildEventFormSchema } from '@/lib/validation';
 

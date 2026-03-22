@@ -10,9 +10,7 @@ import { CalendarMinus, CalendarX2, Pencil, Plus, Trash2, X } from 'lucide-vue-n
 import { toast } from 'vue-sonner';
 import { EventSeriesType } from '@prisma/client';
 import type { EventFormData, EventFormPayload } from '@/types/forms';
-import { useTimezone } from '@/composables/useTimezone';
 import { useSidebar } from '@/components/ui/sidebar/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EventOccurrence {
   id: string;

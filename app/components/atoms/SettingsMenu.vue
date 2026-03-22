@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { Laptop, Moon, Settings, Sun } from 'lucide-vue-next';
-import { useColorMode } from '@/composables/useColorMode';
-import { useTimezone } from '@/composables/useTimezone';
 import { formatCurrentTimeForTimeZone, formatTimeZoneOffsetCompact } from '@/lib/timezone';
 
 const { t } = useI18n();
 const { $i18n } = useNuxtApp();
-const { mode } = useColorMode();
+const { mode } = useThemeMode();
 const { timezone, deviceTimezone, options: timezones } = useTimezone();
 
 const currentLocale = computed(() => $i18n.locale.value);

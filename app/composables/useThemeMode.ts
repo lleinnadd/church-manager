@@ -5,7 +5,7 @@ interface NuxtColorModeState {
   value: string;
 }
 
-export function useColorMode() {
+export function useThemeMode() {
   const colorMode = useNuxtApp().$colorMode as NuxtColorModeState;
 
   const mode = computed<ColorMode>({

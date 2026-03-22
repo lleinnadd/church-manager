@@ -1,7 +1,7 @@
 import { DepartmentFunctionScope, type Congregation } from '@prisma/client';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useForm } from 'vee-validate';
-import { computed, watch, type Ref } from 'vue';
+import type { Ref } from 'vue';
 import type {
   DepartmentFormData,
   DepartmentFormPayload,
