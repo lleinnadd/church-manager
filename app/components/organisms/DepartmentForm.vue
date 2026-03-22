@@ -88,7 +88,7 @@ const onSubmit = handleSubmit((formValues) => {
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField v-slot="{ field }" name="hasScopeDivision">
+        <FormField v-slot="{ value, handleChange }" name="hasScopeDivision">
           <FormItem class="flex items-center justify-between rounded-lg border p-4">
             <div>
               <p class="text-sm font-medium leading-none">
@@ -99,7 +99,10 @@ const onSubmit = handleSubmit((formValues) => {
               </p>
             </div>
             <FormControl>
-              <Switch :checked="field.value" @update:checked="field.onChange" />
+              <Switch
+                :model-value="Boolean(value)"
+                @update:model-value="(nextValue) => handleChange(Boolean(nextValue))"
+              />
             </FormControl>
           </FormItem>
         </FormField>
