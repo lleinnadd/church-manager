@@ -5,6 +5,21 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
   devServer: { port: 3333 },
+  vite: {
+    optimizeDeps: {
+      include: [
+        '@clerk/vue',
+        'class-variance-authority',
+        '@internationalized/date',
+        '@vee-validate/zod',
+        'reka-ui',
+        'reka-ui/date',
+        '@prisma/client',
+        'zod',
+        '@clerk/themes',
+      ],
+    },
+  },
   modules: [
     '@clerk/nuxt',
     '@nuxtjs/tailwindcss',
