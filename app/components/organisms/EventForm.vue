@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { EventSeriesType } from '@prisma/client';
-import { CalendarIcon, Clock3, Plus, Trash2, TriangleAlertIcon } from 'lucide-vue-next';
+import { CalendarIcon, Clock3, Plus, Trash2, TriangleAlertIcon } from '@lucide/vue';
 import { CalendarDate, getLocalTimeZone, type DateValue } from '@internationalized/date';
 import type { EventFormData, EventFormPayload } from '@/types/forms';
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Church, Plus, Pencil, Trash2, MapPin, Users, UserRound } from 'lucide-vue-next';
+import { Church, Plus, Pencil, Trash2, MapPin, Users, UserRound } from '@lucide/vue';
 import type { CongregationType, Congregation } from '@prisma/client';
 import { toast } from 'vue-sonner';
 

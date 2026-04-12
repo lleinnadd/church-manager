@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, CalendarIcon, TriangleAlertIcon } from 'lucide-vue-next';
+import { ArrowLeft, CalendarIcon, TriangleAlertIcon } from '@lucide/vue';
 import type { DateValue } from '@internationalized/date';
 import { BRAZIL_STATES } from '@/lib/constants';
 import type { CongregationFormPayload } from '@/types/forms';

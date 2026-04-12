@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Laptop, Moon, Settings, Sun } from 'lucide-vue-next';
+import { Laptop, Moon, Settings, Sun } from '@lucide/vue';
 import { formatCurrentTimeForTimeZone, formatTimeZoneOffsetCompact } from '@/lib/timezone';
 
 const { t } = useI18n();

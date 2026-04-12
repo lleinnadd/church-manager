@@ -6,7 +6,7 @@ import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import enLocale from '@fullcalendar/core/locales/en-gb';
 import type { CalendarOptions, EventInput } from '@fullcalendar/core';
 import type { DateClickArg } from '@fullcalendar/interaction';
-import { CalendarMinus, CalendarX2, Pencil, Plus, Trash2, X } from 'lucide-vue-next';
+import { CalendarMinus, CalendarX2, Pencil, Plus, Trash2, X } from '@lucide/vue';
 import { toast } from 'vue-sonner';
 import { EventSeriesType } from '@prisma/client';
 import type { EventFormData, EventFormPayload } from '@/types/forms';

@@ -35,6 +35,9 @@ importers:
       '@internationalized/date':
         specifier: ^3.12.0
         version: 3.12.0
+      '@lucide/vue':
+        specifier: ^1.0.0
+        version: 1.8.0(vue@3.5.32(typescript@5.9.3))
       '@nuxt/fonts':
         specifier: ^0.14.0
         version: 0.14.0(@vercel/blob@2.3.3)(db0@0.3.4(@electric-sql/pglite@0.3.15)(mysql2@3.15.3))(ioredis@5.9.3)(magicast@0.5.2)(vite@7.3.1(@types/node@25.6.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.99.0)(terser@5.46.0)(yaml@2.8.2))
@@ -80,9 +83,6 @@ importers:
       image-size:
         specifier: ^2.0.2
         version: 2.0.2
-      lucide-vue-next:
-        specifier: ^0.577.0
-        version: 0.577.0(vue@3.5.32(typescript@5.9.3))
       nuxt:
         specifier: ^4.4.2
         version: 4.4.2(@babel/core@7.29.0)(@babel/plugin-syntax-jsx@7.28.6(@babel/core@7.29.0))(@electric-sql/pglite@0.3.15)(@parcel/watcher@2.5.6)(@types/node@25.6.0)(@vercel/blob@2.3.3)(@vue/compiler-sfc@3.5.30)(cac@6.7.14)(db0@0.3.4(@electric-sql/pglite@0.3.15)(mysql2@3.15.3))(eslint@9.39.2(jiti@2.6.1))(ioredis@5.9.3)(lightningcss@1.30.2)(magicast@0.5.2)(meow@13.2.0)(mysql2@3.15.3)(optionator@0.9.4)(rollup-plugin-visualizer@6.0.5(rollup@4.57.1))(rollup@4.57.1)(sass@1.99.0)(terser@5.46.0)(typescript@5.9.3)(vite@7.3.1(@types/node@25.6.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.99.0)(terser@5.46.0)(yaml@2.8.2))(vue-tsc@3.2.6(typescript@5.9.3))(yaml@2.8.2)
@@ -1054,6 +1054,11 @@ packages:
 
   '@kwsites/promise-deferred@1.1.1':
     resolution: {integrity: sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==}
+
+  '@lucide/vue@1.8.0':
+    resolution: {integrity: sha512-Rgy2rxfOx9yP6fWneE3QO6xwUbF2o7f9+MRbzGLRakee4tzUeVWHdX23uRH4ymwEzoq2+8vqRI9yGsxeZhYlWw==}
+    peerDependencies:
+      vue: '>=3.0.1'
 
   '@mapbox/geojson-rewind@0.5.2':
     resolution: {integrity: sha512-tJaT+RbYGJYStt7wI3cq4Nl4SXxG8W7JDG5DMJu97V25RnbNg3QtQtf+KD+VLjNpWKYsRvXDNmNrBgEETr1ifA==}
@@ -5303,11 +5308,6 @@ packages:
     resolution: {integrity: sha512-DqC6n3QQ77zdFpCMASA1a3Jlb64Hv2N2DciFGkO/4L9+q/IpIAuRlKOvCXabtRW6cQf8usbmM6BE/TOPysCdIA==}
     engines: {bun: '>=1.0.0', deno: '>=1.30.0', node: '>=8.0.0'}
 
-  lucide-vue-next@0.577.0:
-    resolution: {integrity: sha512-py05bAfv9SHVJqscbiOnjcnLlEmOffA58a+7XhZuFxrs6txe1E8VoR1ngWGTYO+9aVKABAz8l3ee3PqiQN9QPA==}
-    peerDependencies:
-      vue: '>=3.0.1'
-
   magic-regexp@0.10.0:
     resolution: {integrity: sha512-Uly1Bu4lO1hwHUW0CQeSWuRtzCMNO00CmXtS8N6fyvB3B979GOEEeAkiTUDsmbYLAbvpUS/Kt5c4ibosAzVyVg==}
 
@@ -8043,6 +8043,10 @@ snapshots:
       - supports-color
 
   '@kwsites/promise-deferred@1.1.1': {}
+
+  '@lucide/vue@1.8.0(vue@3.5.32(typescript@5.9.3))':
+    dependencies:
+      vue: 3.5.32(typescript@5.9.3)
 
   '@mapbox/geojson-rewind@0.5.2':
     dependencies:
@@ -12684,10 +12688,6 @@ snapshots:
 
   lru.min@1.1.4:
     optional: true
-
-  lucide-vue-next@0.577.0(vue@3.5.32(typescript@5.9.3)):
-    dependencies:
-      vue: 3.5.32(typescript@5.9.3)
 
   magic-regexp@0.10.0:
     dependencies:

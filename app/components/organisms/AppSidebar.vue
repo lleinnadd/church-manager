@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Home, Users, CalendarDays, ChevronUp, Church, Building2 } from 'lucide-vue-next';
+import { Home, Users, CalendarDays, ChevronUp, Church, Building2 } from '@lucide/vue';
 import { dark } from '@clerk/themes';
 import { useSidebar } from '@/components/ui/sidebar/utils';
 

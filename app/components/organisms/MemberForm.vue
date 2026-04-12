@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { DepartmentScope } from '@prisma/client';
-import { CalendarIcon, Trash2, TriangleAlertIcon } from 'lucide-vue-next';
+import { CalendarIcon, Trash2, TriangleAlertIcon } from '@lucide/vue';
 import type { DateValue } from '@internationalized/date';
 import type { MemberFormData, MemberFormPayload } from '@/types/forms';
 

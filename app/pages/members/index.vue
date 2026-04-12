@@ -8,7 +8,7 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-vue-next';
+} from '@lucide/vue';
 import { toast } from 'vue-sonner';
 import {
   type Member,

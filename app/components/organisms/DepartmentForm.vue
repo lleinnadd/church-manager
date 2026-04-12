@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowDown, ArrowUp, Plus, Trash2, TriangleAlertIcon } from 'lucide-vue-next';
+import { ArrowDown, ArrowUp, Plus, Trash2, TriangleAlertIcon } from '@lucide/vue';
 import { DepartmentFunctionScope } from '@prisma/client';
 import type { DepartmentFormData, DepartmentFormPayload } from '@/types/forms';
 

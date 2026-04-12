@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Building2, Plus, Pencil, Trash2, Users } from 'lucide-vue-next';
+import { Building2, Plus, Pencil, Trash2, Users } from '@lucide/vue';
 import { toast } from 'vue-sonner';
 import type { Department } from '@prisma/client';
 
