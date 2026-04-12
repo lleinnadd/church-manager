@@ -1,9 +1,3 @@
-import {
-  eventSeriesSchema,
-  mapEventSeriesDaySchedules,
-  resolveEventSeriesBaseData,
-} from '../../utils/events';
-
 export default defineEventHandler(async (event) => {
   const parsed = eventSeriesSchema.safeParse(await readBody(event));
   if (!parsed.success) {

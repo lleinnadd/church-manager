@@ -1,5 +1,4 @@
 import { createMemberSchema } from '#shared/validation/member';
-import { resolveMemberDepartmentsInput } from '../../utils/member-departments';
 
 const memberSchema = createMemberSchema();
 

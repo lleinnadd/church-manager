@@ -1,5 +1,4 @@
 import { CongregationType } from '@prisma/client';
-import { getCongregationLeadershipMap } from '../../utils/congregation-leadership';
 
 const congregationTypePriority: Record<CongregationType, number> = {
   [CongregationType.HEADQUARTERS]: 0,

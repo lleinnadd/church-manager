@@ -143,7 +143,6 @@ function scheduleCalendarResize() {
     updateCalendarSize();
   });
 
-  // Keep one delayed pass to catch width transitions (sidebar collapse/expand).
   if (calendarResizeTimeoutId !== null) {
     window.clearTimeout(calendarResizeTimeoutId);
   }

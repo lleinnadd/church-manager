@@ -1,9 +1,4 @@
 import { z } from 'zod';
-import {
-  buildOccurrenceDateKey,
-  buildOccurrencesForSeriesRange,
-  parseDateOnlyToUtc,
-} from '../../../utils/events';
 
 const occurrenceSchema = z.object({
   seriesId: z.string().optional(),

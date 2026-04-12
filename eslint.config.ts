@@ -6,10 +6,6 @@ import globals from 'globals';
 import typescriptEslint from 'typescript-eslint';
 import type { Linter } from 'eslint';
 
-/**
- * Extends each config object's `files` array to also include `**\/*.vue`,
- * so that the Airbnb rules apply inside Vue single-file component scripts.
- */
 function withVueFiles(cfgs: Linter.Config[]): Linter.Config[] {
   return cfgs.map((cfg) => {
     if (cfg.files) {
@@ -20,7 +16,6 @@ function withVueFiles(cfgs: Linter.Config[]): Linter.Config[] {
 }
 
 export default typescriptEslint.config(
-  // ── Global ignores ────────────────────────────────────────────────────
   {
     ignores: [
       'node_modules/',
@@ -34,25 +29,17 @@ export default typescriptEslint.config(
     ],
   },
 
-  // ── Register plugins used by airbnb-extended configs ──────────────────
-  // Each plugin export is a flat config object that registers the plugin
-  // namespace. We extend their file patterns to include .vue files.
   ...withVueFiles([plugins.importX, plugins.stylistic, plugins.typescriptEslint]),
 
-  // ── ESLint core recommended rules ─────────────────────────────────────
   eslint.configs.recommended,
 
-  // ── Airbnb base rules (JS + TS) with Vue file support ─────────────────
   ...withVueFiles(configs.base.recommended),
   ...withVueFiles(configs.base.typescript),
 
-  // ── TypeScript type-aware rules (TS + Vue) ───────────────────────────
   ...withVueFiles(typescriptEslint.configs.recommendedTypeChecked),
 
-  // ── Vue recommended rules ─────────────────────────────────────────────
   ...eslintPluginVue.configs['flat/recommended'],
 
-  // ── TypeScript language settings for TS & Vue files ───────────────────
   {
     files: ['**/*.{ts,vue}'],
     languageOptions: {
@@ -65,7 +52,6 @@ export default typescriptEslint.config(
       parserOptions: {
         parser: typescriptEslint.parser,
         projectService: true,
-        // Available in Node 20.11+ / jiti; not in Nuxt's tsconfig scope.
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error — import.meta.dirname works at runtime
         tsconfigRootDir: import.meta.dirname,
@@ -74,12 +60,9 @@ export default typescriptEslint.config(
     },
   },
 
-  // ── Nuxt auto-import globals ──────────────────────────────────────────
-  // Prevents no-undef errors for Nuxt/Vue auto-imported APIs.
   {
     languageOptions: {
       globals: {
-        // Vue reactivity & lifecycle
         ref: 'readonly',
         computed: 'readonly',
         reactive: 'readonly',
@@ -111,7 +94,6 @@ export default typescriptEslint.config(
         provide: 'readonly',
         inject: 'readonly',
         h: 'readonly',
-        // Vue macros
         defineProps: 'readonly',
         defineEmits: 'readonly',
         defineExpose: 'readonly',
@@ -119,11 +101,9 @@ export default typescriptEslint.config(
         defineModel: 'readonly',
         defineOptions: 'readonly',
         withDefaults: 'readonly',
-        // Vue Router
         useRoute: 'readonly',
         useRouter: 'readonly',
         navigateTo: 'readonly',
-        // Nuxt composables
         useAsyncData: 'readonly',
         useFetch: 'readonly',
         useLazyFetch: 'readonly',
@@ -138,7 +118,6 @@ export default typescriptEslint.config(
         useRequestHeaders: 'readonly',
         useRequestEvent: 'readonly',
         useRequestURL: 'readonly',
-        // Nuxt utilities
         defineNuxtConfig: 'readonly',
         defineNuxtPlugin: 'readonly',
         defineNuxtRouteMiddleware: 'readonly',
@@ -159,20 +138,14 @@ export default typescriptEslint.config(
     },
   },
 
-  // ── Rule overrides ────────────────────────────────────────────────────
   {
     rules: {
-      // ── Import rules ────────────────────────────────────────────────────
-      // TypeScript already catches unresolved imports; disable to avoid
-      // false positives with Nuxt aliases (@ / ~ / #).
       'import-x/no-unresolved': 'off',
       'import-x/no-extraneous-dependencies': 'off',
       'import-x/prefer-default-export': 'off',
       'import-x/extensions': 'off',
-      // Nuxt auto-imports cause false-positive cycle detections.
       'import-x/no-cycle': 'off',
 
-      // ── Core JS overrides ───────────────────────────────────────────────
       'no-param-reassign': [
         'error',
         {
@@ -180,7 +153,6 @@ export default typescriptEslint.config(
           ignorePropertyModificationsFor: ['state', 'acc', 'e', 'ctx', 'req', 'res'],
         },
       ],
-      // TypeScript handles unused vars better
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -190,23 +162,16 @@ export default typescriptEslint.config(
           caughtErrorsIgnorePattern: '^_',
         },
       ],
-      // Allow console in dev (warn instead of error)
       'no-console': 'warn',
 
-      // ── Vue overrides ───────────────────────────────────────────────────
       'vue/multi-word-component-names': 'off',
       'vue/no-multiple-template-root': 'off',
-      // Vue+TS defineProps with generics handles defaults differently.
       'vue/require-default-prop': 'off',
     },
   },
 
-  // ── Prettier (MUST be last) ───────────────────────────────────────────
-  // Disables all formatting rules that conflict with Prettier and
-  // runs Prettier as an ESLint rule via eslint-plugin-prettier.
   eslintPluginPrettierRecommended,
 
-  // ── Relax strict rules for shadcn-ui generated components ─────────────
   {
     files: ['app/components/ui/**/*.{ts,vue}'],
     rules: {

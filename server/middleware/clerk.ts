@@ -1,5 +1,4 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nuxt/server';
-import { createError } from 'h3';
 
 const isProtectedRoute = createRouteMatcher(['/api/(.*)']);
 const isWebhookRoute = createRouteMatcher(['/api/webhook(.*)']);

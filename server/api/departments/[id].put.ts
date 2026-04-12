@@ -1,10 +1,5 @@
 import { DepartmentFunctionScope } from '@prisma/client';
 import { z } from 'zod';
-import {
-  type NormalizedDepartmentFunction,
-  normalizeDepartmentFunctions,
-  normalizeDepartmentLocalNames,
-} from '../../utils/departments';
 
 const departmentSchema = z.object({
   name: z.string().min(1),
