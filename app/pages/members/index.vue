@@ -21,6 +21,7 @@ import {
 } from '@prisma/client';
 
 const { t } = useI18n();
+const { userId } = useAuth();
 
 type MemberWithRelations = Member & {
   congregation: Pick<Congregation, 'id' | 'name' | 'type'>;
@@ -188,14 +189,16 @@ async function handleDelete() {
                     {{ $t('common.edit') }}
                   </NuxtLink>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  class="text-destructive"
-                  @select="confirmDelete(member.id, member.name)"
-                >
-                  <Trash2 class="mr-2 size-4" />
-                  {{ $t('common.delete') }}
-                </DropdownMenuItem>
+                <template v-if="member.clerkUserId !== userId">
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    class="text-destructive"
+                    @select="confirmDelete(member.id, member.name)"
+                  >
+                    <Trash2 class="mr-2 size-4" />
+                    {{ $t('common.delete') }}
+                  </DropdownMenuItem>
+                </template>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
