@@ -14,5 +14,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Congregation not found' });
   }
 
-  return congregation;
+  const leadership = await getCongregationLeadership(prisma, congregation.id);
+
+  return {
+    ...congregation,
+    leadership,
+  };
 });

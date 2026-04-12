@@ -81,7 +81,9 @@
       "createSuccess": "Congregação criada com sucesso",
       "createError": "Falha ao criar congregação",
       "updateSuccess": "Congregação atualizada com sucesso",
-      "updateError": "Falha ao atualizar congregação"
+      "updateError": "Falha ao atualizar congregação",
+      "responsibleLabel": "Responsável",
+      "noResponsible": "Não definido"
     },
     "members": {
       "title": "Membros",

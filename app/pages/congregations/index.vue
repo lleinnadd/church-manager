@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { Church, Plus, Pencil, Trash2, MapPin, Users } from 'lucide-vue-next';
+import { Church, Plus, Pencil, Trash2, MapPin, Users, UserRound } from 'lucide-vue-next';
 import type { CongregationType, Congregation } from '@prisma/client';
 import { toast } from 'vue-sonner';
 
 const { t, locale } = useI18n();
 
-type CongregationWithCount = Congregation & { _count: { members: number } };
+interface CongregationLeadershipData {
+  responsibles: { memberName: string }[];
+}
+
+type CongregationWithCount = Congregation & {
+  _count: { members: number };
+  leadership?: CongregationLeadershipData | null;
+};
 
 const {
   data: congregations,
@@ -59,6 +66,10 @@ function formatType(type: CongregationType) {
     SUB_BRANCH: t('form.congregation.type.subBranch'),
   };
   return labels[type] ?? type;
+}
+
+function getResponsibleName(congregation: CongregationWithCount) {
+  return congregation.leadership?.responsibles?.[0]?.memberName || null;
 }
 </script>
 
@@ -161,6 +172,13 @@ function formatType(type: CongregationType) {
           >
             <MapPin class="mt-0.5 size-4 shrink-0" />
             <span>{{ formatAddress(congregation) }}</span>
+          </div>
+          <div class="text-muted-foreground flex items-start gap-2 text-sm">
+            <UserRound class="mt-0.5 size-4 shrink-0" />
+            <span>
+              {{ $t('pages.congregations.responsibleLabel') }}:
+              {{ getResponsibleName(congregation) || $t('pages.congregations.noResponsible') }}
+            </span>
           </div>
         </CardContent>
         <CardFooter class="text-muted-foreground flex items-center gap-2 text-sm mt-auto">
