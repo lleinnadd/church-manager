@@ -86,5 +86,6 @@ export async function safeDeleteBlob(pathname: string) {
     const deleteBlob = del as DelBlobFn;
     await deleteBlob(pathname, { token: blobToken() });
   } catch {
+    // no-op: blob may already be missing
   }
 }
