@@ -58,6 +58,8 @@ export default defineEventHandler(async (event) => {
     if (eventType === 'user.created') {
       const name = mapClerkName(evt.data);
 
+      const memberNumber = await nextMemberNumber();
+
       await prisma.member.upsert({
         where: { clerkUserId },
         update: {
@@ -65,6 +67,7 @@ export default defineEventHandler(async (event) => {
           status: MemberStatus.ACTIVE,
         },
         create: {
+          memberNumber,
           name,
           status: MemberStatus.ACTIVE,
           clerkUserId,

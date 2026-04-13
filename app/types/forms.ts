@@ -74,6 +74,7 @@ export interface MemberDepartmentInput {
 }
 
 export interface MemberFormData {
+  memberNumber?: number;
   name: string;
   congregationId: string;
   status: MemberStatus;

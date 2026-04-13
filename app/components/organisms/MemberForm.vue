@@ -366,6 +366,13 @@ const onSubmit = handleSubmit(async (formValues) => {
 
         <!-- Fields -->
         <div class="grid flex-1 gap-4 md:grid-cols-2">
+          <FormItem v-if="initialData?.memberNumber">
+            <FormLabel>{{ $t('form.member.memberNumber') }}</FormLabel>
+            <FormControl>
+              <Input :model-value="String(initialData.memberNumber)" disabled />
+            </FormControl>
+          </FormItem>
+
           <FormField v-slot="{ componentField }" name="name">
             <FormItem>
               <FormLabel>{{ $t('form.member.name') }}</FormLabel>

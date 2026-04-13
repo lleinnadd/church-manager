@@ -53,8 +53,11 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  const memberNumber = await nextMemberNumber();
+
   const member = await prisma.member.create({
     data: {
+      memberNumber,
       name: body.name || 'Novo membro',
       congregationId,
       status: MemberStatus.ACTIVE,

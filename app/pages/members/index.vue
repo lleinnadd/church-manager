@@ -157,6 +157,8 @@ async function handleDelete() {
             <div class="min-w-0 flex-1">
               <CardTitle class="truncate text-lg">{{ member.name }}</CardTitle>
               <CardDescription class="flex items-center gap-2">
+                <span class="text-muted-foreground font-medium">#{{ member.memberNumber }}</span>
+                <span class="text-muted-foreground">·</span>
                 <Shield class="size-4 text-muted-foreground" />
                 <span>{{ statusLabel(member.status) }}</span>
               </CardDescription>

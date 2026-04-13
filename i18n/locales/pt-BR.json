@@ -215,6 +215,7 @@
     "member": {
       "generalInfo": "Informações do Membro",
       "generalInfoDescription": "Detalhes básicos para identificar o membro.",
+      "memberNumber": "Nº do Membro",
       "name": "Nome *",
       "namePlaceholder": "Nome do membro",
       "congregation": "Congregação *",

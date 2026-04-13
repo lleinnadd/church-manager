@@ -215,6 +215,7 @@
     "member": {
       "generalInfo": "Member Information",
       "generalInfoDescription": "Basic details to identify the member.",
+      "memberNumber": "Member #",
       "name": "Name *",
       "namePlaceholder": "Member name",
       "congregation": "Congregation *",

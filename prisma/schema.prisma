@@ -37,6 +37,8 @@ model Member {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  memberNumber Int @unique
+
   congregationId String?       @db.ObjectId
   congregation   Congregation? @relation(fields: [congregationId], references: [id])
 
