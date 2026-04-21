@@ -80,7 +80,7 @@ export const useDepartmentFormModel = (initialData: Ref<DepartmentFormData | und
     initialData,
     (value) => {
       resetForm({ values: buildInitialValues(value) });
-      const next = normalizeSortOrder(buildInitialValues(value).functions as FunctionInput[]);
+      const next = normalizeSortOrder(buildInitialValues(value).functions);
       setFieldValue('functions', next);
     },
     { immediate: true, deep: true },

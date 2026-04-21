@@ -183,4 +183,20 @@ export default typescriptEslint.config(
       '@typescript-eslint/no-shadow': 'off',
     },
   },
+
+  {
+    // Server code runs on modern Node — Airbnb's transpile-era restrictions don't apply.
+    // Also allow Prisma's underscore-prefixed aggregate fields (_count, _all, _sum, etc.).
+    files: ['server/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': 'off',
+      'no-continue': 'off',
+      'no-underscore-dangle': [
+        'error',
+        {
+          allow: ['_count', '_all', '_sum', '_avg', '_min', '_max'],
+        },
+      ],
+    },
+  },
 );

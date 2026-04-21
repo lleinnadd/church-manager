@@ -63,7 +63,121 @@
   },
   "pages": {
     "home": {
-      "title": "Welcome to Church Manager"
+      "title": "Dashboard",
+      "description": "Real-time overview of your church.",
+      "error": "Failed to load the dashboard.",
+      "scope": {
+        "global": "Global view",
+        "globalDescription": "Showing data from all congregations.",
+        "congregationDescription": "Showing data for a {type}."
+      },
+      "filter": {
+        "placeholder": "Select a congregation",
+        "all": "All congregations",
+        "yours": "yours"
+      },
+      "kpi": {
+        "activeMembers": "Active members",
+        "activeMembersHint": "of {total} registered",
+        "newMembers": "New members (30d)",
+        "newMembersHint": "in the last 30 days",
+        "eventsToday": "Events today",
+        "eventsTodayHint": "{count} in the next 7 days",
+        "congregations": "Congregations",
+        "congregationsHint": "{departments} active departments"
+      },
+      "viewerNext": {
+        "label": "Your next activity, {name}",
+        "cta": "View agenda"
+      },
+      "memberStatus": {
+        "title": "Member status",
+        "description": "Distribution by registration state.",
+        "active": "Active",
+        "transferred": "Transferred",
+        "withdrawn": "Withdrawn"
+      },
+      "ageRanges": {
+        "title": "Age range",
+        "description": "Members grouped by age.",
+        "children": "Children (0-12)",
+        "teens": "Teens (13-17)",
+        "youngAdults": "Young adults (18-29)",
+        "adults": "Adults (30-59)",
+        "seniors": "Seniors (60+)"
+      },
+      "birthdays": {
+        "title": "Birthdays this month",
+        "description": "Members celebrating their birthday this month.",
+        "empty": "No birthdays this month.",
+        "day": "Day {day}"
+      },
+      "newMembers": {
+        "title": "New members",
+        "description": "Recent registrations in the last 30 days.",
+        "empty": "No new members in the period."
+      },
+      "coverage": {
+        "title": "Registration quality",
+        "description": "Photo coverage and platform adoption.",
+        "photos": "Members with photo",
+        "platform": "Platform adoption"
+      },
+      "attention": {
+        "title": "Items that need attention",
+        "description": "Records and structures with gaps.",
+        "incompleteProfiles": "Incomplete profiles",
+        "withoutDepartment": "Without department",
+        "withoutCongregation": "Without congregation",
+        "congregationsWithoutLeadership": "Congregations without leadership",
+        "departmentsWithoutMembers": "Departments without members",
+        "allGood": "Everything is fine!"
+      },
+      "upcomingEvents": {
+        "title": "Upcoming events",
+        "description": "Next scheduled activities.",
+        "empty": "No events scheduled in the upcoming days."
+      },
+      "miniCalendar": {
+        "title": "Calendar",
+        "description": "Days with events highlighted."
+      },
+      "eventsByType": {
+        "title": "Events by type",
+        "description": "Distribution within the current window.",
+        "singleDay": "Single day",
+        "multiDay": "Multi-day",
+        "monthlyRecurring": "Monthly recurring"
+      },
+      "cancellation": {
+        "title": "Cancellation rate (month)",
+        "hint": "{cancelled} cancelled out of {total} planned"
+      },
+      "congregationsByType": {
+        "title": "Congregations by type",
+        "description": "Distribution of headquarters, branches and sub-branches.",
+        "center": "total"
+      },
+      "byState": {
+        "title": "Congregations by state",
+        "description": "Geographic distribution.",
+        "empty": "No location data yet."
+      },
+      "leadership": {
+        "title": "Leadership",
+        "description": "Local board by congregation.",
+        "empty": "No leadership registered yet."
+      },
+      "topDepartments": {
+        "title": "Departments with most members",
+        "description": "Top 5 by unique member count.",
+        "empty": "No departments with members."
+      },
+      "eventsByDepartment": {
+        "title": "Events by department",
+        "description": "Top 5 in the current window.",
+        "empty": "No events by department in the window."
+      }
     },
     "congregations": {
       "title": "Congregations",
