@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { Component } from 'vue';
-
 const props = defineProps<{
   label: string;
   value: number | string;
