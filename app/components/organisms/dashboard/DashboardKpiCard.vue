@@ -24,7 +24,7 @@ const variantClass = computed(() => {
 </script>
 
 <template>
-  <Card>
+  <Card class="py-0">
     <CardContent class="flex items-center gap-4 p-4">
       <div
         v-if="icon"

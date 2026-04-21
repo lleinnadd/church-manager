@@ -353,7 +353,7 @@ const scopeSubtitle = computed(() => {
 
         <DashboardUpcomingEventsList :events="stats.events.upcoming" />
 
-        <DashboardEventCalendarMini :highlighted-dates="stats.events.upcomingDates" />
+        <DashboardEventCalendarMini :events="stats.events.upcoming" />
 
         <Card>
           <CardHeader>

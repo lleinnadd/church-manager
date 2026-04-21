@@ -401,6 +401,7 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
     endAt: occ.endAt.toISOString(),
     cancelled: occ.cancelled,
     isException: occ.isException,
+    eventType: seriesById.get(occ.seriesId)?.eventType ?? EventSeriesType.SINGLE_DAY,
     congregation: occ.congregation,
     department: occ.departmentId
       ? { id: occ.departmentId, name: departmentNameById.get(occ.departmentId) ?? '' }
@@ -439,6 +440,7 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
         endAt: match.endAt.toISOString(),
         cancelled: match.cancelled,
         isException: match.isException,
+        eventType: seriesById.get(match.seriesId)?.eventType ?? EventSeriesType.SINGLE_DAY,
         congregation: match.congregation,
         department: match.departmentId
           ? { id: match.departmentId, name: departmentNameById.get(match.departmentId) ?? '' }

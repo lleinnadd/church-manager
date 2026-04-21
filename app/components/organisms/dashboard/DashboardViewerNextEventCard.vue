@@ -26,7 +26,7 @@ function formatTime(value: string) {
 </script>
 
 <template>
-  <Card v-if="event" class="border-primary/30 bg-primary/5">
+  <Card v-if="event" class="border-primary/30 bg-primary/5 py-0">
     <CardContent class="flex items-center gap-4 p-4">
       <div
         class="bg-primary text-primary-foreground flex size-12 shrink-0 items-center justify-center rounded-lg"

@@ -65,6 +65,7 @@ export interface DashboardUpcomingEvent {
   endAt: string;
   cancelled: boolean;
   isException: boolean;
+  eventType: EventSeriesType;
   congregation: DashboardCongregationLite | null;
   department: { id: string; name: string } | null;
 }
