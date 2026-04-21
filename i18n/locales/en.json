@@ -180,7 +180,26 @@
       "applySeriesQuestion": "Choose how to apply this change.",
       "editScopeTitle": "Apply changes",
       "applySeriesLabel": "Entire series",
-      "applyOccurrenceLabel": "Only this occurrence"
+      "applyOccurrenceLabel": "Only this occurrence",
+      "export": {
+        "button": "Export",
+        "title": "Export Calendar",
+        "description": "Choose the period to export the calendar as PDF.",
+        "modeLabel": "Period",
+        "currentMonth": "Current month",
+        "fullYear": "Full year",
+        "selectMonths": "Select months",
+        "year": "Year",
+        "months": "Months",
+        "selectAll": "All",
+        "clearAll": "Clear",
+        "includeMiniCalendars": "Include mini calendars on the side",
+        "miniCalendarsRequiresSequential": "Only available when the selected months are consecutive.",
+        "download": "Download",
+        "generating": "Generating...",
+        "success": "Calendar exported successfully",
+        "error": "Failed to export calendar"
+      }
     }
   },
   "form": {

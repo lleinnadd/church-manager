@@ -112,6 +112,24 @@ const createPreview = ref<{ title: string; eventType: string; sameTimeStart: str
   sameTimeStart: null,
 });
 
+const exportDialogOpen = ref(false);
+const exportCurrentMonth = ref('');
+
+function getCurrentCalendarMonth(): string {
+  const api = calendarRef.value?.getApi();
+  if (!api) {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+  const date = api.getDate();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function openExportDialog() {
+  exportCurrentMonth.value = getCurrentCalendarMonth();
+  exportDialogOpen.value = true;
+}
+
 const createInitialData = computed<EventFormData | undefined>(() =>
   createInitialDate.value ? ({ startsOn: createInitialDate.value } as EventFormData) : undefined,
 );
@@ -758,12 +776,16 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   headerToolbar: {
     left: 'prev,next today',
     center: 'title',
-    right: 'loadingBadge',
+    right: 'exportCalendar loadingBadge',
   },
   customButtons: {
     loadingBadge: {
       text: t('common.loading'),
       click: () => {},
+    },
+    exportCalendar: {
+      text: t('pages.events.export.button'),
+      click: () => openExportDialog(),
     },
   },
   buttonText: {
@@ -1177,6 +1199,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     @confirm="handleConfirmAction"
     @cancel="closeActionConfirmation"
   />
+
+  <CalendarExportDialog v-model:open="exportDialogOpen" :current-month="exportCurrentMonth" />
 </template>
 
 <style scoped>
@@ -1301,6 +1325,14 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 
 :deep(.fc-shadcn-theme.is-calendar-loading .fc .fc-loadingBadge-button.fc-button) {
   display: inline-flex;
+}
+
+:deep(.fc-shadcn-theme .fc .fc-exportCalendar-button.fc-button) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
 }
 
 :deep(.fc-shadcn-theme .fc .fc-toolbar-title) {
