@@ -17,8 +17,10 @@ import type { AcceptableValue } from 'reka-ui';
 import type { Congregation } from '@prisma/client';
 import { CalendarDate, getLocalTimeZone, type DateValue } from '@internationalized/date';
 import type { TransactionFormData, TransactionFormPayload } from '@/types/forms';
+import { formatDateTimeLocal } from '@/lib/utils';
 
 const { t, locale } = useI18n();
+const { timezone } = useTimezone();
 const { formatBRL } = useCurrencyInput();
 
 const now = new Date();
@@ -131,7 +133,7 @@ function formatTime(dateStr: string) {
   return new Intl.DateTimeFormat(locale.value, {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/Sao_Paulo',
+    timeZone: timezone.value,
   }).format(date);
 }
 
@@ -175,7 +177,7 @@ async function openEditSheet(txId: string) {
     const tx = await $fetch<TransactionFormData>(`/api/transactions/${txId}`);
     editingTransaction.value = {
       ...tx,
-      date: new Date(tx.date).toISOString().slice(0, 16),
+      date: formatDateTimeLocal(tx.date),
     };
     sheetOpen.value = true;
   } catch {
