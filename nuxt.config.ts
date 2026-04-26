@@ -1,4 +1,13 @@
 import { dark } from '@clerk/themes';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+
+const esmRequire = createRequire(import.meta.url);
+const prismaClientDir = path.dirname(esmRequire.resolve('@prisma/client/package.json'));
+const prismaClientBrowserPath = path.resolve(
+  prismaClientDir,
+  '../../.prisma/client/index-browser.js',
+);
 
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
@@ -12,6 +21,11 @@ export default defineNuxtConfig({
     client: false,
   },
   vite: {
+    resolve: {
+      alias: {
+        '.prisma/client/index-browser': prismaClientBrowserPath,
+      },
+    },
     build: {
       sourcemap: false,
       rollupOptions: {
@@ -49,7 +63,6 @@ export default defineNuxtConfig({
         '@prisma/client',
         'zod',
         '@clerk/themes',
-        '@clerk/vue',
         '@clerk/localizations',
         '@fullcalendar/vue3',
         '@fullcalendar/daygrid',
