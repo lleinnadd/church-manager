@@ -212,8 +212,6 @@ async function handleCreateCategory() {
   }
 }
 
-const NO_CONGREGATION_VALUE = '__none__';
-
 const hasAttachments = computed(() => {
   const existingCount = props.initialData?.attachments?.length ?? 0;
   return existingCount + pendingFiles.value.length > 0;
@@ -404,19 +402,13 @@ const onSubmit = handleSubmit((formValues) => {
             <FormLabel>{{ $t('form.transaction.congregation') }}</FormLabel>
             <FormControl>
               <Select
-                :model-value="field.value || NO_CONGREGATION_VALUE"
-                @update:model-value="
-                  (value: AcceptableValue) =>
-                    field.onChange(value === NO_CONGREGATION_VALUE ? null : value)
-                "
+                :model-value="field.value ?? ''"
+                @update:model-value="(value: AcceptableValue) => field.onChange(value)"
               >
                 <SelectTrigger>
                   <SelectValue :placeholder="$t('form.transaction.congregationPlaceholder')" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem :value="NO_CONGREGATION_VALUE">
-                    {{ $t('form.transaction.noCongregation') }}
-                  </SelectItem>
                   <SelectItem
                     v-for="congregation in congregations || []"
                     :key="congregation.id"

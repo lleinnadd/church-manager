@@ -8,19 +8,16 @@ export default defineEventHandler(async (event) => {
 
   const { initialBalance, initialBalanceDate, congregationId } = parsed.data;
 
-  const where: Record<string, unknown> = {};
-  if (congregationId) {
-    where.congregationId = congregationId;
-
-    const congregation = await prisma.congregation.findUnique({
-      where: { id: congregationId },
-    });
-    if (!congregation) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid congregationId' });
-    }
-  } else {
-    where.congregationId = null;
+  const congregation = await prisma.congregation.findUnique({
+    where: { id: congregationId },
+  });
+  if (!congregation) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid congregationId' });
   }
+
+  const where: Record<string, unknown> = {
+    congregationId,
+  };
 
   const existing = await prisma.treasuryConfig.findFirst({ where });
 
@@ -39,7 +36,7 @@ export default defineEventHandler(async (event) => {
     data: {
       initialBalance,
       initialBalanceDate: new Date(initialBalanceDate),
-      congregationId: congregationId ?? null,
+      congregationId,
     },
   });
 

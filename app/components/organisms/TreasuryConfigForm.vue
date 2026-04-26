@@ -8,7 +8,7 @@ import type { Congregation } from '@prisma/client';
 const { locale, t } = useI18n();
 
 const props = defineProps<{
-  congregationId?: string | null;
+  congregationId?: string;
 }>();
 
 const { data: congregations } = useFetch<Congregation[]>('/api/congregations');
@@ -16,7 +16,17 @@ const loading = ref(false);
 
 const initialBalance = ref(0);
 const initialBalanceDate = ref(new Date().toISOString().slice(0, 10));
-const selectedCongregationId = ref<string | null>(props.congregationId ?? null);
+const selectedCongregationId = ref<string>(props.congregationId ?? '');
+
+watch(
+  congregations,
+  (list) => {
+    if (!selectedCongregationId.value && list?.length) {
+      selectedCongregationId.value = list[0]!.id;
+    }
+  },
+  { immediate: true },
+);
 
 const { formatInputDisplay } = useCurrencyInput();
 const balanceDisplay = ref(initialBalance.value ? formatInputDisplay(initialBalance.value) : '');
@@ -91,8 +101,6 @@ function onDateChange(dateValue: unknown) {
   }
 }
 
-const NO_CONGREGATION_VALUE = '__none__';
-
 async function handleSave() {
   loading.value = true;
   try {
@@ -101,7 +109,7 @@ async function handleSave() {
       body: {
         initialBalance: initialBalance.value,
         initialBalanceDate: initialBalanceDate.value,
-        congregationId: selectedCongregationId.value || null,
+        congregationId: selectedCongregationId.value,
       },
     });
     toast.success(t('pages.treasury.configSaveSuccess'));
@@ -124,19 +132,15 @@ async function handleSave() {
       <div class="space-y-2">
         <Label>{{ $t('form.treasuryConfig.congregation') }}</Label>
         <Select
-          :model-value="selectedCongregationId || NO_CONGREGATION_VALUE"
+          :model-value="selectedCongregationId"
           @update:model-value="
-            (value: AcceptableValue) =>
-              (selectedCongregationId = value === NO_CONGREGATION_VALUE ? null : (value as string))
+            (value: AcceptableValue) => (selectedCongregationId = value as string)
           "
         >
           <SelectTrigger>
             <SelectValue :placeholder="$t('form.treasuryConfig.congregationPlaceholder')" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem :value="NO_CONGREGATION_VALUE">
-              {{ $t('form.treasuryConfig.global') }}
-            </SelectItem>
             <SelectItem
               v-for="congregation in congregations || []"
               :key="congregation.id"

@@ -19,13 +19,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Transaction not found' });
   }
 
-  if (body.congregationId) {
-    const congregation = await prisma.congregation.findUnique({
-      where: { id: body.congregationId },
-    });
-    if (!congregation) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid congregationId' });
-    }
+  const congregation = await prisma.congregation.findUnique({
+    where: { id: body.congregationId },
+  });
+  if (!congregation) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid congregationId' });
   }
 
   if (body.categoryId) {
@@ -46,7 +44,7 @@ export default defineEventHandler(async (event) => {
       date: new Date(body.date),
       notes: body.notes ?? null,
       categoryId: body.categoryId ?? null,
-      congregationId: body.congregationId ?? null,
+      congregationId: body.congregationId,
     },
     include: {
       category: true,

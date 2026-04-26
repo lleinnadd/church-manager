@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 const querySchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/),
-  congregationId: z.string().optional(),
+  congregationId: z.string(),
 });
 
 export default defineEventHandler(async (event) => {
@@ -20,12 +20,9 @@ export default defineEventHandler(async (event) => {
   const monthStart = new Date(Date.UTC(year, monthNum, 1, 0, 0, 0));
   const monthEnd = new Date(Date.UTC(year, monthNum + 1, 0, 23, 59, 59, 999));
 
-  const configWhere: Record<string, unknown> = {};
-  if (congregationId) {
-    configWhere.congregationId = congregationId;
-  } else {
-    configWhere.congregationId = null;
-  }
+  const configWhere: Record<string, unknown> = {
+    congregationId,
+  };
 
   const config = await prisma.treasuryConfig.findFirst({ where: configWhere });
   const initialBalance = config?.initialBalance ?? 0;
@@ -33,8 +30,8 @@ export default defineEventHandler(async (event) => {
 
   const priorWhere: Record<string, unknown> = {
     date: { gte: initialBalanceDate, lt: monthStart },
+    congregationId,
   };
-  if (congregationId) priorWhere.congregationId = congregationId;
 
   const priorTransactions = await prisma.transaction.findMany({
     where: priorWhere,
@@ -52,8 +49,8 @@ export default defineEventHandler(async (event) => {
 
   const transactionWhere: Record<string, unknown> = {
     date: { gte: monthStart, lte: monthEnd },
+    congregationId,
   };
-  if (congregationId) transactionWhere.congregationId = congregationId;
 
   const transactions = await prisma.transaction.findMany({
     where: transactionWhere,

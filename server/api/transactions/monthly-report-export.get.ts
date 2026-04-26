@@ -4,7 +4,7 @@ import { renderMonthlyReportPdf, type MonthlyReportData } from '~~/server/utils/
 
 const querySchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/),
-  congregationId: z.string().optional(),
+  congregationId: z.string(),
   locale: z.enum(['pt-BR', 'en']).default('pt-BR'),
 });
 
@@ -22,12 +22,9 @@ export default defineEventHandler(async (event) => {
   const monthStart = new Date(Date.UTC(year, monthNum, 1, 0, 0, 0));
   const monthEnd = new Date(Date.UTC(year, monthNum + 1, 0, 23, 59, 59, 999));
 
-  const configWhere: Record<string, unknown> = {};
-  if (congregationId) {
-    configWhere.congregationId = congregationId;
-  } else {
-    configWhere.congregationId = null;
-  }
+  const configWhere: Record<string, unknown> = {
+    congregationId,
+  };
 
   const config = await prisma.treasuryConfig.findFirst({ where: configWhere });
   const initialBalance = config?.initialBalance ?? 0;
@@ -35,8 +32,8 @@ export default defineEventHandler(async (event) => {
 
   const priorWhere: Record<string, unknown> = {
     date: { gte: initialBalanceDate, lt: monthStart },
+    congregationId,
   };
-  if (congregationId) priorWhere.congregationId = congregationId;
 
   const priorTransactions = await prisma.transaction.findMany({
     where: priorWhere,
@@ -54,8 +51,8 @@ export default defineEventHandler(async (event) => {
 
   const transactionWhere: Record<string, unknown> = {
     date: { gte: monthStart, lte: monthEnd },
+    congregationId,
   };
-  if (congregationId) transactionWhere.congregationId = congregationId;
 
   const transactions = await prisma.transaction.findMany({
     where: transactionWhere,
@@ -95,14 +92,11 @@ export default defineEventHandler(async (event) => {
 
   const closingBalance = openingBalance + totalIncome - totalExpense;
 
-  let congregationName: string | null = null;
-  if (congregationId) {
-    const congregation = await prisma.congregation.findUnique({
-      where: { id: congregationId },
-      select: { name: true },
-    });
-    congregationName = congregation?.name ?? null;
-  }
+  const congregation = await prisma.congregation.findUnique({
+    where: { id: congregationId },
+    select: { name: true },
+  });
+  const congregationName = congregation?.name ?? null;
 
   const reportData: MonthlyReportData = {
     month,

@@ -11,7 +11,7 @@ function normalizeInitialValues(data?: TransactionFormData): TransactionFormPayl
     amount: data?.amount ?? 0,
     date: data?.date ?? new Date().toISOString().slice(0, 16),
     categoryId: data?.categoryId ?? null,
-    congregationId: data?.congregationId ?? null,
+    congregationId: data?.congregationId ?? '',
     notes: data?.notes ?? null,
   };
 }
@@ -44,7 +44,7 @@ export const useTransactionFormModel = (initialData: Ref<TransactionFormData | u
     ...formValues,
     notes: formValues.notes?.trim() || null,
     categoryId: formValues.categoryId || null,
-    congregationId: formValues.congregationId || null,
+    congregationId: formValues.congregationId,
   });
 
   return {

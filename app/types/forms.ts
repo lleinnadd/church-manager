@@ -163,7 +163,7 @@ export interface TransactionFormPayload {
   amount: number;
   date: string;
   categoryId?: string | null;
-  congregationId?: string | null;
+  congregationId: string;
   notes?: string | null;
 }
 

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const querySchema = z.object({
-  congregationId: z.string().optional(),
+  congregationId: z.string(),
 });
 
 export default defineEventHandler(async (event) => {
@@ -10,12 +10,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid query params' });
   }
 
-  const where: Record<string, unknown> = {};
-  if (parsed.data.congregationId) {
-    where.congregationId = parsed.data.congregationId;
-  } else {
-    where.congregationId = null;
-  }
+  const where: Record<string, unknown> = {
+    congregationId: parsed.data.congregationId,
+  };
 
   const config = await prisma.treasuryConfig.findFirst({ where });
 
@@ -23,7 +20,7 @@ export default defineEventHandler(async (event) => {
     config ?? {
       initialBalance: 0,
       initialBalanceDate: new Date().toISOString(),
-      congregationId: parsed.data.congregationId ?? null,
+      congregationId: parsed.data.congregationId,
     }
   );
 });

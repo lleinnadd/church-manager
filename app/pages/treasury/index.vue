@@ -29,6 +29,18 @@ const filterType = ref<string>('');
 
 const { data: congregations } = useFetch<Congregation[]>('/api/congregations');
 
+const NO_FILTER_VALUE = '__all__';
+
+watch(
+  congregations,
+  (list) => {
+    if (!filterCongregationId.value && list?.length) {
+      filterCongregationId.value = list[0]!.id;
+    }
+  },
+  { immediate: true },
+);
+
 const {
   data: dailyData,
   status,
@@ -139,8 +151,6 @@ function toDateString(value: DateValue | undefined): string {
   if (!value) return '';
   return value.toString();
 }
-
-const NO_FILTER_VALUE = '__all__';
 
 const sheetOpen = ref(false);
 const sheetLoading = ref(false);
@@ -312,17 +322,13 @@ async function handleSheetSubmit(data: TransactionFormPayload, files: File[]) {
         <div class="space-y-1">
           <Label>{{ $t('pages.treasury.filterCongregation') }}</Label>
           <Select
-            :model-value="filterCongregationId || NO_FILTER_VALUE"
-            @update:model-value="
-              (v: AcceptableValue) =>
-                (filterCongregationId = v === NO_FILTER_VALUE ? '' : (v as string))
-            "
+            :model-value="filterCongregationId"
+            @update:model-value="(v: AcceptableValue) => (filterCongregationId = v as string)"
           >
             <SelectTrigger class="w-full sm:w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem :value="NO_FILTER_VALUE">{{ $t('common.all') }}</SelectItem>
               <SelectItem v-for="c in congregations || []" :key="c.id" :value="c.id">
                 {{ c.name }}
               </SelectItem>

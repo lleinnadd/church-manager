@@ -31,7 +31,7 @@ export const createTransactionSchema = (messages?: TransactionValidationMessageO
       .positive({ message: resolved.amountPositive }),
     date: z.string().min(1, { message: resolved.required }),
     categoryId: z.string().optional().nullable(),
-    congregationId: z.string().optional().nullable(),
+    congregationId: z.string().min(1, { message: resolved.required }),
     notes: z.string().optional().nullable(),
   });
 };
@@ -46,5 +46,5 @@ export const transactionCategorySchema = z.object({
 export const treasuryConfigSchema = z.object({
   initialBalance: z.number(),
   initialBalanceDate: z.string().min(1),
-  congregationId: z.string().optional().nullable(),
+  congregationId: z.string().min(1),
 });

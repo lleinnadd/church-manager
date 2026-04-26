@@ -17,7 +17,7 @@ export const buildTransactionFormSchema = (t: Composer['t']) => {
       .positive({ message: t('validation.amountPositive') }),
     date: z.string({ required_error: required }).min(1, { message: required }),
     categoryId: z.string().optional().nullable(),
-    congregationId: z.string().optional().nullable(),
+    congregationId: z.string({ required_error: required }).min(1, { message: required }),
     notes: z.string().optional().nullable(),
   });
 };

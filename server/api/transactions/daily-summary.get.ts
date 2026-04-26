@@ -4,7 +4,7 @@ import { z } from 'zod';
 const querySchema = z.object({
   startDate: z.string(),
   endDate: z.string(),
-  congregationId: z.string().optional(),
+  congregationId: z.string(),
 });
 
 export default defineEventHandler(async (event) => {
@@ -17,12 +17,9 @@ export default defineEventHandler(async (event) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
 
-  const configWhere: Record<string, unknown> = {};
-  if (congregationId) {
-    configWhere.congregationId = congregationId;
-  } else {
-    configWhere.congregationId = null;
-  }
+  const configWhere: Record<string, unknown> = {
+    congregationId,
+  };
 
   const config = await prisma.treasuryConfig.findFirst({ where: configWhere });
   const initialBalance = config?.initialBalance ?? 0;
@@ -30,8 +27,8 @@ export default defineEventHandler(async (event) => {
 
   const transactionWhere: Record<string, unknown> = {
     date: { gte: start, lte: end },
+    congregationId,
   };
-  if (congregationId) transactionWhere.congregationId = congregationId;
 
   const transactions = await prisma.transaction.findMany({
     where: transactionWhere,
@@ -44,8 +41,8 @@ export default defineEventHandler(async (event) => {
 
   const priorWhere: Record<string, unknown> = {
     date: { gte: initialBalanceDate, lt: start },
+    congregationId,
   };
-  if (congregationId) priorWhere.congregationId = congregationId;
 
   const priorTransactions = await prisma.transaction.findMany({
     where: priorWhere,

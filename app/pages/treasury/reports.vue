@@ -12,6 +12,16 @@ const filterCongregationId = ref<string>('');
 
 const { data: congregations } = useFetch<Congregation[]>('/api/congregations');
 
+watch(
+  congregations,
+  (list) => {
+    if (!filterCongregationId.value && list?.length) {
+      filterCongregationId.value = list[0]!.id;
+    }
+  },
+  { immediate: true },
+);
+
 const { data: report, status } = useFetch<{
   month: string;
   openingBalance: number;
@@ -82,10 +92,8 @@ async function exportPdf() {
     const query = new URLSearchParams({
       month: currentMonth.value,
       locale: locale.value,
+      congregationId: filterCongregationId.value,
     });
-    if (filterCongregationId.value) {
-      query.set('congregationId', filterCongregationId.value);
-    }
 
     const response = await $fetch<Blob>(
       `/api/transactions/monthly-report-export?${query.toString()}`,
@@ -104,8 +112,6 @@ async function exportPdf() {
     isExporting.value = false;
   }
 }
-
-const NO_FILTER_VALUE = '__all__';
 </script>
 
 <template>
@@ -142,17 +148,13 @@ const NO_FILTER_VALUE = '__all__';
 
         <div class="flex items-center gap-2">
           <Select
-            :model-value="filterCongregationId || NO_FILTER_VALUE"
-            @update:model-value="
-              (v: AcceptableValue) =>
-                (filterCongregationId = v === NO_FILTER_VALUE ? '' : (v as string))
-            "
+            :model-value="filterCongregationId"
+            @update:model-value="(v: AcceptableValue) => (filterCongregationId = v as string)"
           >
             <SelectTrigger class="w-full sm:w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem :value="NO_FILTER_VALUE">{{ $t('common.all') }}</SelectItem>
               <SelectItem v-for="c in congregations || []" :key="c.id" :value="c.id">
                 {{ c.name }}
               </SelectItem>

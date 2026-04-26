@@ -570,7 +570,6 @@
       "date": "Data / Hora *",
       "congregation": "Congregação",
       "congregationPlaceholder": "Selecione uma congregação",
-      "noCongregation": "Sem congregação (global)",
       "category": "Categoria",
       "categoryPlaceholder": "Selecione ou crie uma categoria",
       "categorySearch": "Buscar categoria...",
@@ -597,7 +596,6 @@
       "description": "Defina o saldo de partida antes do sistema. Este valor será usado para calcular todos os saldos.",
       "congregation": "Congregação",
       "congregationPlaceholder": "Selecione uma congregação",
-      "global": "Global (todas as congregações)",
       "initialBalance": "Saldo Inicial",
       "initialBalancePlaceholder": "0,00",
       "initialBalanceDate": "Data de Referência"

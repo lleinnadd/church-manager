@@ -570,7 +570,6 @@
       "date": "Date / Time *",
       "congregation": "Congregation",
       "congregationPlaceholder": "Select a congregation",
-      "noCongregation": "No congregation (global)",
       "category": "Category",
       "categoryPlaceholder": "Select or create a category",
       "categorySearch": "Search category...",
@@ -597,7 +596,6 @@
       "description": "Set the starting balance before the system. This value will be used to calculate all balances.",
       "congregation": "Congregation",
       "congregationPlaceholder": "Select a congregation",
-      "global": "Global (all congregations)",
       "initialBalance": "Initial Balance",
       "initialBalancePlaceholder": "0.00",
       "initialBalanceDate": "Reference Date"
