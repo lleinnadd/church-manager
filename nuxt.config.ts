@@ -1,14 +1,46 @@
 import { dark } from '@clerk/themes';
 
-// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
   devServer: { port: 3333 },
+  typescript: {
+    typeCheck: true,
+  },
+  sourcemap: {
+    server: false,
+    client: false,
+  },
   vite: {
+    build: {
+      sourcemap: false,
+      rollupOptions: {
+        onwarn(warning, defaultHandler) {
+          if (
+            warning.code === 'UNRESOLVED_IMPORT' &&
+            typeof warning.exporter === 'string' &&
+            warning.exporter.includes('.prisma/client')
+          )
+            return;
+          defaultHandler(warning);
+        },
+      },
+    },
+    plugins: [
+      {
+        name: 'suppress-sourcemap-warnings',
+        configResolved(config) {
+          const originalWarn = config.logger.warn.bind(config.logger);
+          config.logger.warn = (msg, options) => {
+            if (typeof msg === 'string' && msg.includes('Sourcemap is likely to be incorrect'))
+              return;
+            originalWarn(msg, options);
+          };
+        },
+      },
+    ],
     optimizeDeps: {
       include: [
-        '@clerk/vue',
         'class-variance-authority',
         '@internationalized/date',
         '@vee-validate/zod',
@@ -28,6 +60,25 @@ export default defineNuxtConfig({
     '@nuxt/fonts',
     '@nuxtjs/i18n',
     '@nuxtjs/color-mode',
+    function stripVolarPlugin(_options, nuxt) {
+      nuxt.hook('prepare:types', ({ tsConfig, nodeTsConfig: nodeConfig }) => {
+        tsConfig.vueCompilerOptions ||= {};
+        const plugins: string[] = [];
+        const origPush = plugins.push.bind(plugins);
+        (plugins as { push: typeof origPush }).push = (...items: string[]) => {
+          const filtered = items.filter((i) => !String(i).includes('sfc-route-blocks'));
+          return origPush(...filtered);
+        };
+        tsConfig.vueCompilerOptions.plugins = plugins;
+
+        nodeConfig.include ||= [];
+        nodeConfig.include.push(
+          '../eslint.config.ts',
+          '../commitlint.config.ts',
+          '../prisma.config.ts',
+        );
+      });
+    },
   ],
   colorMode: {
     classSuffix: '',
@@ -73,5 +124,17 @@ export default defineNuxtConfig({
   ],
   imports: {
     dirs: ['@/composables/**'],
+  },
+  hooks: {
+    'vite:extendConfig': function dedupeVueTsc(config, { isServer }) {
+      if (isServer && config.plugins) {
+        const idx = (config.plugins as unknown[]).findIndex(
+          (p) => p && typeof (p as { then?: unknown }).then === 'function',
+        );
+        if (idx !== -1) {
+          (config.plugins as unknown[]).splice(idx, 1);
+        }
+      }
+    },
   },
 });

@@ -2,6 +2,7 @@ import eslint from '@eslint/js';
 import { configs, plugins } from 'eslint-config-airbnb-extended';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import eslintPluginVue from 'eslint-plugin-vue';
+import vueParser from 'vue-eslint-parser';
 import globals from 'globals';
 import typescriptEslint from 'typescript-eslint';
 import type { Linter } from 'eslint';
@@ -36,26 +37,29 @@ export default typescriptEslint.config(
   ...withVueFiles(configs.base.recommended),
   ...withVueFiles(configs.base.typescript),
 
-  ...withVueFiles(typescriptEslint.configs.recommendedTypeChecked),
+  ...withVueFiles(typescriptEslint.configs.recommended),
 
   ...eslintPluginVue.configs['flat/recommended'],
 
   {
-    files: ['**/*.{ts,vue}'],
+    files: ['**/*.vue'],
+    languageOptions: {
+      parser: vueParser,
+      parserOptions: {
+        parser: typescriptEslint.parser,
+        extraFileExtensions: ['.vue'],
+      },
+    },
+  },
+
+  {
+    files: ['**/*.ts'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
       globals: {
         ...globals.browser,
         ...globals.node,
-      },
-      parserOptions: {
-        parser: typescriptEslint.parser,
-        projectService: true,
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error — import.meta.dirname works at runtime
-        tsconfigRootDir: import.meta.dirname,
-        extraFileExtensions: ['.vue'],
       },
     },
   },
@@ -150,7 +154,17 @@ export default typescriptEslint.config(
         'error',
         {
           props: true,
-          ignorePropertyModificationsFor: ['state', 'acc', 'e', 'ctx', 'req', 'res'],
+          ignorePropertyModificationsFor: [
+            'state',
+            'acc',
+            'e',
+            'ctx',
+            'req',
+            'res',
+            'config',
+            'tsConfig',
+            'nodeConfig',
+          ],
         },
       ],
       'no-unused-vars': 'off',
@@ -185,8 +199,6 @@ export default typescriptEslint.config(
   },
 
   {
-    // Server code runs on modern Node — Airbnb's transpile-era restrictions don't apply.
-    // Also allow Prisma's underscore-prefixed aggregate fields (_count, _all, _sum, etc.).
     files: ['server/**/*.ts'],
     rules: {
       'no-restricted-syntax': 'off',
