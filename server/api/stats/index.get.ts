@@ -66,9 +66,6 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
   const auth = (event.context.auth as () => { userId: string | null })();
   const clerkUserId = auth?.userId ?? null;
 
-  // ---------------------------------------------------------------------------
-  // Viewer
-  // ---------------------------------------------------------------------------
   const viewerMember = clerkUserId
     ? await prisma.member.findUnique({
         where: { clerkUserId },
@@ -82,9 +79,6 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
       })
     : null;
 
-  // ---------------------------------------------------------------------------
-  // Resolve scope
-  // ---------------------------------------------------------------------------
   const allCongregations = await prisma.congregation.findMany({
     select: { id: true, name: true, type: true },
     orderBy: [{ type: 'asc' }, { name: 'asc' }],
@@ -125,9 +119,6 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
   const upcomingWindowEnd = addDaysUtc(today, UPCOMING_WINDOW_DAYS);
   const last30 = addDaysUtc(today, -30);
 
-  // ---------------------------------------------------------------------------
-  // Members aggregations (run in parallel)
-  // ---------------------------------------------------------------------------
   const [
     statusGroups,
     maritalGroups,
@@ -188,7 +179,6 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
     }),
   ]);
 
-  // members.byStatus
   const byStatus: Record<MemberStatus, number> = {
     ACTIVE: 0,
     TRANSFERRED: 0,
@@ -198,7 +188,6 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
     byStatus[group.status] = group._count._all;
   }
 
-  // members.byMaritalStatus
   const byMaritalStatus: Record<MaritalStatus, number> & { UNKNOWN: number } = {
     SINGLE: 0,
     MARRIED: 0,
@@ -215,7 +204,6 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
     }
   }
 
-  // members.byAgeRange + birthdays this month
   const byAgeRange: Record<AgeRangeKey, number> & { UNKNOWN: number } = {
     '0-12': 0,
     '13-17': 0,
@@ -248,9 +236,6 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
   }
   birthdays.sort((a, b) => a.dayOfMonth - b.dayOfMonth);
 
-  // ---------------------------------------------------------------------------
-  // Events
-  // ---------------------------------------------------------------------------
   const [seriesList, cancelledOccurrences, exceptionOccurrences, allDepartmentsLite] =
     await Promise.all([
       prisma.eventSeries.findMany({
@@ -422,7 +407,6 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
     ? cancelledOccurrences / cancellationDenominator
     : 0;
 
-  // Viewer next event: prefer events whose congregation OR department matches viewer
   let viewerNextEvent: DashboardUpcomingEvent | null = null;
   if (viewerMember) {
     const viewerDepartmentIds = new Set(viewerMember.departments.map((d) => d.departmentId));
@@ -449,9 +433,6 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Congregations
-  // ---------------------------------------------------------------------------
   const [congTypeGroups, congregationsForState, leadershipMap] = await Promise.all([
     scopeCongregation
       ? Promise.resolve([
@@ -517,9 +498,6 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
   }
   leadership.sort((a, b) => b.responsibles.length - a.responsibles.length);
 
-  // ---------------------------------------------------------------------------
-  // Departments
-  // ---------------------------------------------------------------------------
   const departmentMembershipFilter = scopeCongregation
     ? {
         OR: [

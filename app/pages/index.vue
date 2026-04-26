@@ -175,7 +175,6 @@ const scopeSubtitle = computed(() => {
 
 <template>
   <div class="space-y-6">
-    <!-- Header -->
     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div class="space-y-1">
         <div class="flex items-center gap-2">
@@ -198,7 +197,6 @@ const scopeSubtitle = computed(() => {
       <Skeleton v-else class="h-9 w-full rounded-md sm:w-72" />
     </div>
 
-    <!-- Loading skeleton -->
     <template v-if="isLoading">
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Skeleton v-for="i in 4" :key="`kpi-skel-${i}`" class="h-24 w-full rounded-xl" />
@@ -213,7 +211,6 @@ const scopeSubtitle = computed(() => {
       </div>
     </template>
 
-    <!-- Error -->
     <Card v-else-if="error" class="border-destructive/30">
       <CardContent class="text-destructive flex items-center gap-3 p-6 text-sm">
         <AlertTriangle class="size-5" />
@@ -224,16 +221,13 @@ const scopeSubtitle = computed(() => {
       </CardContent>
     </Card>
 
-    <!-- Dashboard -->
     <template v-else-if="stats">
-      <!-- Viewer next event banner -->
       <DashboardViewerNextEventCard
         v-if="stats.viewer.nextEvent"
         :event="stats.viewer.nextEvent"
         :member-name="stats.viewer.memberName"
       />
 
-      <!-- KPIs row -->
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <DashboardKpiCard
           :label="$t('pages.home.kpi.activeMembers')"
@@ -277,7 +271,6 @@ const scopeSubtitle = computed(() => {
         />
       </div>
 
-      <!-- People row -->
       <div class="gap-4 sm:columns-2 lg:columns-3 *:mb-4 *:break-inside-avoid">
         <Card>
           <CardHeader>

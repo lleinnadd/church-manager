@@ -39,7 +39,6 @@ export default defineEventHandler(async (event) => {
   const firstMonth = sortedMonths[0]!;
   const lastMonth = sortedMonths[sortedMonths.length - 1]!;
 
-  // Extended range used for mini-calendar indicators (one month before/after).
   const extendedStart = new Date(Date.UTC(firstMonth.year, firstMonth.month - 1, 1, 0, 0, 0));
   const extendedEnd = new Date(Date.UTC(lastMonth.year, lastMonth.month + 2, 1, 0, 0, 0));
 

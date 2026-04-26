@@ -29,8 +29,6 @@ export function useCalendarExport() {
     return [...selectedMonths.value].sort();
   });
 
-  // Mini calendars only make sense when exported months are contiguous,
-  // since they show the previous/next month relative to the page's month.
   const monthsAreSequential = computed<boolean>(() => {
     const months = monthsToExport.value;
     if (months.length <= 1) return true;

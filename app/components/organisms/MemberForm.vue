@@ -302,7 +302,6 @@ const onSubmit = handleSubmit(async (formValues) => {
         <CardDescription>{{ $t('form.member.generalInfoDescription') }}</CardDescription>
       </CardHeader>
       <CardContent class="flex flex-col gap-6 md:flex-row">
-        <!-- Photo -->
         <div class="shrink-0 space-y-2">
           <p class="text-sm font-medium">{{ $t('form.member.photoTitle') }}</p>
 
@@ -364,7 +363,6 @@ const onSubmit = handleSubmit(async (formValues) => {
           <p v-if="photoError" class="max-w-36 text-sm text-destructive">{{ photoError }}</p>
         </div>
 
-        <!-- Fields -->
         <div class="grid flex-1 gap-4 md:grid-cols-2">
           <FormItem v-if="initialData?.memberNumber">
             <FormLabel>{{ $t('form.member.memberNumber') }}</FormLabel>

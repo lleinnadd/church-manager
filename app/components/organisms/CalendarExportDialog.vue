@@ -91,7 +91,6 @@ async function handleExport() {
       </DialogHeader>
 
       <div class="space-y-4">
-        <!-- Export mode -->
         <div class="space-y-2">
           <Label class="text-sm font-medium">{{ $t('pages.events.export.modeLabel') }}</Label>
           <RadioGroup v-model="exportMode" class="flex flex-col gap-2">
@@ -116,7 +115,6 @@ async function handleExport() {
           </RadioGroup>
         </div>
 
-        <!-- Year selector (for year and custom modes) -->
         <div v-if="exportMode === 'year' || exportMode === 'custom'" class="space-y-2">
           <Label class="text-sm font-medium">{{ $t('pages.events.export.year') }}</Label>
           <Select v-model="selectedYear">
@@ -131,7 +129,6 @@ async function handleExport() {
           </Select>
         </div>
 
-        <!-- Month grid (for custom mode) -->
         <div v-if="exportMode === 'custom'" class="space-y-2">
           <div class="flex items-center justify-between">
             <Label class="text-sm font-medium">{{ $t('pages.events.export.months') }}</Label>
@@ -168,7 +165,6 @@ async function handleExport() {
           </div>
         </div>
 
-        <!-- Mini calendars toggle -->
         <div class="space-y-1">
           <label
             class="flex items-start gap-2"

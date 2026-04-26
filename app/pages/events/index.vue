@@ -605,7 +605,7 @@ async function deleteSeries() {
   const occurrence = selectedOccurrence.value;
   if (!occurrence) return;
 
-  await $fetch(`/api/events/${occurrence.seriesId}`, { method: 'DELETE' });
+  await $fetch(`/api/events/${occurrence.seriesId}` as '/api/events/:id', { method: 'DELETE' });
   toast.success(t('pages.events.deleteSuccess'));
   closeDetails();
   refetchCalendarEvents();
@@ -619,7 +619,7 @@ async function endRecurrence() {
   const monthlyStartTime =
     minutesToTime(series.sameTimeStartMinutes) || getTimeFromIso(occurrence.startAt);
 
-  await $fetch(`/api/events/${series.id}`, {
+  await $fetch(`/api/events/${series.id}` as '/api/events/:id', {
     method: 'PUT',
     body: {
       title: series.title,

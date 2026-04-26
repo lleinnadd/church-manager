@@ -15,9 +15,9 @@ import {
   type Congregation,
   type MemberDepartment,
   type Department,
-  MemberStatus,
+  type MemberStatus,
   DepartmentScope,
-  CongregationType,
+  type CongregationType,
 } from '@prisma/client';
 
 const { t } = useI18n();

@@ -48,7 +48,7 @@ const initialData = computed<EventFormData | undefined>(() => {
     departmentId: eventSeries.value.departmentId,
     eventType: eventSeries.value.eventType,
     startsOn: toDateOnly(eventSeries.value.startsOn),
-    endsOn: toDateOnly(eventSeries.value.endsOn),
+    endsOn: eventSeries.value.endsOn ? toDateOnly(eventSeries.value.endsOn) : null,
     sameTimeStart: minutesToTime(eventSeries.value.sameTimeStartMinutes),
     daySchedules: eventSeries.value.daySchedules.map((entry) => ({
       date: toDateOnly(entry.date),
@@ -70,7 +70,7 @@ const isLoading = computed(() => status.value === 'pending');
 async function handleSubmit(data: EventFormPayload) {
   loading.value = true;
   try {
-    await $fetch(`/api/events/${id}`, { method: 'PUT', body: data });
+    await $fetch(`/api/events/${id}` as '/api/events/:id', { method: 'PUT', body: data });
     toast.success(t('pages.events.updateSuccess'));
     await router.push('/events');
   } catch {

@@ -24,7 +24,7 @@ export interface CalendarEvent {
 
 export interface MonthData {
   year: number;
-  month: number; // 0-indexed
+  month: number;
   events: CalendarEvent[];
 }
 
@@ -32,12 +32,8 @@ export type ExportLocale = 'pt-BR' | 'en';
 
 const h = React.createElement;
 
-// A4 landscape (in points): 842 x 595
 const PAGE_PADDING = 18;
 
-// Cores derivadas das variáveis --chart-* do módulo de eventos (dark mode),
-// convertidas de oklch para hex já que @react-pdf/renderer não suporta oklch nem color-mix.
-// chart-2 (verde) → recorrente | chart-1 (azul/violeta) → multi-dia | chart-5 (rosa) → único
 const EVENT_COLORS: Record<string, { accent: string; bg: string; text: string }> = {
   MONTHLY_RECURRING: { accent: '#2dc09a', bg: '#d4f5ea', text: '#0e3d2c' },
   MULTI_DAY: { accent: '#4843db', bg: '#dedef9', text: '#1d1c4a' },
@@ -330,7 +326,6 @@ function EventDisc(props: { types: string[] }) {
     );
   }
 
-  // Build pie slices using SVG arc paths.
   const slices = types.map((type, idx) => {
     const startAngle = (idx / types.length) * 2 * Math.PI - Math.PI / 2;
     const endAngle = ((idx + 1) / types.length) * 2 * Math.PI - Math.PI / 2;
@@ -386,7 +381,6 @@ function MiniCalendar(props: {
             : null;
         const cellEvents = dateKey && cell.isCurrentMonth ? (eventsByDate!.get(dateKey) ?? []) : [];
 
-        // Deduplicate by event type — each unique type becomes one slice of the disc.
         const sliceTypes = cellEvents.reduce<string[]>((acc, ev) => {
           if (!acc.includes(ev.eventType)) acc.push(ev.eventType);
           return acc;
@@ -620,8 +614,6 @@ export async function renderCalendarPdf(
   options?: RenderOptions,
 ): Promise<Buffer> {
   const showMiniCalendars = options?.showMiniCalendars ?? true;
-  // Build a date-keyed map of events for mini-calendar indicators.
-  // Falls back to events embedded in monthsData when allEvents isn't provided.
   const eventsByDate = new Map<string, CalendarEvent[]>();
   const sourceEvents = allEvents ?? monthsData.flatMap((m) => m.events);
   sourceEvents.forEach((ev) => {
