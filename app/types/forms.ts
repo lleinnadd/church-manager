@@ -5,6 +5,7 @@ import type {
   MemberStatus,
   MaritalStatus,
   EventSeriesType,
+  TransactionType,
 } from '@prisma/client';
 
 export interface CongregationFormPayload {
@@ -154,4 +155,35 @@ export interface EventFormPayload {
 
 export interface EventFormData extends EventFormPayload {
   id?: string;
+}
+
+export interface TransactionFormPayload {
+  name: string;
+  type: TransactionType;
+  amount: number;
+  date: string;
+  categoryId?: string | null;
+  congregationId?: string | null;
+  notes?: string | null;
+}
+
+export interface TransactionAttachmentData {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  blobUrl: string;
+  blobPath: string;
+}
+
+export interface TransactionFormData extends TransactionFormPayload {
+  id?: string;
+  category?: { id: string; name: string } | null;
+  congregation?: { id: string; name: string; type: CongregationType } | null;
+  attachments?: TransactionAttachmentData[];
+}
+
+export interface TransactionCategoryOption {
+  id: string;
+  name: string;
 }
