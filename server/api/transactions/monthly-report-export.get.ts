@@ -1,6 +1,7 @@
 import { TransactionType } from '@prisma/client';
 import { z } from 'zod';
 import { renderMonthlyReportPdf, type MonthlyReportData } from '~~/server/utils/treasury-report';
+import { getCongregationLeadership } from '~~/server/utils/congregation-leadership';
 
 const querySchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/),
@@ -98,6 +99,9 @@ export default defineEventHandler(async (event) => {
   });
   const congregationName = congregation?.name ?? null;
 
+  const leadership = await getCongregationLeadership(prisma, congregationId);
+  const pastorName = leadership?.responsibles?.[0]?.memberName ?? null;
+
   const reportData: MonthlyReportData = {
     month,
     openingBalance,
@@ -111,6 +115,7 @@ export default defineEventHandler(async (event) => {
       expense: data.expense,
     })),
     congregationName,
+    pastorName,
   };
 
   const pdfBuffer = await renderMonthlyReportPdf(reportData, locale);

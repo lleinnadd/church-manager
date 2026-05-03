@@ -29,6 +29,7 @@ export interface MonthlyReportData {
   transactions: ReportTransaction[];
   categorySummary: CategorySummaryItem[];
   congregationName?: string | null;
+  pastorName?: string | null;
 }
 
 const COLORS = {
@@ -118,6 +119,32 @@ const styles = StyleSheet.create({
   catColName: { width: '40%' },
   catColIncome: { width: '30%', textAlign: 'right' },
   catColExpense: { width: '30%', textAlign: 'right' },
+  signatureSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 60,
+    paddingHorizontal: 20,
+  },
+  signatureBlock: {
+    width: '40%',
+    alignItems: 'center',
+  },
+  signatureLine: {
+    width: '100%',
+    borderBottom: `1 solid ${COLORS.text}`,
+    marginBottom: 4,
+  },
+  signatureLabel: {
+    fontSize: 8,
+    color: COLORS.muted,
+    textAlign: 'center',
+  },
+  signatureName: {
+    fontSize: 10,
+    color: COLORS.text,
+    textAlign: 'center',
+    marginBottom: 2,
+  },
   footer: {
     position: 'absolute',
     bottom: 20,
@@ -149,6 +176,8 @@ const labels: Record<ReportLocale, Record<string, string>> = {
     uncategorized: 'Sem categoria',
     generatedAt: 'Gerado em',
     page: 'Página',
+    pastorSignature: 'Pastor / Responsável',
+    treasurerSignature: 'Tesoureiro(a)',
   },
   en: {
     title: 'Monthly Treasury Report',
@@ -168,6 +197,8 @@ const labels: Record<ReportLocale, Record<string, string>> = {
     uncategorized: 'Uncategorized',
     generatedAt: 'Generated at',
     page: 'Page',
+    pastorSignature: 'Pastor / Church Leader',
+    treasurerSignature: 'Treasurer',
   },
 };
 
@@ -317,44 +348,6 @@ function MonthlyReportDocument({
         ),
       ),
 
-      data.categorySummary.length > 0
-        ? h(
-            View,
-            null,
-            h(Text, { style: styles.sectionTitle }, l.categorySummary),
-            h(
-              View,
-              { style: styles.tableHeader },
-              h(Text, { style: { ...styles.tableHeaderText, ...styles.catColName } }, l.category),
-              h(Text, { style: { ...styles.tableHeaderText, ...styles.catColIncome } }, l.income),
-              h(Text, { style: { ...styles.tableHeaderText, ...styles.catColExpense } }, l.expense),
-            ),
-            ...data.categorySummary.map((cat, index) =>
-              h(
-                View,
-                {
-                  key: `cat-${index}`,
-                  style: {
-                    ...styles.tableRow,
-                    ...(index % 2 === 1 ? styles.tableRowAlt : {}),
-                  },
-                },
-                h(Text, { style: styles.catColName }, cat.name),
-                h(
-                  Text,
-                  { style: { ...styles.catColIncome, color: COLORS.income } },
-                  formatCurrency(cat.income, locale),
-                ),
-                h(
-                  Text,
-                  { style: { ...styles.catColExpense, color: COLORS.expense } },
-                  formatCurrency(cat.expense, locale),
-                ),
-              ),
-            ),
-          )
-        : null,
-
       h(
         View,
         { style: styles.footer, fixed: true },
@@ -369,6 +362,83 @@ function MonthlyReportDocument({
         ),
       ),
     ),
+
+    data.categorySummary.length > 0
+      ? h(
+          Page,
+          { size: 'A4', style: styles.page },
+          h(Text, { style: styles.title }, l.title),
+          h(
+            Text,
+            { style: styles.subtitle },
+            `${formatMonthTitle(data.month, locale)}${data.congregationName ? ` — ${data.congregationName}` : ''}`,
+          ),
+
+          h(Text, { style: styles.sectionTitle }, l.categorySummary),
+          h(
+            View,
+            { style: styles.tableHeader },
+            h(Text, { style: { ...styles.tableHeaderText, ...styles.catColName } }, l.category),
+            h(Text, { style: { ...styles.tableHeaderText, ...styles.catColIncome } }, l.income),
+            h(Text, { style: { ...styles.tableHeaderText, ...styles.catColExpense } }, l.expense),
+          ),
+          ...data.categorySummary.map((cat, index) =>
+            h(
+              View,
+              {
+                key: `cat-${index}`,
+                style: {
+                  ...styles.tableRow,
+                  ...(index % 2 === 1 ? styles.tableRowAlt : {}),
+                },
+              },
+              h(Text, { style: styles.catColName }, cat.name),
+              h(
+                Text,
+                { style: { ...styles.catColIncome, color: COLORS.income } },
+                formatCurrency(cat.income, locale),
+              ),
+              h(
+                Text,
+                { style: { ...styles.catColExpense, color: COLORS.expense } },
+                formatCurrency(cat.expense, locale),
+              ),
+            ),
+          ),
+
+          h(
+            View,
+            { style: styles.signatureSection },
+            h(
+              View,
+              { style: styles.signatureBlock },
+              h(View, { style: styles.signatureLine }),
+              data.pastorName ? h(Text, { style: styles.signatureName }, data.pastorName) : null,
+              h(Text, { style: styles.signatureLabel }, l.pastorSignature),
+            ),
+            h(
+              View,
+              { style: styles.signatureBlock },
+              h(View, { style: styles.signatureLine }),
+              h(Text, { style: styles.signatureLabel }, l.treasurerSignature),
+            ),
+          ),
+
+          h(
+            View,
+            { style: styles.footer, fixed: true },
+            h(
+              Text,
+              null,
+              `${l.generatedAt} ${new Intl.DateTimeFormat(locale, {
+                dateStyle: 'short',
+                timeStyle: 'short',
+                timeZone: 'America/Sao_Paulo',
+              }).format(new Date())}`,
+            ),
+          ),
+        )
+      : null,
   );
 }
 
