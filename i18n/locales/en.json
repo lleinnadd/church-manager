@@ -220,7 +220,8 @@
       "deleteTitle": "Delete member",
       "deleteDescription": "Are you sure you want to delete '{name}'? This action cannot be undone.",
       "deleteSuccess": "Member deleted successfully",
-      "deleteError": "Failed to delete member"
+      "deleteError": "Failed to delete member",
+      "exportBirthdays": "Birthdays"
     },
     "departments": {
       "title": "Departments",
@@ -626,5 +627,17 @@
       "member": "Member",
       "leader": "Leader"
     }
+  },
+  "birthdayExport": {
+    "title": "Export Birthdays",
+    "description": "Select the months to export the birthday list as PDF.",
+    "yearLabel": "Year",
+    "monthsLabel": "Months",
+    "selectAll": "Select all",
+    "clear": "Clear",
+    "download": "Download",
+    "generating": "Generating...",
+    "success": "PDF exported successfully.",
+    "error": "Failed to export PDF."
   }
 }

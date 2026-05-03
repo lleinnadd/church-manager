@@ -220,7 +220,8 @@
       "deleteTitle": "Excluir membro",
       "deleteDescription": "Tem certeza que deseja excluir '{name}'? Esta ação não pode ser desfeita.",
       "deleteSuccess": "Membro excluído com sucesso",
-      "deleteError": "Falha ao excluir membro"
+      "deleteError": "Falha ao excluir membro",
+      "exportBirthdays": "Aniversariantes"
     },
     "departments": {
       "title": "Departamentos",
@@ -626,5 +627,17 @@
       "member": "Membro",
       "leader": "Líder"
     }
+  },
+  "birthdayExport": {
+    "title": "Exportar Aniversariantes",
+    "description": "Selecione os meses para exportar a lista de aniversariantes em PDF.",
+    "yearLabel": "Ano",
+    "monthsLabel": "Meses",
+    "selectAll": "Selecionar todos",
+    "clear": "Limpar",
+    "download": "Download",
+    "generating": "Gerando...",
+    "success": "PDF exportado com sucesso.",
+    "error": "Erro ao exportar PDF."
   }
 }

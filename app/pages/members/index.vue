@@ -8,6 +8,7 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  Cake,
 } from '@lucide/vue';
 import { toast } from 'vue-sonner';
 import {
@@ -43,6 +44,7 @@ const { data: members, refresh, status } = useFetch<MemberWithRelations[]>('/api
 
 const isLoading = computed(() => status.value === 'pending');
 
+const showBirthdayExport = ref(false);
 const deleteTarget = ref<{ id: string; name: string } | null>(null);
 const isDeleting = ref(false);
 const departmentScrollRefs = ref<Record<string, HTMLElement | null>>({});
@@ -127,6 +129,10 @@ async function handleDelete() {
         <p class="text-muted-foreground text-sm">{{ $t('pages.members.description') }}</p>
       </div>
       <div class="flex gap-2">
+        <Button variant="outline" @click="showBirthdayExport = true">
+          <Cake class="mr-2 size-4" />
+          {{ $t('pages.members.exportBirthdays') }}
+        </Button>
         <Button as-child>
           <NuxtLink to="/members/new">
             <Plus class="mr-2 size-4" />
@@ -263,6 +269,8 @@ async function handleDelete() {
         </CardContent>
       </Card>
     </div>
+
+    <BirthdayExportDialog v-model:open="showBirthdayExport" />
 
     <ConfirmDialog
       :open="!!deleteTarget"
