@@ -8,14 +8,14 @@ import {
   ArrowDownCircle,
   Settings,
   FileBarChart,
-  CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
   MoreVertical,
   Paperclip,
 } from '@lucide/vue';
 import { toast } from 'vue-sonner';
 import type { AcceptableValue } from 'reka-ui';
 import type { Congregation } from '@prisma/client';
-import { CalendarDate, getLocalTimeZone, type DateValue } from '@internationalized/date';
 import type { TransactionFormData, TransactionFormPayload } from '@/types/forms';
 import { formatDateTimeLocal } from '@/lib/utils';
 
@@ -24,8 +24,50 @@ const { timezone } = useTimezone();
 const { formatBRL } = useCurrencyInput();
 
 const now = new Date();
-const startDate = ref(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10));
-const endDate = ref(new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10));
+const currentYear = ref(now.getFullYear());
+const currentMonth = ref(now.getMonth());
+
+const startDate = computed(() =>
+  new Date(currentYear.value, currentMonth.value, 1).toISOString().slice(0, 10),
+);
+const endDate = computed(() =>
+  new Date(currentYear.value, currentMonth.value + 1, 0).toISOString().slice(0, 10),
+);
+
+const monthLabel = computed(() => {
+  const date = new Date(currentYear.value, currentMonth.value, 1);
+  return new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric' }).format(date);
+});
+
+function prevMonth() {
+  if (currentMonth.value === 0) {
+    currentMonth.value = 11;
+    currentYear.value -= 1;
+  } else {
+    currentMonth.value -= 1;
+  }
+}
+
+function nextMonth() {
+  if (currentMonth.value === 11) {
+    currentMonth.value = 0;
+    currentYear.value += 1;
+  } else {
+    currentMonth.value += 1;
+  }
+}
+
+function goToCurrentMonth() {
+  const today = new Date();
+  currentYear.value = today.getFullYear();
+  currentMonth.value = today.getMonth();
+}
+
+const isCurrentMonth = computed(() => {
+  const today = new Date();
+  return currentYear.value === today.getFullYear() && currentMonth.value === today.getMonth();
+});
+
 const filterCongregationId = ref<string>('');
 const filterType = ref<string>('');
 
@@ -137,23 +179,6 @@ function formatTime(dateStr: string) {
   }).format(date);
 }
 
-function parseDateStringToDateValue(value?: string | null): DateValue | undefined {
-  if (!value) return undefined;
-  const [year, month, day] = value.split('-').map(Number);
-  if (!year || !month || !day) return undefined;
-  return new CalendarDate(year, month, day);
-}
-
-function formatDateDisplay(value: DateValue | undefined): string {
-  if (!value) return '';
-  return value.toDate(getLocalTimeZone()).toLocaleDateString(locale.value);
-}
-
-function toDateString(value: DateValue | undefined): string {
-  if (!value) return '';
-  return value.toString();
-}
-
 const sheetOpen = ref(false);
 const sheetLoading = ref(false);
 const editingTransaction = ref<TransactionFormData | undefined>(undefined);
@@ -261,65 +286,25 @@ async function handleSheetSubmit(data: TransactionFormPayload, files: File[]) {
 
     <Card class="py-0">
       <CardContent
-        class="grid grid-cols-2 gap-3 px-4 py-3 sm:flex sm:flex-wrap sm:items-end sm:gap-4"
+        class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
       >
-        <div class="space-y-1">
-          <Label>{{ $t('pages.treasury.startDate') }}</Label>
-          <Popover>
-            <PopoverTrigger as-child>
-              <Button
-                type="button"
-                variant="outline"
-                :class="[
-                  'w-full justify-start text-left font-normal',
-                  !startDate && 'text-muted-foreground',
-                ]"
-              >
-                <CalendarIcon class="mr-2 size-4" />
-                {{
-                  startDate
-                    ? formatDateDisplay(parseDateStringToDateValue(startDate))
-                    : $t('common.pickADate')
-                }}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent class="w-auto p-0">
-              <Calendar
-                :model-value="parseDateStringToDateValue(startDate)"
-                layout="month-and-year"
-                @update:model-value="(v) => (startDate = toDateString(v as DateValue))"
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div class="space-y-1">
-          <Label>{{ $t('pages.treasury.endDate') }}</Label>
-          <Popover>
-            <PopoverTrigger as-child>
-              <Button
-                type="button"
-                variant="outline"
-                :class="[
-                  'w-full justify-start text-left font-normal',
-                  !endDate && 'text-muted-foreground',
-                ]"
-              >
-                <CalendarIcon class="mr-2 size-4" />
-                {{
-                  endDate
-                    ? formatDateDisplay(parseDateStringToDateValue(endDate))
-                    : $t('common.pickADate')
-                }}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent class="w-auto p-0">
-              <Calendar
-                :model-value="parseDateStringToDateValue(endDate)"
-                layout="month-and-year"
-                @update:model-value="(v) => (endDate = toDateString(v as DateValue))"
-              />
-            </PopoverContent>
-          </Popover>
+        <div class="flex items-center gap-2">
+          <Button variant="outline" size="icon" class="size-8" @click="prevMonth">
+            <ChevronLeft class="size-4" />
+            <span class="sr-only">{{ $t('pages.treasury.prevMonth') }}</span>
+          </Button>
+          <button
+            :title="$t('pages.treasury.goToCurrentMonth')"
+            class="min-w-40 text-center text-sm font-semibold capitalize cursor-pointer hover:underline"
+            :class="{ 'text-muted-foreground': !isCurrentMonth }"
+            @click="goToCurrentMonth"
+          >
+            {{ monthLabel }}
+          </button>
+          <Button variant="outline" size="icon" class="size-8" @click="nextMonth">
+            <ChevronRight class="size-4" />
+            <span class="sr-only">{{ $t('pages.treasury.nextMonth') }}</span>
+          </Button>
         </div>
         <div class="space-y-1">
           <Label>{{ $t('pages.treasury.filterCongregation') }}</Label>
