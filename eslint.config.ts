@@ -30,7 +30,7 @@ export default typescriptEslint.config(
     ],
   },
 
-  ...withVueFiles([plugins.importX, plugins.stylistic, plugins.typescriptEslint]),
+  ...withVueFiles([plugins.importX, plugins.stylistic]),
 
   eslint.configs.recommended,
 
