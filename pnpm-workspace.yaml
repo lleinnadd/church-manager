@@ -1,3 +1,6 @@
+overrides:
+  '@internationalized/date': ^3.12.2
+
 allowBuilds:
   '@clerk/shared': false
   '@parcel/watcher': false
