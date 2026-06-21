@@ -63,7 +63,6 @@ export default defineNuxtConfig({
         '@prisma/client',
         'zod',
         '@clerk/themes',
-        '@clerk/vue',
         '@clerk/localizations',
         '@fullcalendar/vue3',
         '@fullcalendar/daygrid',
