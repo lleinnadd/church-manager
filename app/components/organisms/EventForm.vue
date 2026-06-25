@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { EventSeriesType } from '@prisma/client';
-import { CalendarIcon, Clock3, Plus, Trash2, TriangleAlertIcon } from '@lucide/vue';
+import {
+  CalendarIcon,
+  ChevronDown,
+  ChevronUp,
+  Clock3,
+  Plus,
+  Trash2,
+  TriangleAlertIcon,
+} from '@lucide/vue';
 import { CalendarDate, getLocalTimeZone, type DateValue } from '@internationalized/date';
 import type { EventFormData, EventFormPayload } from '@/types/forms';
 
@@ -31,6 +39,7 @@ const {
   daySchedules,
   canApplyFirstScheduleToRange,
   handleSubmit,
+  setFieldValue,
   addDaySchedule,
   removeDaySchedule,
   applyFirstScheduleToRange,
@@ -93,6 +102,82 @@ function formatDateDisplay(value: DateValue | undefined): string {
   if (!value) return '';
   return value.toDate(getLocalTimeZone()).toLocaleDateString(locale.value);
 }
+
+const rotationToggled = ref(false);
+const rotationEnabled = computed(
+  () => (values.rotationCongregationIds?.length ?? 0) > 0 || rotationToggled.value,
+);
+
+watch(
+  () => values.rotationCongregationIds,
+  (ids) => {
+    if (ids?.length) rotationToggled.value = true;
+  },
+  { immediate: true },
+);
+
+function toggleRotation(enabled: boolean) {
+  rotationToggled.value = enabled;
+  if (!enabled) {
+    setFieldValue('rotationCongregationIds', []);
+    setFieldValue('rotationStartDate', null);
+  }
+}
+
+const availableRotationCongregations = computed(() => {
+  const selectedIds = new Set(values.rotationCongregationIds ?? []);
+  return (congregations.value ?? []).filter((c) => !selectedIds.has(c.id));
+});
+
+function addRotationCongregation(congregationId: string) {
+  const current = [...(values.rotationCongregationIds ?? [])];
+  current.push(congregationId);
+  setFieldValue('rotationCongregationIds', current);
+}
+
+function removeRotationCongregation(index: number) {
+  const current = [...(values.rotationCongregationIds ?? [])];
+  current.splice(index, 1);
+  setFieldValue('rotationCongregationIds', current);
+  if (!current.length) {
+    rotationToggled.value = false;
+    setFieldValue('rotationStartDate', null);
+  }
+}
+
+function moveRotationCongregation(index: number, direction: -1 | 1) {
+  const current = [...(values.rotationCongregationIds ?? [])];
+  const targetIndex = index + direction;
+  if (targetIndex < 0 || targetIndex >= current.length) return;
+  [current[index], current[targetIndex]] = [current[targetIndex]!, current[index]!];
+  setFieldValue('rotationCongregationIds', current);
+}
+
+function getCongregationName(id: string): string {
+  return congregations.value?.find((c) => c.id === id)?.name ?? id;
+}
+
+const rotationPreview = computed(() => {
+  const ids = values.rotationCongregationIds ?? [];
+  const startDate = values.rotationStartDate;
+  if (!ids.length || !startDate) return [];
+
+  const [year = 2026, month = 1] = startDate.split('-').map(Number);
+  const preview: { month: string; congregation: string }[] = [];
+
+  for (let i = 0; i < Math.min(ids.length + 1, 12); i += 1) {
+    const m = (month - 1 + i) % 12;
+    const y = year + Math.floor((month - 1 + i) / 12);
+    const date = new Date(y, m, 1);
+    const label = date.toLocaleDateString(locale.value, { month: 'long', year: 'numeric' });
+    const idx = i % ids.length;
+    preview.push({ month: label, congregation: getCongregationName(ids[idx]!) });
+  }
+
+  return preview;
+});
+
+const NO_CONGREGATION_VALUE = '__none__';
 
 const onSubmit = handleSubmit((formValues) => {
   emit('submit', toPayload(formValues));
@@ -520,6 +605,164 @@ watch(
             <FormMessage />
           </FormItem>
         </FormField>
+      </CardContent>
+    </Card>
+
+    <Card v-if="isMonthly">
+      <CardHeader>
+        <div class="flex items-center justify-between">
+          <div>
+            <CardTitle>{{ $t('form.event.rotation.title') }}</CardTitle>
+            <CardDescription>{{ $t('form.event.rotation.description') }}</CardDescription>
+          </div>
+          <Switch :model-value="rotationEnabled" @update:model-value="toggleRotation" />
+        </div>
+      </CardHeader>
+      <CardContent v-if="rotationEnabled" class="space-y-4">
+        <div
+          v-if="!(values.rotationCongregationIds ?? []).length"
+          class="text-sm text-muted-foreground"
+        >
+          {{ $t('form.event.rotation.empty') }}
+        </div>
+
+        <div
+          v-for="(congId, index) in values.rotationCongregationIds ?? []"
+          :key="congId"
+          class="flex items-center gap-2 rounded-md border bg-muted/20 px-3 py-2"
+        >
+          <span class="text-muted-foreground text-xs font-medium w-5 shrink-0"
+            >{{ index + 1 }}.</span
+          >
+          <span class="flex-1 text-sm font-medium truncate">{{ getCongregationName(congId) }}</span>
+          <div class="flex shrink-0 items-center gap-0.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="size-7"
+              :disabled="index === 0"
+              :title="$t('form.event.rotation.moveUp')"
+              @click="moveRotationCongregation(index, -1)"
+            >
+              <ChevronUp class="size-3.5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="size-7"
+              :disabled="index === (values.rotationCongregationIds ?? []).length - 1"
+              :title="$t('form.event.rotation.moveDown')"
+              @click="moveRotationCongregation(index, 1)"
+            >
+              <ChevronDown class="size-3.5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="size-7"
+              :title="$t('form.event.rotation.remove')"
+              @click="removeRotationCongregation(index)"
+            >
+              <Trash2 class="size-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        <div
+          v-if="availableRotationCongregations.length"
+          class="flex flex-col gap-3 sm:flex-row sm:items-end"
+        >
+          <div class="flex-1">
+            <Select
+              :model-value="NO_CONGREGATION_VALUE"
+              @update:model-value="
+                (v) => {
+                  if (v && v !== NO_CONGREGATION_VALUE) addRotationCongregation(String(v));
+                }
+              "
+            >
+              <SelectTrigger>
+                <SelectValue :placeholder="$t('form.event.rotation.addCongregation')" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem :value="NO_CONGREGATION_VALUE" class="hidden">
+                  {{ $t('form.event.rotation.addCongregation') }}
+                </SelectItem>
+                <SelectItem
+                  v-for="congregation in availableRotationCongregations"
+                  :key="congregation.id"
+                  :value="congregation.id"
+                >
+                  {{ congregation.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <FormField
+          v-if="(values.rotationCongregationIds ?? []).length"
+          v-slot="{ field, meta }"
+          name="rotationStartDate"
+        >
+          <FormItem>
+            <FormLabel>{{ $t('form.event.rotation.startMonth') }}</FormLabel>
+            <Popover>
+              <FormControl>
+                <PopoverTrigger as-child>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    :class="[
+                      'w-full justify-start text-left font-normal',
+                      !field.value && 'text-muted-foreground',
+                    ]"
+                    :aria-invalid="(meta.touched || submitCount > 0) && !meta.valid"
+                    @blur="field.onBlur"
+                  >
+                    <CalendarIcon class="mr-2 size-4" />
+                    {{
+                      field.value
+                        ? formatDateDisplay(parseDateStringToDateValue(field.value))
+                        : $t('common.pickADate')
+                    }}
+                  </Button>
+                </PopoverTrigger>
+              </FormControl>
+              <PopoverContent class="w-auto p-0">
+                <Calendar
+                  :model-value="parseDateStringToDateValue(field.value)"
+                  layout="month-and-year"
+                  @update:model-value="(v) => field.onChange(toDateString(v as DateValue))"
+                />
+              </PopoverContent>
+            </Popover>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <div v-if="rotationPreview.length" class="space-y-1.5">
+          <p class="text-xs font-medium text-muted-foreground">
+            {{ $t('form.event.rotation.preview') }}
+          </p>
+          <div class="rounded-md border">
+            <div
+              v-for="(entry, index) in rotationPreview"
+              :key="index"
+              :class="[
+                'flex items-center justify-between px-3 py-1.5 text-sm',
+                index > 0 && 'border-t',
+                index === 0 && 'font-medium',
+              ]"
+            >
+              <span class="capitalize">{{ entry.month }}</span>
+              <span class="text-muted-foreground">{{ entry.congregation }}</span>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
 

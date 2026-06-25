@@ -44,6 +44,8 @@ export const eventSeriesSchema = z
     sameTimeStart: z.string().optional().nullable(),
     daySchedules: z.array(eventDayScheduleSchema).optional().default([]),
     monthlyRule: eventMonthlyRuleSchema.optional().nullable(),
+    rotationCongregationIds: z.array(z.string()).optional().default([]),
+    rotationStartDate: z.string().optional().nullable(),
   })
   .superRefine((value, context) => {
     if (value.eventType === EventSeriesType.MULTI_DAY && !value.endsOn) {
@@ -83,6 +85,14 @@ export const eventSeriesSchema = z
         message: 'monthlyRule is required for monthly recurring events',
       });
     }
+
+    if (value.rotationCongregationIds?.length && !value.rotationStartDate) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['rotationStartDate'],
+        message: 'rotationStartDate is required when rotationCongregationIds is set',
+      });
+    }
   });
 
 export type EventSeriesInput = z.infer<typeof eventSeriesSchema>;
@@ -99,6 +109,8 @@ export interface EventSeriesBaseData {
   sameTimeStartMinutes: number | null;
   monthlyWeekday: number | null;
   monthlyOrdinal: number | null;
+  rotationCongregationIds: string[];
+  rotationStartDate: Date | null;
 }
 
 export interface EventOccurrenceDraft {
@@ -174,6 +186,8 @@ export function resolveEventSeriesBaseData(
     sameTimeStartMinutes: resolveEventSeriesSameTimeStartMinutes(input),
     monthlyWeekday: input.monthlyRule?.weekday ?? null,
     monthlyOrdinal: input.monthlyRule?.ordinal ?? null,
+    rotationCongregationIds: input.rotationCongregationIds ?? [],
+    rotationStartDate: input.rotationStartDate ? parseDateOnlyToUtc(input.rotationStartDate) : null,
   };
 }
 
@@ -391,4 +405,23 @@ export function buildOccurrencesForSeriesRange(
 
 export function buildOccurrenceDateKey(date: Date): string {
   return dateToDateOnlyString(parseDateOnlyToUtc(dateToDateOnlyString(date)));
+}
+
+export function resolveRotationCongregationId(
+  rotationCongregationIds: string[],
+  rotationStartDate: Date | null,
+  occurrenceDate: Date,
+): string | null {
+  if (!rotationCongregationIds.length || !rotationStartDate) return null;
+
+  const anchorYear = rotationStartDate.getUTCFullYear();
+  const anchorMonth = rotationStartDate.getUTCMonth();
+  const occYear = occurrenceDate.getUTCFullYear();
+  const occMonth = occurrenceDate.getUTCMonth();
+
+  const monthsElapsed = (occYear - anchorYear) * 12 + (occMonth - anchorMonth);
+  const len = rotationCongregationIds.length;
+  const index = ((monthsElapsed % len) + len) % len;
+
+  return rotationCongregationIds[index] ?? null;
 }

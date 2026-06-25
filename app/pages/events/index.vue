@@ -22,6 +22,7 @@ interface EventOccurrence {
   isException?: boolean;
   seriesId: string;
   congregation?: { id: string; name: string } | null;
+  responsibleCongregation?: { id: string; name: string } | null;
   department?: { id: string; name: string } | null;
   series: {
     id: string;
@@ -40,6 +41,7 @@ interface CalendarExtendedProps {
   rawEndAt?: string;
   description?: string | null;
   congregationName?: string;
+  responsibleCongregationName?: string;
   departmentName?: string;
   eventType?: string;
   startsOn?: string;
@@ -57,6 +59,7 @@ interface SelectedCalendarOccurrence {
   startAt: string;
   endAt: string;
   congregationName?: string;
+  responsibleCongregationName?: string;
   departmentName?: string;
   eventType?: string;
 }
@@ -73,6 +76,8 @@ interface EventSeriesDetails {
   sameTimeStartMinutes: number | null;
   monthlyWeekday: number | null;
   monthlyOrdinal: number | null;
+  rotationCongregationIds: string[];
+  rotationStartDate: string | null;
   daySchedules: { date: string; startMinutes: number; endMinutes: number }[];
 }
 
@@ -643,6 +648,8 @@ async function endRecurrence() {
               startTime: monthlyStartTime,
             }
           : null,
+      rotationCongregationIds: series.rotationCongregationIds ?? [],
+      rotationStartDate: series.rotationStartDate ? toDateOnly(series.rotationStartDate) : null,
     },
   });
 
@@ -704,6 +711,7 @@ async function loadCalendarEvents(
         rawEndAt: item.endAt,
         description: item.description,
         congregationName: item.congregation?.name,
+        responsibleCongregationName: item.responsibleCongregation?.name,
         departmentName: item.department?.name,
         eventType: item.series?.eventType,
         startsOn: item.series?.startsOn,
@@ -866,6 +874,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       startAt: props.rawStartAt,
       endAt: props.rawEndAt,
       congregationName: props.congregationName,
+      responsibleCongregationName: props.responsibleCongregationName,
       departmentName: props.departmentName,
       eventType: props.eventType,
     };
@@ -886,8 +895,13 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     info.el.classList.add('fc-event-has-type-dot');
 
     const congregationName = props.congregationName;
+    const responsibleName = props.responsibleCongregationName;
     const departmentName = props.departmentName;
-    const tooltip = [info.event.title, congregationName, departmentName]
+    const tooltip = [
+      info.event.title,
+      responsibleName ? `Resp: ${responsibleName}` : congregationName,
+      departmentName,
+    ]
       .filter(Boolean)
       .join(' • ');
     const element = info.el;
@@ -1105,6 +1119,15 @@ const calendarOptions = computed<CalendarOptions>(() => ({
               {{ $t('pages.events.detailsRecurrenceRange') }}
             </p>
             <p class="mt-1 font-medium">{{ recurrenceRangeLabel }}</p>
+          </div>
+          <div
+            v-if="selectedOccurrence?.responsibleCongregationName"
+            class="rounded-md border bg-muted/20 px-3 py-2"
+          >
+            <p class="text-muted-foreground text-xs">
+              {{ $t('pages.events.detailsResponsibleCongregation') }}
+            </p>
+            <p class="mt-1 font-medium">{{ selectedOccurrence.responsibleCongregationName }}</p>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div class="rounded-md border bg-muted/20 px-3 py-2">

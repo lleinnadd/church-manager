@@ -325,6 +325,7 @@
       "detailsRecurrence": "Recurrence",
       "detailsRecurrenceRange": "Recurrence range",
       "detailsCongregation": "Congregation",
+      "detailsResponsibleCongregation": "Responsible congregation",
       "detailsDepartment": "Department",
       "editAction": "Edit",
       "monthlyRecurring": "Monthly recurring",
@@ -556,7 +557,20 @@
       "weekdayPlaceholder": "Select weekday",
       "date": "Date",
       "startTime": "Start",
-      "endTime": "End"
+      "endTime": "End",
+      "rotation": {
+        "title": "Congregation rotation",
+        "description": "Configure responsibility rotation across congregations.",
+        "enable": "Enable rotation",
+        "startMonth": "Cycle start month",
+        "addCongregation": "Add congregation",
+        "preview": "Cycle preview",
+        "empty": "No congregations added to the rotation.",
+        "responsible": "Resp: {name}",
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "remove": "Remove"
+      }
     },
     "transaction": {
       "generalInfo": "Transaction Details",

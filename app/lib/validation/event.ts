@@ -55,6 +55,8 @@ export const buildEventFormSchema = (t: Composer['t']) => {
       sameTimeStart: z.string().optional().nullable(),
       daySchedules: z.array(dayScheduleSchema).optional().default([]),
       monthlyRule: monthlyRuleSchema.optional().nullable(),
+      rotationCongregationIds: z.array(z.string()).optional().default([]),
+      rotationStartDate: z.string().optional().nullable(),
     })
     .superRefine((value, context) => {
       if (value.eventType === EventSeriesType.MULTI_DAY && !value.endsOn) {
@@ -115,6 +117,14 @@ export const buildEventFormSchema = (t: Composer['t']) => {
         context.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['sameTimeStart'],
+          message: required,
+        });
+      }
+
+      if (value.rotationCongregationIds?.length && !value.rotationStartDate) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['rotationStartDate'],
           message: required,
         });
       }

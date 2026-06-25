@@ -16,6 +16,8 @@ function normalizeInitialValues(data?: EventFormData): EventFormPayload {
     sameTimeStart: data?.sameTimeStart ?? null,
     daySchedules: data?.daySchedules ?? [],
     monthlyRule: data?.monthlyRule ?? null,
+    rotationCongregationIds: data?.rotationCongregationIds ?? [],
+    rotationStartDate: data?.rotationStartDate ?? null,
   };
 }
 
@@ -74,11 +76,15 @@ export const useEventFormModel = (initialData: Ref<EventFormData | undefined>) =
     (eventType) => {
       if (eventType === EventSeriesType.SINGLE_DAY) {
         setFieldValue('endsOn', values.startsOn || '');
-        return;
       }
 
       if (eventType === EventSeriesType.MULTI_DAY && !values.endsOn?.trim()) {
         setFieldValue('endsOn', values.startsOn || '');
+      }
+
+      if (eventType !== EventSeriesType.MONTHLY_RECURRING) {
+        setFieldValue('rotationCongregationIds', []);
+        setFieldValue('rotationStartDate', null);
       }
     },
   );
@@ -145,6 +151,14 @@ export const useEventFormModel = (initialData: Ref<EventFormData | undefined>) =
       .sort((a, b) => a.date.localeCompare(b.date)),
     monthlyRule:
       formValues.eventType === EventSeriesType.MONTHLY_RECURRING ? formValues.monthlyRule : null,
+    rotationCongregationIds:
+      formValues.eventType === EventSeriesType.MONTHLY_RECURRING
+        ? (formValues.rotationCongregationIds ?? [])
+        : [],
+    rotationStartDate:
+      formValues.eventType === EventSeriesType.MONTHLY_RECURRING
+        ? (formValues.rotationStartDate ?? null)
+        : null,
   });
 
   return {
@@ -159,6 +173,7 @@ export const useEventFormModel = (initialData: Ref<EventFormData | undefined>) =
     daySchedules,
     canApplyFirstScheduleToRange,
     handleSubmit,
+    setFieldValue,
     addDaySchedule,
     removeDaySchedule,
     applyFirstScheduleToRange,

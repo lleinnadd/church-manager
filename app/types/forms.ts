@@ -151,6 +151,8 @@ export interface EventFormPayload {
   sameTimeStart?: string | null;
   daySchedules?: EventDayScheduleInput[];
   monthlyRule?: EventMonthlyRuleInput | null;
+  rotationCongregationIds?: string[];
+  rotationStartDate?: string | null;
 }
 
 export interface EventFormData extends EventFormPayload {

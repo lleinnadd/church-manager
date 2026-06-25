@@ -179,6 +179,9 @@ model EventSeries {
   monthlyWeekday Int?
   monthlyOrdinal Int?
 
+  rotationCongregationIds String[]  @default([]) @db.ObjectId
+  rotationStartDate       DateTime?
+
   daySchedules EventSeriesDaySchedule[]
   occurrences  EventOccurrence[]
 

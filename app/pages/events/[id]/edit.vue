@@ -15,6 +15,8 @@ interface EventSeriesApiResponse {
   sameTimeStartMinutes: number | null;
   monthlyWeekday: number | null;
   monthlyOrdinal: number | null;
+  rotationCongregationIds: string[];
+  rotationStartDate: string | null;
   daySchedules: { date: string; startMinutes: number; endMinutes: number }[];
 }
 
@@ -62,6 +64,10 @@ const initialData = computed<EventFormData | undefined>(() => {
             startTime: minutesToTime(eventSeries.value.sameTimeStartMinutes) || '19:00',
           }
         : null,
+    rotationCongregationIds: eventSeries.value.rotationCongregationIds ?? [],
+    rotationStartDate: eventSeries.value.rotationStartDate
+      ? toDateOnly(eventSeries.value.rotationStartDate)
+      : null,
   };
 });
 

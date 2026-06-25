@@ -46,6 +46,21 @@ export default defineEventHandler(async (event) => {
     return [];
   }
 
+  const rotationCongregationIds = [
+    ...new Set(seriesList.flatMap((s) => s.rotationCongregationIds)),
+  ];
+  const rotationCongregationMap = new Map<string, { id: string; name: string; type: string }>();
+
+  if (rotationCongregationIds.length) {
+    const rotationCongregations = await prisma.congregation.findMany({
+      where: { id: { in: rotationCongregationIds } },
+      select: { id: true, name: true, type: true },
+    });
+    for (const c of rotationCongregations) {
+      rotationCongregationMap.set(c.id, c);
+    }
+  }
+
   const exceptionEntries = await prisma.eventOccurrence.findMany({
     where: {
       seriesId: { in: seriesList.map((series) => series.id) },
@@ -99,8 +114,27 @@ export default defineEventHandler(async (event) => {
 
       if (exception) {
         consumedExceptions.add(exception.id);
-        return exception.cancelled ? [] : [exception];
+        if (exception.cancelled) return [];
+        const excResponsibleId = resolveRotationCongregationId(
+          series.rotationCongregationIds,
+          series.rotationStartDate,
+          exception.occurrenceDate,
+        );
+        return [
+          {
+            ...exception,
+            responsibleCongregation: excResponsibleId
+              ? (rotationCongregationMap.get(excResponsibleId) ?? null)
+              : null,
+          },
+        ];
       }
+
+      const responsibleId = resolveRotationCongregationId(
+        series.rotationCongregationIds,
+        series.rotationStartDate,
+        occurrence.occurrenceDate,
+      );
 
       return [
         {
@@ -118,6 +152,9 @@ export default defineEventHandler(async (event) => {
           cancelled: false,
           congregation: series.congregation,
           department: series.department,
+          responsibleCongregation: responsibleId
+            ? (rotationCongregationMap.get(responsibleId) ?? null)
+            : null,
           series: {
             id: series.id,
             eventType: series.eventType,
@@ -131,14 +168,33 @@ export default defineEventHandler(async (event) => {
     }),
   );
 
-  const remainingExceptions = exceptionEntries.filter(
-    (exception) =>
-      !consumedExceptions.has(exception.id) &&
-      !exception.cancelled &&
-      (!exception.series.endsOn || exception.occurrenceDate <= exception.series.endsOn) &&
-      exception.startAt < end &&
-      exception.endAt > start,
-  );
+  const seriesById = new Map(seriesList.map((s) => [s.id, s]));
+
+  const remainingExceptions = exceptionEntries
+    .filter(
+      (exception) =>
+        !consumedExceptions.has(exception.id) &&
+        !exception.cancelled &&
+        (!exception.series.endsOn || exception.occurrenceDate <= exception.series.endsOn) &&
+        exception.startAt < end &&
+        exception.endAt > start,
+    )
+    .map((exception) => {
+      const parentSeries = seriesById.get(exception.seriesId);
+      const remResponsibleId = parentSeries
+        ? resolveRotationCongregationId(
+            parentSeries.rotationCongregationIds,
+            parentSeries.rotationStartDate,
+            exception.occurrenceDate,
+          )
+        : null;
+      return {
+        ...exception,
+        responsibleCongregation: remResponsibleId
+          ? (rotationCongregationMap.get(remResponsibleId) ?? null)
+          : null,
+      };
+    });
 
   return [...generatedAndMerged, ...remainingExceptions].sort(
     (a, b) => a.startAt.getTime() - b.startAt.getTime(),

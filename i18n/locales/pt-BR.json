@@ -325,6 +325,7 @@
       "detailsRecurrence": "Recorrência",
       "detailsRecurrenceRange": "Período da recorrência",
       "detailsCongregation": "Congregação",
+      "detailsResponsibleCongregation": "Congregação responsável",
       "detailsDepartment": "Departamento",
       "editAction": "Editar",
       "monthlyRecurring": "Recorrente mensal",
@@ -556,7 +557,20 @@
       "weekdayPlaceholder": "Selecione o dia da semana",
       "date": "Data",
       "startTime": "Início",
-      "endTime": "Fim"
+      "endTime": "Fim",
+      "rotation": {
+        "title": "Rodízio de congregações",
+        "description": "Configure a rotação de responsabilidade entre congregações.",
+        "enable": "Habilitar rodízio",
+        "startMonth": "Mês de início do ciclo",
+        "addCongregation": "Adicionar congregação",
+        "preview": "Prévia do ciclo",
+        "empty": "Nenhuma congregação adicionada ao rodízio.",
+        "responsible": "Resp: {name}",
+        "moveUp": "Mover para cima",
+        "moveDown": "Mover para baixo",
+        "remove": "Remover"
+      }
     },
     "transaction": {
       "generalInfo": "Dados da Transação",
