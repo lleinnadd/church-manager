@@ -89,6 +89,31 @@ export const useEventFormModel = (initialData: Ref<EventFormData | undefined>) =
     },
   );
 
+  function getDefaultTimeForDate(dateStr: string): string {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (!year || !month || !day) return '19:00';
+    const dayOfWeek = new Date(year, month - 1, day).getDay();
+    return dayOfWeek === 0 ? '18:00' : '19:00';
+  }
+
+  watch(
+    () => values.startsOn,
+    (startsOn, oldStartsOn) => {
+      if (!startsOn) return;
+      if (!oldStartsOn && values.sameTimeStart) return;
+      setFieldValue('sameTimeStart', getDefaultTimeForDate(startsOn));
+    },
+    { immediate: true },
+  );
+
+  watch(
+    () => values.monthlyRule?.weekday,
+    (weekday) => {
+      if (weekday == null) return;
+      setFieldValue('monthlyRule.startTime', weekday === 0 ? '18:00' : '19:00');
+    },
+  );
+
   const canApplyFirstScheduleToRange = computed(() => {
     if (!values.startsOn || !values.endsOn) return false;
     const first = daySchedules.value[0];
