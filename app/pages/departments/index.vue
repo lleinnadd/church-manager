@@ -3,6 +3,11 @@ import { Building2, Plus, Pencil, Trash2, Users } from '@lucide/vue';
 import { toast } from 'vue-sonner';
 import type { Department } from '@prisma/client';
 
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'departments', action: 'READ' },
+});
+
 const { t } = useI18n();
 
 interface DepartmentLocalName {

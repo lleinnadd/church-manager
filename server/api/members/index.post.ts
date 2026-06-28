@@ -1,8 +1,13 @@
+import { PermissionAction } from '@prisma/client';
 import { createMemberSchema } from '#shared/validation/member';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const memberSchema = createMemberSchema();
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'members', PermissionAction.CREATE);
+
   const parsed = memberSchema.safeParse(await readBody(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });

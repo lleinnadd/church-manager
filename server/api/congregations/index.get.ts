@@ -1,4 +1,5 @@
-import { CongregationType } from '@prisma/client';
+import { CongregationType, PermissionAction } from '@prisma/client';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const congregationTypePriority: Record<CongregationType, number> = {
   [CongregationType.HEADQUARTERS]: 0,
@@ -6,8 +7,14 @@ const congregationTypePriority: Record<CongregationType, number> = {
   [CongregationType.SUB_BRANCH]: 2,
 };
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'congregations', PermissionAction.READ);
+
+  const congregationFilter = getCongregationFilter(rbac, 'congregations');
+
   const congregations = await prisma.congregation.findMany({
+    where: congregationFilter,
     include: {
       _count: {
         select: { members: true },

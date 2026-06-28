@@ -11,6 +11,11 @@ import {
 } from '@lucide/vue';
 import type { CongregationType } from '@prisma/client';
 
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'stats', action: 'READ' },
+});
+
 const { t } = useI18n();
 const { stats, pending, error, congregationId, refresh } = useDashboardStats();
 

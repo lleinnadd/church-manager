@@ -21,6 +21,11 @@ import {
   type CongregationType,
 } from '@prisma/client';
 
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'members', action: 'READ' },
+});
+
 const { t } = useI18n();
 const { userId } = useAuth();
 

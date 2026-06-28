@@ -4,6 +4,7 @@
   },
   "sidebar": {
     "menu": "Menu",
+    "admin": "Administration",
     "home": "Home",
     "congregations": "Congregations",
     "members": "Members",
@@ -654,5 +655,56 @@
     "generating": "Generating...",
     "success": "PDF exported successfully.",
     "error": "Failed to export PDF."
+  },
+  "noAccess": {
+    "title": "No Access",
+    "description": "Your account does not have any permissions assigned yet. Please contact an administrator to get access to the system."
+  },
+  "rbac": {
+    "title": "Access Profiles",
+    "newProfile": "New Profile",
+    "editProfile": "Edit Profile",
+    "profileName": "Profile name",
+    "profileDescription": "Description",
+    "permissions": "Permissions",
+    "bindings": "Bindings",
+    "addBinding": "Add Binding",
+    "noProfiles": "No access profiles registered.",
+    "noBindings": "No bindings configured.",
+    "systemProfile": "System profile",
+    "deleteConfirm": "Are you sure you want to delete this profile?",
+    "deleteBindingConfirm": "Are you sure you want to remove this binding?",
+    "saved": "Profile saved successfully.",
+    "deleted": "Profile deleted successfully.",
+    "bindingAdded": "Binding added successfully.",
+    "bindingDeleted": "Binding removed successfully.",
+    "resources": {
+      "members": "Members",
+      "congregations": "Congregations",
+      "departments": "Departments",
+      "events": "Events",
+      "treasury": "Treasury",
+      "treasury-config": "Treasury Config",
+      "stats": "Dashboard",
+      "rbac": "Access Profiles"
+    },
+    "actions": {
+      "CREATE": "Create",
+      "READ": "View",
+      "UPDATE": "Edit",
+      "DELETE": "Delete",
+      "EXPORT": "Export",
+      "MANAGE": "Manage"
+    },
+    "scopeTypes": {
+      "ALL": "All congregations",
+      "OWN_CONGREGATION": "Own congregation"
+    },
+    "function": "Function",
+    "scope": "Scope",
+    "selectFunction": "Select a function",
+    "selectScope": "Select a scope",
+    "isAdmin": "Administrator",
+    "isAdminDescription": "Administrators have full system access regardless of access profiles."
   }
 }

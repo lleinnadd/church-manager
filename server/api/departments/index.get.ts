@@ -1,4 +1,10 @@
-export default defineEventHandler(async () => {
+import { PermissionAction } from '@prisma/client';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
+
+export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'departments', PermissionAction.READ);
+
   return prisma.department.aggregateRaw({
     pipeline: [
       { $sort: { name: 1 } },

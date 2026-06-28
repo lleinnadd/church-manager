@@ -3,6 +3,11 @@ import { ChevronLeft, ChevronRight, Download, ArrowUpCircle, ArrowDownCircle } f
 import type { AcceptableValue } from 'reka-ui';
 import type { Congregation } from '@prisma/client';
 
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'treasury', action: 'READ' },
+});
+
 const { locale } = useI18n();
 const { formatBRL } = useCurrencyInput();
 

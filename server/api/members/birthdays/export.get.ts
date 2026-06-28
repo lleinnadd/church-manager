@@ -1,5 +1,7 @@
+import { PermissionAction } from '@prisma/client';
 import { z } from 'zod';
 import type { BirthdayMonthData } from '~~/server/utils/birthday-export';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const querySchema = z.object({
   months: z
@@ -21,6 +23,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const { months: monthStrings, locale } = parsed.data;
+
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'members', PermissionAction.EXPORT);
 
   const auth = (event.context.auth as () => { userId: string | null })();
   const clerkUserId = auth?.userId ?? null;

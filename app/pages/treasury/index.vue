@@ -19,6 +19,11 @@ import type { Congregation } from '@prisma/client';
 import type { TransactionFormData, TransactionFormPayload } from '@/types/forms';
 import { formatDateTimeLocal } from '@/lib/utils';
 
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'treasury', action: 'READ' },
+});
+
 const { t, locale } = useI18n();
 const { timezone } = useTimezone();
 const { formatBRL } = useCurrencyInput();

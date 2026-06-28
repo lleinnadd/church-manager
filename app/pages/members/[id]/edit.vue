@@ -1,16 +1,45 @@
 <script setup lang="ts">
+import { Shield } from '@lucide/vue';
 import { toast } from 'vue-sonner';
 import type { MemberFormData, MemberFormPayload } from '@/types/forms';
+
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'members', action: 'UPDATE' },
+});
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const loading = ref(false);
+const { isAdmin: viewerIsAdmin } = usePermissions();
 
 const id = route.params.id as string;
 
-const { data: member, status } = useFetch<MemberFormData>(`/api/members/${id}`);
+const {
+  data: member,
+  status,
+  refresh,
+} = useFetch<MemberFormData & { isAdmin?: boolean }>(`/api/members/${id}`);
 const isLoading = computed(() => status.value === 'pending');
+
+const togglingAdmin = ref(false);
+
+async function handleToggleAdmin(checked: boolean) {
+  togglingAdmin.value = true;
+  try {
+    await $fetch(`/api/members/${id}`, {
+      method: 'PUT',
+      body: { ...member.value, isAdmin: checked },
+    });
+    toast.success(t('rbac.saved'));
+    await refresh();
+  } catch {
+    toast.error(t('common.errorGeneric'));
+  } finally {
+    togglingAdmin.value = false;
+  }
+}
 
 async function handleSubmit(data: MemberFormPayload) {
   loading.value = true;
@@ -38,11 +67,23 @@ async function handleSubmit(data: MemberFormPayload) {
       <Skeleton class="h-64 w-full rounded-xl" />
     </div>
 
-    <MemberForm
-      v-else-if="member"
-      :initial-data="member"
-      :loading="loading"
-      @submit="handleSubmit"
-    />
+    <template v-else-if="member">
+      <div v-if="viewerIsAdmin" class="flex items-center justify-between rounded-lg border p-4">
+        <div class="flex items-center gap-3">
+          <Shield class="size-5 text-muted-foreground" />
+          <div>
+            <p class="font-medium">{{ $t('rbac.isAdmin') }}</p>
+            <p class="text-sm text-muted-foreground">{{ $t('rbac.isAdminDescription') }}</p>
+          </div>
+        </div>
+        <Switch
+          :checked="member.isAdmin ?? false"
+          :disabled="togglingAdmin"
+          @update:checked="handleToggleAdmin"
+        />
+      </div>
+
+      <MemberForm :initial-data="member" :loading="loading" @submit="handleSubmit" />
+    </template>
   </div>
 </template>

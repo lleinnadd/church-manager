@@ -1,10 +1,15 @@
-import { CongregationType } from '@prisma/client';
+import { CongregationType, PermissionAction } from '@prisma/client';
 import { createCongregationSchema } from '#shared/validation/congregation';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const congregationSchema = createCongregationSchema();
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'congregations', PermissionAction.UPDATE);
+
   const id = getRouterParam(event, 'id');
+  assertCongregationAccess(rbac, id);
   const parsed = congregationSchema.safeParse(await readBody(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });

@@ -1,4 +1,10 @@
+import { PermissionAction } from '@prisma/client';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
+
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'members', PermissionAction.READ);
+
   const id = getRouterParam(event, 'id');
 
   const member = await prisma.member.findUnique({
@@ -25,6 +31,8 @@ export default defineEventHandler(async (event) => {
   if (!member) {
     throw createError({ statusCode: 404, statusMessage: 'Member not found' });
   }
+
+  assertCongregationAccess(rbac, member.congregationId);
 
   return member;
 });

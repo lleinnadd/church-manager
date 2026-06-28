@@ -1,5 +1,6 @@
-import { DepartmentFunctionScope } from '@prisma/client';
+import { DepartmentFunctionScope, PermissionAction } from '@prisma/client';
 import { z } from 'zod';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const departmentSchema = z.object({
   name: z.string().min(1),
@@ -29,6 +30,9 @@ const departmentSchema = z.object({
 });
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'departments', PermissionAction.UPDATE);
+
   const id = getRouterParam(event, 'id');
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'Department id is required' });

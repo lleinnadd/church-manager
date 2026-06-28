@@ -1,4 +1,9 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'treasury-config', action: 'READ' },
+});
+</script>
 
 <template>
   <div class="space-y-6">

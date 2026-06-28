@@ -4,6 +4,7 @@
   },
   "sidebar": {
     "menu": "Menu",
+    "admin": "Administração",
     "home": "Início",
     "congregations": "Congregações",
     "members": "Membros",
@@ -654,5 +655,56 @@
     "generating": "Gerando...",
     "success": "PDF exportado com sucesso.",
     "error": "Erro ao exportar PDF."
+  },
+  "noAccess": {
+    "title": "Sem acesso",
+    "description": "Sua conta ainda não possui permissões atribuídas. Entre em contato com um administrador para obter acesso ao sistema."
+  },
+  "rbac": {
+    "title": "Perfis de Acesso",
+    "newProfile": "Novo Perfil",
+    "editProfile": "Editar Perfil",
+    "profileName": "Nome do perfil",
+    "profileDescription": "Descrição",
+    "permissions": "Permissões",
+    "bindings": "Vínculos",
+    "addBinding": "Adicionar Vínculo",
+    "noProfiles": "Nenhum perfil de acesso cadastrado.",
+    "noBindings": "Nenhum vínculo configurado.",
+    "systemProfile": "Perfil do sistema",
+    "deleteConfirm": "Tem certeza que deseja excluir este perfil?",
+    "deleteBindingConfirm": "Tem certeza que deseja remover este vínculo?",
+    "saved": "Perfil salvo com sucesso.",
+    "deleted": "Perfil excluído com sucesso.",
+    "bindingAdded": "Vínculo adicionado com sucesso.",
+    "bindingDeleted": "Vínculo removido com sucesso.",
+    "resources": {
+      "members": "Membros",
+      "congregations": "Congregações",
+      "departments": "Departamentos",
+      "events": "Eventos",
+      "treasury": "Tesouraria",
+      "treasury-config": "Configuração da Tesouraria",
+      "stats": "Dashboard",
+      "rbac": "Perfis de Acesso"
+    },
+    "actions": {
+      "CREATE": "Criar",
+      "READ": "Visualizar",
+      "UPDATE": "Editar",
+      "DELETE": "Excluir",
+      "EXPORT": "Exportar",
+      "MANAGE": "Gerenciar"
+    },
+    "scopeTypes": {
+      "ALL": "Todas as congregações",
+      "OWN_CONGREGATION": "Própria congregação"
+    },
+    "function": "Função",
+    "scope": "Escopo",
+    "selectFunction": "Selecione uma função",
+    "selectScope": "Selecione um escopo",
+    "isAdmin": "Administrador",
+    "isAdminDescription": "Administradores têm acesso total ao sistema, independente de perfis de acesso."
   }
 }

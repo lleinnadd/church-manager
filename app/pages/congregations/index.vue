@@ -3,6 +3,11 @@ import { Church, Plus, Pencil, Trash2, MapPin, Users, UserRound } from '@lucide/
 import type { CongregationType, Congregation } from '@prisma/client';
 import { toast } from 'vue-sonner';
 
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'congregations', action: 'READ' },
+});
+
 const { t, locale } = useI18n();
 
 interface CongregationLeadershipData {

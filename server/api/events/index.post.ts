@@ -1,4 +1,10 @@
+import { PermissionAction } from '@prisma/client';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
+
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'events', PermissionAction.CREATE);
+
   const parsed = eventSeriesSchema.safeParse(await readBody(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
@@ -7,6 +13,8 @@ export default defineEventHandler(async (event) => {
   const body = parsed.data;
   const baseData = resolveEventSeriesBaseData(body);
   const daySchedulesData = mapEventSeriesDaySchedules(body.daySchedules);
+
+  assertCongregationAccess(rbac, body.congregationId);
 
   const congregation = await prisma.congregation.findUnique({ where: { id: body.congregationId } });
   if (!congregation) {

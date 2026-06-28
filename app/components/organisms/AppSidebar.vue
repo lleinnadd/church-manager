@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { Home, Users, CalendarDays, ChevronUp, Church, Building2, Wallet } from '@lucide/vue';
+import {
+  Home,
+  Users,
+  CalendarDays,
+  ChevronUp,
+  Church,
+  Building2,
+  Wallet,
+  Settings,
+} from '@lucide/vue';
 import { dark } from '@clerk/themes';
 import { useSidebar } from '@/components/ui/sidebar/utils';
 
@@ -7,17 +16,53 @@ const { t } = useI18n();
 const { user } = useUser();
 const clerk = useClerk();
 const { state } = useSidebar();
+const { can, isAdmin } = usePermissions();
 
 const isCollapsed = computed(() => state.value === 'collapsed');
 
-const menuItems = computed(() => [
-  { title: t('sidebar.home'), icon: Home, url: '/' },
-  { title: t('sidebar.congregations'), icon: Church, url: '/congregations' },
-  { title: t('sidebar.departments'), icon: Building2, url: '/departments' },
-  { title: t('sidebar.members'), icon: Users, url: '/members' },
-  { title: t('sidebar.events'), icon: CalendarDays, url: '/events' },
-  { title: t('sidebar.treasury'), icon: Wallet, url: '/treasury' },
-]);
+const allMenuItems = [
+  { title: 'sidebar.home', icon: Home, url: '/', resource: 'stats', action: 'READ' },
+  {
+    title: 'sidebar.congregations',
+    icon: Church,
+    url: '/congregations',
+    resource: 'congregations',
+    action: 'READ',
+  },
+  {
+    title: 'sidebar.departments',
+    icon: Building2,
+    url: '/departments',
+    resource: 'departments',
+    action: 'READ',
+  },
+  { title: 'sidebar.members', icon: Users, url: '/members', resource: 'members', action: 'READ' },
+  {
+    title: 'sidebar.events',
+    icon: CalendarDays,
+    url: '/events',
+    resource: 'events',
+    action: 'READ',
+  },
+  {
+    title: 'sidebar.treasury',
+    icon: Wallet,
+    url: '/treasury',
+    resource: 'treasury',
+    action: 'READ',
+  },
+] as const;
+
+const menuItems = computed(() =>
+  allMenuItems
+    .filter((item) => can(item.resource, item.action))
+    .map((item) => ({ ...item, title: t(item.title) })),
+);
+
+const settingsItems = computed(() => {
+  if (!isAdmin.value) return [];
+  return [{ title: t('sidebar.settings'), icon: Settings, url: '/settings/rbac' }];
+});
 
 async function handleSignOut() {
   await clerk.value?.signOut({ redirectUrl: '/auth/sign-in' });
@@ -82,7 +127,23 @@ const userEmail = computed(() => {
         <SidebarGroupLabel>{{ $t('sidebar.menu') }}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            <SidebarMenuItem v-for="item in menuItems" :key="item.title">
+            <SidebarMenuItem v-for="item in menuItems" :key="item.url">
+              <SidebarMenuButton as-child :tooltip="item.title">
+                <NuxtLink :to="item.url">
+                  <component :is="item.icon" />
+                  <span>{{ item.title }}</span>
+                </NuxtLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+
+      <SidebarGroup v-if="settingsItems.length">
+        <SidebarGroupLabel>{{ $t('sidebar.admin') }}</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem v-for="item in settingsItems" :key="item.url">
               <SidebarMenuButton as-child :tooltip="item.title">
                 <NuxtLink :to="item.url">
                   <component :is="item.icon" />

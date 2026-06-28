@@ -1,20 +1,30 @@
-import { MemberStatus } from '@prisma/client';
+import { MemberStatus, PermissionAction } from '@prisma/client';
 import { createMemberSchema } from '#shared/validation/member';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const memberSchema = createMemberSchema();
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'members', PermissionAction.UPDATE);
+
   const id = getRouterParam(event, 'id');
-  const parsed = memberSchema.safeParse(await readBody(event));
+  const rawBody = await readBody(event);
+  const parsed = memberSchema.safeParse(rawBody);
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
   }
   const body = parsed.data;
 
+  const isAdminUpdate =
+    typeof rawBody?.isAdmin === 'boolean' && rbac?.isAdmin ? rawBody.isAdmin : undefined;
+
   const existing = await prisma.member.findUnique({ where: { id } });
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Member not found' });
   }
+
+  assertCongregationAccess(rbac, existing.congregationId);
 
   if (existing.photoBlobPath && existing.photoBlobPath !== body.photoBlobPath) {
     await safeDeleteBlob(existing.photoBlobPath);
@@ -37,6 +47,7 @@ export default defineEventHandler(async (event) => {
       congregationId: body.congregationId,
       status,
       clerkUserId: undefined,
+      isAdmin: isAdminUpdate,
       dateOfBirth: new Date(body.dateOfBirth),
       memberSince: new Date(body.memberSince),
       convertionDate: new Date(body.convertionDate),

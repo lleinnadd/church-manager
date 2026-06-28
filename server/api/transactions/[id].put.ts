@@ -1,6 +1,11 @@
+import { PermissionAction } from '@prisma/client';
 import { createTransactionSchema } from '~~/shared/validation/transaction';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'treasury', PermissionAction.UPDATE);
+
   const id = getRouterParam(event, 'id');
 
   if (!id) {

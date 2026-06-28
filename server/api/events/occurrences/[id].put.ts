@@ -1,4 +1,6 @@
+import { PermissionAction } from '@prisma/client';
 import { z } from 'zod';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const occurrenceSchema = z.object({
   seriesId: z.string().optional(),
@@ -42,6 +44,9 @@ function normalizeOccurrenceDateInput(value: string): string | null {
 }
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'events', PermissionAction.UPDATE);
+
   const id = getRouterParam(event, 'id');
 
   if (!id) {

@@ -71,6 +71,7 @@ model Member {
   observations String?
 
   clerkUserId String? @unique
+  isAdmin     Boolean @default(false)
 
   departments MemberDepartment[]
 
@@ -124,7 +125,8 @@ model DepartmentFunction {
   departmentId String                   @db.ObjectId
   department   Department               @relation(fields: [departmentId], references: [id])
 
-  memberships MemberDepartment[]
+  memberships     MemberDepartment[]
+  profileBindings RbacProfileBinding[]
 
   @@unique([departmentId, name])
   @@index([departmentId])
@@ -351,4 +353,67 @@ model TreasuryConfig {
   initialBalanceDate DateTime @default(now())
 
   @@map("treasury_configs")
+}
+
+enum PermissionAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  EXPORT
+  MANAGE
+}
+
+enum PermissionScopeType {
+  ALL
+  OWN_CONGREGATION
+}
+
+model RbacProfile {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String  @unique
+  description String?
+  isSystem    Boolean @default(false)
+
+  permissions RbacPermission[]
+  bindings    RbacProfileBinding[]
+
+  @@map("rbac_profiles")
+}
+
+model RbacPermission {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profileId String      @db.ObjectId
+  profile   RbacProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  resource  String
+  action    PermissionAction
+  scopeType PermissionScopeType @default(ALL)
+
+  @@unique([profileId, resource, action])
+  @@index([profileId])
+  @@map("rbac_permissions")
+}
+
+model RbacProfileBinding {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profileId  String             @db.ObjectId
+  profile    RbacProfile        @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  functionId String             @db.ObjectId
+  function   DepartmentFunction @relation(fields: [functionId], references: [id], onDelete: Cascade)
+  scope      DepartmentScope
+
+  @@unique([profileId, functionId, scope])
+  @@index([functionId, scope])
+  @@index([profileId])
+  @@map("rbac_profile_bindings")
 }

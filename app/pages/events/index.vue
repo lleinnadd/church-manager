@@ -12,6 +12,11 @@ import { EventSeriesType } from '@prisma/client';
 import type { EventFormData, EventFormPayload } from '@/types/forms';
 import { useSidebar } from '@/components/ui/sidebar/utils';
 
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'events', action: 'READ' },
+});
+
 interface EventOccurrence {
   id: string;
   title: string;

@@ -1,5 +1,6 @@
-import { TransactionType } from '@prisma/client';
+import { TransactionType, PermissionAction } from '@prisma/client';
 import { z } from 'zod';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const querySchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/),
@@ -7,6 +8,9 @@ const querySchema = z.object({
 });
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'treasury', PermissionAction.READ);
+
   const parsed = querySchema.safeParse(getQuery(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'month (YYYY-MM) is required' });

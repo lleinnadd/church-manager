@@ -3,9 +3,11 @@ import {
   EventSeriesType,
   MaritalStatus,
   MemberStatus,
+  PermissionAction,
   Prisma,
 } from '@prisma/client';
 import { z } from 'zod';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 import type {
   AgeRangeKey,
   DashboardCongregationLite,
@@ -58,6 +60,9 @@ function isoDateKey(date: Date): string {
 }
 
 export default defineEventHandler(async (event): Promise<DashboardStatsPayload> => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'stats', PermissionAction.READ);
+
   const parsed = querySchema.safeParse(getQuery(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid query params' });
