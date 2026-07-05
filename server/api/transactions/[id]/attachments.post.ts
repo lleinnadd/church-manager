@@ -16,6 +16,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Transaction not found' });
   }
 
+  assertCongregationAccess(rbac, 'treasury', transaction.congregationId);
+
   const form = await readMultipartFormData(event);
   if (!form?.length) {
     throw createError({ statusCode: 400, statusMessage: 'At least one file is required' });

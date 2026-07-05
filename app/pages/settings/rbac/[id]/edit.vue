@@ -2,6 +2,7 @@
 import { toast } from 'vue-sonner';
 import type { PermissionAction, PermissionScopeType, DepartmentScope } from '@prisma/client';
 import { Plus, Trash2, Link } from '@lucide/vue';
+import type { PendingBinding } from '@/components/organisms/RbacBindingPicker.vue';
 
 definePageMeta({
   middleware: ['rbac'],
@@ -67,32 +68,24 @@ async function handleSubmit(data: ProfileFormData) {
   }
 }
 
-interface DepartmentWithFunctions {
-  id: string;
-  name: string;
-  functions: { id: string; name: string }[];
-}
-
-const { data: departments } = useFetch<DepartmentWithFunctions[]>('/api/departments');
-
-const bindingFunctionId = ref('');
-const bindingScope = ref<DepartmentScope | ''>('');
+const pendingBindings = ref<PendingBinding[]>([]);
 const isAddingBinding = ref(false);
 
-async function handleAddBinding() {
-  if (!bindingFunctionId.value || !bindingScope.value) return;
+async function handleAddBindings() {
+  if (!pendingBindings.value.length) return;
   isAddingBinding.value = true;
   try {
     await $fetch(`/api/rbac/profiles/${profileId}/bindings`, {
       method: 'POST',
       body: {
-        functionId: bindingFunctionId.value,
-        scope: bindingScope.value,
+        bindings: pendingBindings.value.map((b) => ({
+          functionId: b.functionId,
+          scope: b.scope,
+        })),
       },
     });
     toast.success(t('rbac.bindingAdded'));
-    bindingFunctionId.value = '';
-    bindingScope.value = '';
+    pendingBindings.value = [];
     await refresh();
   } catch {
     toast.error(t('common.errorGeneric'));
@@ -120,16 +113,6 @@ async function handleDeleteBinding() {
     deleteBindingTarget.value = null;
   }
 }
-
-const functionOptions = computed(() => {
-  if (!departments.value) return [];
-  return departments.value.flatMap((dept: DepartmentWithFunctions) =>
-    (dept.functions ?? []).map((fn) => ({
-      value: fn.id,
-      label: `${dept.name} — ${fn.name}`,
-    })),
-  );
-});
 </script>
 
 <template>
@@ -180,38 +163,14 @@ const functionOptions = computed(() => {
 
         <p v-else class="text-sm text-muted-foreground">{{ $t('rbac.noBindings') }}</p>
 
-        <div class="flex items-end gap-2">
-          <div class="flex-1">
-            <Label>{{ $t('rbac.function') }}</Label>
-            <Select v-model="bindingFunctionId">
-              <SelectTrigger>
-                <SelectValue :placeholder="$t('rbac.selectFunction')" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="opt in functionOptions" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div class="w-48">
-            <Label>{{ $t('rbac.scope') }}</Label>
-            <Select v-model="bindingScope">
-              <SelectTrigger>
-                <SelectValue :placeholder="$t('rbac.selectScope')" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="LOCAL">LOCAL</SelectItem>
-                <SelectItem value="GENERAL">GENERAL</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            :disabled="!bindingFunctionId || !bindingScope || isAddingBinding"
-            @click="handleAddBinding"
-          >
+        <Separator />
+
+        <RbacBindingPicker v-model="pendingBindings" />
+
+        <div class="flex justify-end">
+          <Button :disabled="!pendingBindings.length || isAddingBinding" @click="handleAddBindings">
             <Plus class="mr-2 size-4" />
-            {{ $t('rbac.addBinding') }}
+            {{ $t('rbac.saveBindings') }}
           </Button>
         </div>
       </div>

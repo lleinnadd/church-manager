@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   const baseData = resolveEventSeriesBaseData(body);
   const daySchedulesData = mapEventSeriesDaySchedules(body.daySchedules);
 
-  assertCongregationAccess(rbac, body.congregationId);
+  assertCongregationAccess(rbac, 'events', body.congregationId);
 
   const congregation = await prisma.congregation.findUnique({ where: { id: body.congregationId } });
   if (!congregation) {

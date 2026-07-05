@@ -24,5 +24,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Event not found' });
   }
 
+  assertCongregationAccess(rbac, 'events', series.congregationId);
+
   return series;
 });

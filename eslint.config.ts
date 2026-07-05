@@ -121,6 +121,7 @@ export default typescriptEslint.config(
         useCookie: 'readonly',
         useError: 'readonly',
         useRequestHeaders: 'readonly',
+        useRequestFetch: 'readonly',
         useRequestEvent: 'readonly',
         useRequestURL: 'readonly',
         defineNuxtConfig: 'readonly',

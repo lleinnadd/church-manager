@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { PermissionAction, PermissionScopeType } from '@prisma/client';
-import { RBAC_RESOURCES } from '~~/shared/validation/rbac';
+import { RBAC_RESOURCES, PERMISSION_ACTIONS } from '~~/shared/validation/rbac';
+
+type PermissionAction = (typeof PERMISSION_ACTIONS)[number];
+type PermissionScopeType = 'ALL' | 'OWN_CONGREGATION';
 
 interface PermissionEntry {
   resource: string;
@@ -34,14 +36,7 @@ const { t } = useI18n();
 const name = ref(props.initialData?.name ?? '');
 const description = ref(props.initialData?.description ?? '');
 
-const ACTIONS = [
-  PermissionAction.READ,
-  PermissionAction.CREATE,
-  PermissionAction.UPDATE,
-  PermissionAction.DELETE,
-  PermissionAction.EXPORT,
-  PermissionAction.MANAGE,
-] as const;
+const ACTIONS = PERMISSION_ACTIONS;
 
 type PermissionState = Record<string, Record<PermissionAction, boolean>>;
 type ScopeState = Record<string, PermissionScopeType>;
@@ -52,7 +47,7 @@ function buildInitialState(): { perms: PermissionState; scopes: ScopeState } {
 
   RBAC_RESOURCES.forEach((resource) => {
     perms[resource] = {} as Record<PermissionAction, boolean>;
-    scopes[resource] = PermissionScopeType.ALL;
+    scopes[resource] = 'ALL';
     ACTIONS.forEach((action) => {
       perms[resource]![action] = false;
     });
@@ -83,10 +78,10 @@ function getScope(resource: string): PermissionScopeType {
 }
 
 function toggleManage(resource: string) {
-  const isManage = permissions[resource]![PermissionAction.MANAGE];
+  const isManage = permissions[resource]!.MANAGE;
   if (isManage) {
     ACTIONS.forEach((action) => {
-      if (action !== PermissionAction.MANAGE) {
+      if (action !== 'MANAGE') {
         permissions[resource]![action] = false;
       }
     });
@@ -94,8 +89,8 @@ function toggleManage(resource: string) {
 }
 
 function onActionToggle(resource: string, action: PermissionAction) {
-  if (action !== PermissionAction.MANAGE && permissions[resource]![action]) {
-    permissions[resource]![PermissionAction.MANAGE] = false;
+  if (action !== 'MANAGE' && permissions[resource]![action]) {
+    permissions[resource]!.MANAGE = false;
   }
 }
 

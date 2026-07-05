@@ -15,8 +15,12 @@ export default defineEventHandler(async (event) => {
 
   const member = await prisma.member.findUnique({
     where: { id },
-    select: { photoBlobPath: true, clerkUserId: true },
+    select: { photoBlobPath: true, clerkUserId: true, congregationId: true },
   });
+
+  if (member) {
+    assertCongregationAccess(rbac, 'members', member.congregationId);
+  }
 
   if (member?.clerkUserId && member.clerkUserId === auth.userId) {
     throw createError({ statusCode: 403, statusMessage: 'You cannot delete your own profile' });

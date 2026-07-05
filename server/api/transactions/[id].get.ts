@@ -24,5 +24,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Transaction not found' });
   }
 
+  assertCongregationAccess(rbac, 'treasury', transaction.congregationId);
+
   return transaction;
 });

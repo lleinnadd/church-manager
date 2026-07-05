@@ -25,10 +25,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Event not found' });
   }
 
+  assertCongregationAccess(rbac, 'events', existing.congregationId);
+
   const congregation = await prisma.congregation.findUnique({ where: { id: body.congregationId } });
   if (!congregation) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid congregationId' });
   }
+
+  assertCongregationAccess(rbac, 'events', body.congregationId);
 
   if (body.departmentId) {
     const department = await prisma.department.findUnique({ where: { id: body.departmentId } });

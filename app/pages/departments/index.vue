@@ -9,6 +9,7 @@ definePageMeta({
 });
 
 const { t } = useI18n();
+const { can } = usePermissions();
 
 interface DepartmentLocalName {
   id: string;
@@ -64,7 +65,7 @@ async function handleDelete() {
         <p class="text-muted-foreground text-sm">{{ $t('pages.departments.description') }}</p>
       </div>
       <div class="flex gap-2">
-        <Button as-child>
+        <Button v-if="can('departments', 'CREATE')" as-child>
           <NuxtLink to="/departments/new">
             <Plus class="mr-2 size-4" />
             {{ $t('pages.departments.new') }}
@@ -86,7 +87,7 @@ async function handleDelete() {
         <EmptyDescription>{{ $t('pages.departments.emptyDescription') }}</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button as-child>
+        <Button v-if="can('departments', 'CREATE')" as-child>
           <NuxtLink to="/departments/new">
             <Plus class="mr-2 size-4" />
             {{ $t('pages.departments.new') }}
@@ -125,14 +126,15 @@ async function handleDelete() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem as-child>
+                <DropdownMenuItem v-if="can('departments', 'UPDATE')" as-child>
                   <NuxtLink :to="`/departments/${department.id}/edit`">
                     <Pencil class="mr-2 size-4" />
                     {{ $t('common.edit') }}
                   </NuxtLink>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator v-if="can('departments', 'DELETE')" />
                 <DropdownMenuItem
+                  v-if="can('departments', 'DELETE')"
                   class="text-destructive"
                   @select="confirmDelete(department.id, department.name)"
                 >

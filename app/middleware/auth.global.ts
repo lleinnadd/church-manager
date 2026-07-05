@@ -1,3 +1,5 @@
+const ensured = ref(false);
+
 export default defineNuxtRouteMiddleware(async (to) => {
   const { userId } = useAuth();
   const { user } = useUser();
@@ -13,32 +15,33 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo('/');
   }
 
-  if (import.meta.client && userId.value && !isAuthRoute) {
-    await $fetch('/api/members/ensure', {
-      method: 'POST',
-      body: {
-        clerkUserId: userId.value,
-        name: user.value?.fullName,
-      },
-    });
+  if (userId.value && !isAuthRoute) {
+    // Ensure a member record exists for this Clerk user (client-only, once per session).
+    if (import.meta.client && !ensured.value) {
+      await $fetch('/api/members/ensure', {
+        method: 'POST',
+        body: {
+          clerkUserId: userId.value,
+          name: user.value?.fullName,
+        },
+      });
+      ensured.value = true;
+    }
 
-    if (!isNoAccessRoute) {
-      const { hasAnyPermission, pending } = usePermissions();
+    const { hasAnyPermission, permissions, refresh } = usePermissions();
 
-      if (pending.value) {
-        await new Promise<void>((resolve) => {
-          const stop = watch(pending, (val) => {
-            if (!val) {
-              stop();
-              resolve();
-            }
-          });
-        });
-      }
+    if (!permissions.value) {
+      await refresh();
+    }
 
-      if (!hasAnyPermission.value) {
-        return navigateTo('/no-access');
-      }
+    // No permissions at all → send to the no-access screen.
+    if (!hasAnyPermission.value && !isNoAccessRoute) {
+      return navigateTo('/no-access');
+    }
+
+    // Has access but landed on no-access → send back into the app.
+    if (hasAnyPermission.value && isNoAccessRoute) {
+      return navigateTo('/');
     }
   }
 

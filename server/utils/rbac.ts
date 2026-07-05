@@ -200,11 +200,12 @@ export function getCongregationFilter(
 
 export function assertCongregationAccess(
   ctx: UserPermissionContext,
+  resource: string,
   congregationId: string | null | undefined,
 ): void {
   if (ctx.isAdmin) return;
 
-  const scope = getPermissionScopeType(ctx, 'congregations');
+  const scope = getPermissionScopeType(ctx, resource);
   if (scope === PermissionScopeType.ALL) return;
 
   if (!congregationId || !ctx.allowedCongregationIds.includes(congregationId)) {
@@ -215,4 +216,16 @@ export function assertCongregationAccess(
 export function getRbacContext(event: unknown): UserPermissionContext | null {
   return (event as Record<string, Record<string, unknown>>)?.context
     ?.rbac as UserPermissionContext | null;
+}
+
+export function dedupeBindings<T extends { functionId: string; scope: string }>(
+  bindings: T[],
+): T[] {
+  const seen = new Set<string>();
+  return bindings.filter((b) => {
+    const key = `${b.functionId}:${b.scope}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }

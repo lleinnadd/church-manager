@@ -20,6 +20,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Transaction not found' });
   }
 
+  assertCongregationAccess(rbac, 'treasury', transaction.congregationId);
+
   const deletePromises = transaction.attachments.map((attachment) =>
     safeDeleteAttachmentBlob(attachment.blobPath),
   );

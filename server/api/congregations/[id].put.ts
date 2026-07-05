@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   assertPermission(rbac, 'congregations', PermissionAction.UPDATE);
 
   const id = getRouterParam(event, 'id');
-  assertCongregationAccess(rbac, id);
+  assertCongregationAccess(rbac, 'congregations', id);
   const parsed = congregationSchema.safeParse(await readBody(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });

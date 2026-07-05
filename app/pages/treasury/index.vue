@@ -27,6 +27,7 @@ definePageMeta({
 const { t, locale } = useI18n();
 const { timezone } = useTimezone();
 const { formatBRL } = useCurrencyInput();
+const { can } = usePermissions();
 
 const now = new Date();
 const currentYear = ref(now.getFullYear());
@@ -282,7 +283,7 @@ async function handleSheetSubmit(data: TransactionFormPayload, files: File[]) {
             {{ $t('pages.treasury.settings') }}
           </NuxtLink>
         </Button>
-        <Button size="sm" @click="openCreateSheet">
+        <Button v-if="can('treasury', 'CREATE')" size="sm" @click="openCreateSheet">
           <Plus class="mr-2 size-4" />
           {{ $t('pages.treasury.new') }}
         </Button>
@@ -480,12 +481,16 @@ async function handleSheetSubmit(data: TransactionFormPayload, files: File[]) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem @select="openEditSheet(tx.id!)">
+                  <DropdownMenuItem
+                    v-if="can('treasury', 'UPDATE')"
+                    @select="openEditSheet(tx.id!)"
+                  >
                     <Pencil class="mr-2 size-4" />
                     {{ $t('common.edit') }}
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator v-if="can('treasury', 'DELETE')" />
                   <DropdownMenuItem
+                    v-if="can('treasury', 'DELETE')"
                     class="text-destructive"
                     @select="confirmDelete(tx.id!, tx.name)"
                   >

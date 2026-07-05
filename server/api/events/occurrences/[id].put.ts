@@ -96,6 +96,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Event series not found' });
   }
 
+  assertCongregationAccess(rbac, 'events', series.congregationId);
+
   const existingBySeriesAndDate = await prisma.eventOccurrence.findFirst({
     where: {
       seriesId,

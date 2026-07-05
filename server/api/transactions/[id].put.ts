@@ -24,12 +24,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Transaction not found' });
   }
 
+  assertCongregationAccess(rbac, 'treasury', existing.congregationId);
+
   const congregation = await prisma.congregation.findUnique({
     where: { id: body.congregationId },
   });
   if (!congregation) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid congregationId' });
   }
+
+  assertCongregationAccess(rbac, 'treasury', body.congregationId);
 
   if (body.categoryId) {
     const category = await prisma.transactionCategory.findUnique({

@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Member not found' });
   }
 
-  assertCongregationAccess(rbac, member.congregationId);
+  assertCongregationAccess(rbac, 'members', member.congregationId);
 
   return member;
 });

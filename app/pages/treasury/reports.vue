@@ -10,6 +10,7 @@ definePageMeta({
 
 const { locale } = useI18n();
 const { formatBRL } = useCurrencyInput();
+const { can } = usePermissions();
 
 const now = new Date();
 const currentMonth = ref(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
@@ -166,7 +167,7 @@ async function exportPdf() {
             </SelectContent>
           </Select>
 
-          <Button :disabled="isExporting" @click="exportPdf">
+          <Button v-if="can('treasury', 'EXPORT')" :disabled="isExporting" @click="exportPdf">
             <Download class="mr-2 size-4" />
             {{ $t('pages.treasury.exportPdf') }}
           </Button>

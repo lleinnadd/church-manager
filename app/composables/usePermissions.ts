@@ -1,16 +1,24 @@
 import type { UserPermissionsResponse } from '~~/shared/types/rbac';
 
 export function usePermissions() {
-  const { data, status, refresh } = useFetch<UserPermissionsResponse>('/api/auth/permissions', {
-    key: 'user-permissions',
-    lazy: true,
-  });
+  const data = useState<UserPermissionsResponse | null>('user-permissions', () => null);
+  // Call synchronously so the Nuxt request context (cookies for SSR) is captured.
+  const request = useRequestFetch();
+
+  async function fetchPermissions() {
+    try {
+      data.value = await request<UserPermissionsResponse>('/api/auth/permissions');
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[usePermissions] fetch failed:', err);
+      data.value = null;
+    }
+  }
 
   const isAdmin = computed(() => data.value?.isAdmin ?? false);
   const isGlobal = computed(() => data.value?.isGlobal ?? false);
   const hasAnyPermission = computed(() => data.value?.hasAnyPermission ?? false);
   const allowedCongregationIds = computed(() => data.value?.allowedCongregationIds ?? []);
-  const pending = computed(() => status.value === 'pending');
 
   function can(resource: string, action: string): boolean {
     if (!data.value) return false;
@@ -27,13 +35,12 @@ export function usePermissions() {
 
   return {
     permissions: data,
-    pending,
     isAdmin,
     isGlobal,
     hasAnyPermission,
     allowedCongregationIds,
     can,
     canAny,
-    refresh,
+    refresh: fetchPermissions,
   };
 }

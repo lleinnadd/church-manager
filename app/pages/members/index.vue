@@ -28,6 +28,7 @@ definePageMeta({
 
 const { t } = useI18n();
 const { userId } = useAuth();
+const { can } = usePermissions();
 
 type MemberWithRelations = Member & {
   congregation: Pick<Congregation, 'id' | 'name' | 'type'>;
@@ -134,11 +135,15 @@ async function handleDelete() {
         <p class="text-muted-foreground text-sm">{{ $t('pages.members.description') }}</p>
       </div>
       <div class="flex gap-2">
-        <Button variant="outline" @click="showBirthdayExport = true">
+        <Button
+          v-if="can('members', 'EXPORT')"
+          variant="outline"
+          @click="showBirthdayExport = true"
+        >
           <Cake class="mr-2 size-4" />
           {{ $t('pages.members.exportBirthdays') }}
         </Button>
-        <Button as-child>
+        <Button v-if="can('members', 'CREATE')" as-child>
           <NuxtLink to="/members/new">
             <Plus class="mr-2 size-4" />
             {{ $t('pages.members.new') }}
@@ -196,13 +201,13 @@ async function handleDelete() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem as-child>
+                <DropdownMenuItem v-if="can('members', 'UPDATE')" as-child>
                   <NuxtLink :to="`/members/${member.id}/edit`">
                     <Pencil class="mr-2 size-4" />
                     {{ $t('common.edit') }}
                   </NuxtLink>
                 </DropdownMenuItem>
-                <template v-if="member.clerkUserId !== userId">
+                <template v-if="member.clerkUserId !== userId && can('members', 'DELETE')">
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     class="text-destructive"

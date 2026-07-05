@@ -16,6 +16,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Event not found' });
   }
 
+  assertCongregationAccess(rbac, 'events', existing.congregationId);
+
   await prisma.$transaction(async (tx) => {
     await tx.eventOccurrence.deleteMany({ where: { seriesId: id } });
     await tx.eventSeriesDaySchedule.deleteMany({ where: { seriesId: id } });

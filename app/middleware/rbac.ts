@@ -3,21 +3,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (!requiredPermission) return undefined;
 
-  const { can, pending } = usePermissions();
+  const { can, permissions, refresh } = usePermissions();
 
-  if (pending.value) {
-    await new Promise<void>((resolve) => {
-      const stop = watch(pending, (val) => {
-        if (!val) {
-          stop();
-          resolve();
-        }
-      });
-    });
+  if (!permissions.value) {
+    await refresh();
   }
 
   if (!can(requiredPermission.resource, requiredPermission.action)) {
-    return navigateTo('/');
+    return navigateTo('/no-access');
   }
 
   return undefined;

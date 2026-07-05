@@ -11,6 +11,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Congregation id is required' });
   }
 
+  assertCongregationAccess(rbac, 'congregations', id);
+
   await prisma.departmentLocalName.deleteMany({ where: { congregationId: id } });
   await prisma.memberDepartment.deleteMany({ where: { congregationId: id } });
   await prisma.member.updateMany({

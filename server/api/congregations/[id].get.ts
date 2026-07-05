@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Congregation not found' });
   }
 
-  assertCongregationAccess(rbac, congregation.id);
+  assertCongregationAccess(rbac, 'congregations', congregation.id);
 
   const leadership = await getCongregationLeadership(prisma, congregation.id);
 

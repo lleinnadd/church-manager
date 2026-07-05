@@ -23,6 +23,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Attachment not found' });
   }
 
+  const parentTransaction = await prisma.transaction.findUnique({
+    where: { id },
+    select: { congregationId: true },
+  });
+  assertCongregationAccess(rbac, 'treasury', parentTransaction?.congregationId);
+
   await safeDeleteAttachmentBlob(attachment.blobPath);
   await prisma.transactionAttachment.delete({ where: { id: attachmentId } });
 

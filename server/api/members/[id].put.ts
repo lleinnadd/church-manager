@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Member not found' });
   }
 
-  assertCongregationAccess(rbac, existing.congregationId);
+  assertCongregationAccess(rbac, 'members', existing.congregationId);
 
   if (existing.photoBlobPath && existing.photoBlobPath !== body.photoBlobPath) {
     await safeDeleteBlob(existing.photoBlobPath);
