@@ -88,6 +88,24 @@ export default defineEventHandler(async (event) => {
       return 'Webhook received';
     }
 
+    if (eventType === 'user.deleted') {
+      const member = await prisma.member.findUnique({
+        where: { clerkUserId },
+        select: { id: true, photoBlobPath: true },
+      });
+
+      if (member) {
+        await prisma.memberDepartment.deleteMany({ where: { memberId: member.id } });
+        await prisma.member.delete({ where: { id: member.id } });
+
+        if (member.photoBlobPath) {
+          await safeDeleteBlob(member.photoBlobPath);
+        }
+      }
+
+      return 'Webhook received';
+    }
+
     return 'Webhook received';
   } catch (_err) {
     setResponseStatus(event, 400);
