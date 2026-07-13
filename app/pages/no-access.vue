@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ShieldX } from '@lucide/vue';
 
+definePageMeta({ layout: false });
+
 const clerk = useClerk();
 
 async function handleSignOut() {
