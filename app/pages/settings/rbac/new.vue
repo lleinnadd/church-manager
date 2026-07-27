@@ -5,7 +5,7 @@ import type { PendingBinding } from '@/components/organisms/RbacBindingPicker.vu
 
 definePageMeta({
   middleware: ['rbac'],
-  requiredPermission: { resource: 'rbac', action: 'MANAGE' },
+  requireAdmin: true,
 });
 
 const { t } = useI18n();

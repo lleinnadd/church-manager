@@ -13,6 +13,8 @@ export default defineEventHandler(async (event) => {
 
   const body = parsed.data;
 
+  assertCongregationAccess(rbac, 'treasury', body.congregationId);
+
   const congregation = await prisma.congregation.findUnique({
     where: { id: body.congregationId },
   });

@@ -9,8 +9,6 @@ const ALL_RESOURCES = [
   'events',
   'treasury',
   'treasury-config',
-  'stats',
-  'rbac',
 ];
 
 interface ProfilePermission {
@@ -67,7 +65,6 @@ async function main() {
     { resource: 'treasury', action: PermissionAction.MANAGE, scopeType: PermissionScopeType.OWN_CONGREGATION },
     { resource: 'treasury-config', action: PermissionAction.READ, scopeType: PermissionScopeType.OWN_CONGREGATION },
     { resource: 'treasury-config', action: PermissionAction.UPDATE, scopeType: PermissionScopeType.OWN_CONGREGATION },
-    { resource: 'stats', action: PermissionAction.READ, scopeType: PermissionScopeType.OWN_CONGREGATION },
   ];
 
   const localProfile = await upsertProfile(

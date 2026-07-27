@@ -20,6 +20,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { month, congregationId, locale } = parsed.data;
+  assertCongregationAccess(rbac, 'treasury', congregationId);
   const [yearStr, monthStr] = month.split('-');
   const year = Number(yearStr);
   const monthNum = Number(monthStr) - 1;

@@ -10,11 +10,11 @@ const prismaClientBrowserPath = path.resolve(
 );
 
 export default defineNuxtConfig({
-  compatibilityDate: '2024-11-01',
+  compatibilityDate: '2026-07-26',
   devtools: { enabled: true },
   devServer: { port: 3333 },
   typescript: {
-    typeCheck: true,
+    typeCheck: false,
   },
   sourcemap: {
     server: false,

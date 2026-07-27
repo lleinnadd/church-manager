@@ -17,6 +17,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid query params' });
   }
 
+  if (parsed.data.congregationId) {
+    assertCongregationAccess(rbac, 'events', parsed.data.congregationId);
+  }
+  const congregationFilter: Record<string, unknown> = parsed.data.congregationId
+    ? { congregationId: parsed.data.congregationId }
+    : getCongregationFilter(rbac, 'events');
+
   const now = new Date();
   const start = parsed.data.start
     ? new Date(parsed.data.start)
@@ -36,7 +43,7 @@ export default defineEventHandler(async (event) => {
         { eventType: EventSeriesType.MONTHLY_RECURRING, endsOn: null },
         { endsOn: { gte: start } },
       ],
-      congregationId: parsed.data.congregationId || undefined,
+      ...congregationFilter,
     },
     include: {
       daySchedules: { orderBy: { date: 'asc' } },
@@ -81,7 +88,7 @@ export default defineEventHandler(async (event) => {
           endAt: { gt: start },
         },
       ],
-      congregationId: parsed.data.congregationId || undefined,
+      ...congregationFilter,
     },
     include: {
       congregation: { select: { id: true, name: true, type: true } },

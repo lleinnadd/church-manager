@@ -15,6 +15,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid query params' });
   }
 
+  assertCongregationAccess(rbac, 'treasury-config', parsed.data.congregationId);
+
   const where: Record<string, unknown> = {
     congregationId: parsed.data.congregationId,
   };

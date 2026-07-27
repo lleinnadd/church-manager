@@ -6,7 +6,7 @@ import type { PendingBinding } from '@/components/organisms/RbacBindingPicker.vu
 
 definePageMeta({
   middleware: ['rbac'],
-  requiredPermission: { resource: 'rbac', action: 'MANAGE' },
+  requireAdmin: true,
 });
 
 const { t } = useI18n();
@@ -95,13 +95,20 @@ async function handleAddBindings() {
 }
 
 const deleteBindingTarget = ref<string | null>(null);
+const deleteBindingDialogOpen = ref(false);
 const isDeletingBinding = ref(false);
 
+function askDeleteBinding(id: string) {
+  deleteBindingTarget.value = id;
+  deleteBindingDialogOpen.value = true;
+}
+
 async function handleDeleteBinding() {
-  if (!deleteBindingTarget.value) return;
+  const bindingId = deleteBindingTarget.value;
+  if (!bindingId) return;
   isDeletingBinding.value = true;
   try {
-    await $fetch(`/api/rbac/profiles/${profileId}/bindings/${deleteBindingTarget.value}`, {
+    await $fetch(`/api/rbac/profiles/${profileId}/bindings/${bindingId}`, {
       method: 'DELETE',
     });
     toast.success(t('rbac.bindingDeleted'));
@@ -111,6 +118,7 @@ async function handleDeleteBinding() {
   } finally {
     isDeletingBinding.value = false;
     deleteBindingTarget.value = null;
+    deleteBindingDialogOpen.value = false;
   }
 }
 </script>
@@ -132,51 +140,72 @@ async function handleDeleteBinding() {
       <Separator />
 
       <div class="space-y-4">
-        <h2 class="text-lg font-semibold">{{ $t('rbac.bindings') }}</h2>
-        <p class="text-sm text-muted-foreground">
-          {{ $t('rbac.bindings') }}
-        </p>
+        <div>
+          <h2 class="text-lg font-semibold">{{ $t('rbac.bindings') }}</h2>
+          <p class="text-sm text-muted-foreground">{{ $t('rbac.bindingsDescription') }}</p>
+        </div>
 
-        <div v-if="profile.bindings?.length" class="space-y-2">
-          <div
-            v-for="binding in profile.bindings"
-            :key="binding.id"
-            class="flex items-center justify-between rounded-lg border p-3"
-          >
-            <div class="flex items-center gap-2">
-              <Link class="size-4 text-muted-foreground" />
-              <span class="font-medium">
-                {{ binding.function.department.name }} — {{ binding.function.name }}
-              </span>
-              <Badge variant="outline">{{ binding.scope }}</Badge>
+        <Card>
+          <CardHeader>
+            <CardTitle class="text-base">{{ $t('rbac.existingBindings') }}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div v-if="profile.bindings?.length" class="space-y-2">
+              <div
+                v-for="binding in profile.bindings"
+                :key="binding.id"
+                class="flex items-center justify-between rounded-lg border p-3"
+              >
+                <div class="flex items-center gap-2">
+                  <Link class="size-4 text-muted-foreground" />
+                  <span class="font-medium">
+                    {{ binding.function.department.name }} — {{ binding.function.name }}
+                  </span>
+                  <Badge variant="outline">{{ binding.scope }}</Badge>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  class="size-8 text-destructive"
+                  @click="askDeleteBinding(binding.id)"
+                >
+                  <Trash2 class="size-4" />
+                </Button>
+              </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="size-8 text-destructive"
-              @click="deleteBindingTarget = binding.id"
-            >
-              <Trash2 class="size-4" />
-            </Button>
-          </div>
-        </div>
+            <p v-else class="text-sm text-muted-foreground">{{ $t('rbac.noBindings') }}</p>
+          </CardContent>
+        </Card>
 
-        <p v-else class="text-sm text-muted-foreground">{{ $t('rbac.noBindings') }}</p>
-
-        <Separator />
-
-        <RbacBindingPicker v-model="pendingBindings" />
-
-        <div class="flex justify-end">
-          <Button :disabled="!pendingBindings.length || isAddingBinding" @click="handleAddBindings">
-            <Plus class="mr-2 size-4" />
-            {{ $t('rbac.saveBindings') }}
-          </Button>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle class="text-base">{{ $t('rbac.addBindings') }}</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-4">
+            <RbacBindingPicker v-model="pendingBindings" />
+            <div v-if="pendingBindings.length" class="flex justify-end">
+              <Button :disabled="isAddingBinding" @click="handleAddBindings">
+                <Plus class="mr-2 size-4" />
+                {{ $t('rbac.saveBindings') }}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </template>
 
-    <AlertDialog :open="!!deleteBindingTarget" @update:open="deleteBindingTarget = null">
+    <AlertDialog
+      :open="deleteBindingDialogOpen"
+      @update:open="
+        (open: boolean) => {
+          if (!open && !isDeletingBinding) {
+            deleteBindingDialogOpen = false;
+            deleteBindingTarget = null;
+          }
+        }
+      "
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{{ $t('common.confirm') }}</AlertDialogTitle>
@@ -186,9 +215,14 @@ async function handleDeleteBinding() {
           <AlertDialogCancel :disabled="isDeletingBinding">
             {{ $t('common.cancel') }}
           </AlertDialogCancel>
-          <AlertDialogAction :disabled="isDeletingBinding" @click="handleDeleteBinding">
+          <Button
+            variant="destructive"
+            type="button"
+            :disabled="isDeletingBinding"
+            @click="handleDeleteBinding"
+          >
             {{ $t('common.delete') }}
-          </AlertDialogAction>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -3,20 +3,20 @@ import {
   AlertTriangle,
   Building2,
   CalendarDays,
-  CalendarX,
   Image as ImageIcon,
   ShieldCheck,
   UserPlus,
   Users,
 } from '@lucide/vue';
 import type { CongregationType } from '@prisma/client';
+import { cn } from '@/lib/utils';
 
 definePageMeta({
   middleware: ['rbac'],
-  requiredPermission: { resource: 'stats', action: 'READ' },
 });
 
 const { t } = useI18n();
+const { isAdmin } = usePermissions();
 const { stats, pending, error, congregationId, refresh } = useDashboardStats();
 
 const isLoading = computed(() => pending.value);
@@ -67,31 +67,6 @@ const ageRangeItems = computed(() => {
   ];
 });
 
-const congregationTypeSegments = computed(() => {
-  if (!stats.value) return [];
-  const data = stats.value.congregationsStats.byType;
-  return [
-    {
-      key: 'HEADQUARTERS',
-      label: t('form.congregation.type.headquarters'),
-      value: data.HEADQUARTERS,
-      color: '#6366f1',
-    },
-    {
-      key: 'BRANCH',
-      label: t('form.congregation.type.branch'),
-      value: data.BRANCH,
-      color: '#8b5cf6',
-    },
-    {
-      key: 'SUB_BRANCH',
-      label: t('form.congregation.type.subBranch'),
-      value: data.SUB_BRANCH,
-      color: '#ec4899',
-    },
-  ];
-});
-
 const eventsByTypeItems = computed(() => {
   if (!stats.value) return [];
   const data = stats.value.events.byType;
@@ -135,15 +110,6 @@ const eventsByDepartmentItems = computed(() => {
   }));
 });
 
-const stateItems = computed(() => {
-  if (!stats.value) return [];
-  return stats.value.congregationsStats.byState.map((s) => ({
-    key: s.state,
-    label: s.state,
-    value: s.count,
-  }));
-});
-
 const photoCoveragePct = computed(() => {
   const data = stats.value?.members.photoCoverage;
   if (!data || !data.total) return 0;
@@ -154,11 +120,6 @@ const platformAdoptionPct = computed(() => {
   const data = stats.value?.members.platformAdoption;
   if (!data || !data.total) return 0;
   return Math.round((data.withClerk / data.total) * 100);
-});
-
-const cancellationPct = computed(() => {
-  if (!stats.value) return 0;
-  return Math.round(stats.value.events.cancellationRate * 100);
 });
 
 const scopeBadgeLabel = computed(() => {
@@ -194,12 +155,12 @@ const scopeSubtitle = computed(() => {
         </p>
       </div>
       <DashboardCongregationFilter
-        v-if="stats"
+        v-if="stats && isAdmin"
         v-model="congregationId"
         :congregations="stats.congregations"
         :viewer-congregation-id="stats.viewer.congregation?.id ?? null"
       />
-      <Skeleton v-else class="h-9 w-full rounded-md sm:w-72" />
+      <Skeleton v-else-if="!stats" class="h-9 w-full rounded-md sm:w-72" />
     </div>
 
     <template v-if="isLoading">
@@ -233,7 +194,14 @@ const scopeSubtitle = computed(() => {
         :member-name="stats.viewer.memberName"
       />
 
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div
+        :class="
+          cn('grid gap-4', {
+            'sm:grid-cols-2 lg:grid-cols-4': isAdmin,
+            'md:grid-cols-3': !isAdmin,
+          })
+        "
+      >
         <DashboardKpiCard
           :label="$t('pages.home.kpi.activeMembers')"
           :value="stats.members.byStatus.ACTIVE"
@@ -264,6 +232,7 @@ const scopeSubtitle = computed(() => {
           variant="default"
         />
         <DashboardKpiCard
+          v-if="isAdmin"
           :label="$t('pages.home.kpi.congregations')"
           :value="stats.congregationsStats.total"
           :hint="
@@ -365,50 +334,7 @@ const scopeSubtitle = computed(() => {
           </CardContent>
         </Card>
 
-        <DashboardKpiCard
-          :label="$t('pages.home.cancellation.title')"
-          :value="`${cancellationPct}%`"
-          :hint="
-            $t('pages.home.cancellation.hint', {
-              cancelled: stats.events.cancelledThisMonth,
-              total: stats.events.monthTotal + stats.events.cancelledThisMonth,
-            })
-          "
-          :icon="CalendarX"
-          :variant="cancellationPct > 20 ? 'danger' : 'warning'"
-        />
-
-        <Card>
-          <CardHeader>
-            <CardTitle class="text-base">
-              {{ $t('pages.home.congregationsByType.title') }}
-            </CardTitle>
-            <CardDescription>
-              {{ $t('pages.home.congregationsByType.description') }}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DashboardDonutChart
-              :segments="congregationTypeSegments"
-              :center-label="$t('pages.home.congregationsByType.center')"
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle class="text-base">{{ $t('pages.home.byState.title') }}</CardTitle>
-            <CardDescription>{{ $t('pages.home.byState.description') }}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div v-if="!stateItems.length" class="text-muted-foreground py-6 text-center text-sm">
-              {{ $t('pages.home.byState.empty') }}
-            </div>
-            <DashboardHorizontalBarList v-else :items="stateItems" />
-          </CardContent>
-        </Card>
-
-        <DashboardLeadershipCard :leadership="stats.congregationsStats.leadership" />
+        <DashboardLeadershipCard v-if="isAdmin" :leadership="stats.congregationsStats.leadership" />
 
         <Card>
           <CardHeader>

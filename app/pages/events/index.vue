@@ -822,6 +822,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   dateClick: (arg: DateClickArg) => {
     if (arg.dayEl.closest('.fc-day-other')) return;
 
+    if (!can('events', 'CREATE')) return;
+
     if (createOpen.value) return;
 
     if (detailsOpen.value) {
@@ -1037,7 +1039,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
                 </TooltipContent>
               </Tooltip>
 
-              <Tooltip v-if="canEndRecurrence">
+              <Tooltip v-if="canEndRecurrence && can('events', 'UPDATE')">
                 <TooltipTrigger as-child>
                   <Button
                     type="button"

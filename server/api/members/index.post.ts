@@ -14,6 +14,8 @@ export default defineEventHandler(async (event) => {
   }
   const body = parsed.data;
 
+  assertCongregationAccess(rbac, 'members', body.congregationId);
+
   const { status } = body;
 
   const departmentsInput = await resolveMemberDepartmentsInput(
@@ -21,6 +23,12 @@ export default defineEventHandler(async (event) => {
     body.departments,
     body.congregationId,
   );
+
+  for (const entry of departmentsInput) {
+    if (entry.congregationId) {
+      assertCongregationAccess(rbac, 'members', entry.congregationId);
+    }
+  }
 
   const memberNumber = await nextMemberNumber();
 

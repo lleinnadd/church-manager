@@ -4,6 +4,7 @@ declare module '#app' {
       resource: string;
       action: string;
     };
+    requireAdmin?: boolean;
   }
 }
 

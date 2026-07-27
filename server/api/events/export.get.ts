@@ -31,6 +31,13 @@ export default defineEventHandler(async (event) => {
 
   const { months: monthStrings, congregationId, locale, miniCalendars } = parsed.data;
 
+  if (congregationId) {
+    assertCongregationAccess(rbac, 'events', congregationId);
+  }
+  const congregationFilter: Record<string, unknown> = congregationId
+    ? { congregationId }
+    : getCongregationFilter(rbac, 'events');
+
   const monthParsed = monthStrings.map((m) => {
     const [yearStr, monthStr] = m.split('-');
     return { year: Number(yearStr), month: Number(monthStr) - 1 };
@@ -53,7 +60,7 @@ export default defineEventHandler(async (event) => {
         { eventType: EventSeriesType.MONTHLY_RECURRING, endsOn: null },
         { endsOn: { gte: extendedStart } },
       ],
-      congregationId: congregationId || undefined,
+      ...congregationFilter,
     },
     include: {
       daySchedules: { orderBy: { date: 'asc' } },
@@ -76,7 +83,7 @@ export default defineEventHandler(async (event) => {
             { occurrenceDate: { gte: dateStart, lte: dateEnd } },
             { startAt: { lt: extendedEnd }, endAt: { gt: extendedStart } },
           ],
-          congregationId: congregationId || undefined,
+          ...congregationFilter,
         },
         include: {
           congregation: { select: { id: true, name: true } },

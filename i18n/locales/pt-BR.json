@@ -19,6 +19,7 @@
   "common": {
     "cancel": "Cancelar",
     "confirm": "Confirmar",
+    "errorGeneric": "Ocorreu um erro. Tente novamente.",
     "loading": "Carregando...",
     "save": "Salvar",
     "saving": "Salvando...",
@@ -669,6 +670,8 @@
     "permissions": "Permissões",
     "bindings": "Vínculos",
     "bindingsDescription": "Vincule este perfil a funções de departamento. Membros com essas funções herdam as permissões deste perfil.",
+    "existingBindings": "Vínculos existentes",
+    "addBindings": "Adicionar vínculos",
     "addBinding": "Adicionar Vínculo",
     "saveBindings": "Salvar Vínculos",
     "selectFunctions": "Selecione as funções",
@@ -705,10 +708,12 @@
       "ALL": "Todas as congregações",
       "OWN_CONGREGATION": "Própria congregação"
     },
+    "department": "Departamento",
     "function": "Função",
     "scope": "Escopo",
     "selectFunction": "Selecione uma função",
     "selectScope": "Selecione um escopo",
+    "resourceEnabled": "Permitir este módulo",
     "isAdmin": "Administrador",
     "isAdminDescription": "Administradores têm acesso total ao sistema, independente de perfis de acesso."
   }

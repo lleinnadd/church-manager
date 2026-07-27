@@ -19,6 +19,7 @@
   "common": {
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "errorGeneric": "An error occurred. Please try again.",
     "loading": "Loading...",
     "save": "Save",
     "saving": "Saving...",
@@ -669,6 +670,8 @@
     "permissions": "Permissions",
     "bindings": "Bindings",
     "bindingsDescription": "Link this profile to department functions. Members with those functions inherit this profile's permissions.",
+    "existingBindings": "Existing bindings",
+    "addBindings": "Add bindings",
     "addBinding": "Add Binding",
     "saveBindings": "Save Bindings",
     "selectFunctions": "Select functions",
@@ -705,10 +708,12 @@
       "ALL": "All congregations",
       "OWN_CONGREGATION": "Own congregation"
     },
+    "department": "Department",
     "function": "Function",
     "scope": "Scope",
     "selectFunction": "Select a function",
     "selectScope": "Select a scope",
+    "resourceEnabled": "Enable this module",
     "isAdmin": "Administrator",
     "isAdminDescription": "Administrators have full system access regardless of access profiles."
   }

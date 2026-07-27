@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   const rbac = event.context.rbac as UserPermissionContext | null;
   assertPermission(rbac, 'congregations', PermissionAction.READ);
 
-  const congregationFilter = getCongregationFilter(rbac, 'congregations');
+  const congregationFilter = getCongregationFilter(rbac, 'congregations', 'id');
 
   const congregations = await prisma.congregation.findMany({
     where: congregationFilter,

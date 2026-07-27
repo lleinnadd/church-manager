@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { AlertTriangle } from '@lucide/vue';
+import { cn } from '@/lib/utils';
 
 defineProps<{
   withoutLeadership: { id: string; name: string }[];
@@ -8,6 +9,8 @@ defineProps<{
   withoutDepartment: number;
   withoutCongregation: number;
 }>();
+
+const { isAdmin } = usePermissions();
 </script>
 
 <template>
@@ -20,7 +23,14 @@ defineProps<{
       <CardDescription>{{ $t('pages.home.attention.description') }}</CardDescription>
     </CardHeader>
     <CardContent class="space-y-4 text-sm">
-      <div class="grid grid-cols-3 gap-2">
+      <div
+        :class="
+          cn('grid gap-2', {
+            'grid-cols-3': isAdmin,
+            'grid-cols-2': !isAdmin,
+          })
+        "
+      >
         <div class="rounded-md border p-2 text-center">
           <div class="text-lg font-semibold tabular-nums">{{ incompleteProfiles }}</div>
           <div class="text-muted-foreground mt-0.5 text-xs">
@@ -33,7 +43,7 @@ defineProps<{
             {{ $t('pages.home.attention.withoutDepartment') }}
           </div>
         </div>
-        <div class="rounded-md border p-2 text-center">
+        <div v-if="isAdmin" class="rounded-md border p-2 text-center">
           <div class="text-lg font-semibold tabular-nums">{{ withoutCongregation }}</div>
           <div class="text-muted-foreground mt-0.5 text-xs">
             {{ $t('pages.home.attention.withoutCongregation') }}

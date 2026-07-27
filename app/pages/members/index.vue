@@ -31,7 +31,7 @@ const { userId } = useAuth();
 const { can } = usePermissions();
 
 type MemberWithRelations = Member & {
-  congregation: Pick<Congregation, 'id' | 'name' | 'type'>;
+  congregation: Pick<Congregation, 'id' | 'name' | 'type'> | null;
   departments: (MemberDepartment & {
     department: Department & {
       localNames?: {
@@ -222,7 +222,10 @@ async function handleDelete() {
           </div>
         </CardHeader>
         <CardContent class="space-y-3">
-          <div class="text-xs text-muted-foreground flex items-center gap-2">
+          <div
+            v-if="member.congregation"
+            class="text-xs text-muted-foreground flex items-center gap-2"
+          >
             <Network class="size-4" />
             <span>
               {{ member.congregation.name }} • {{ typeLabel(member.congregation.type) }}

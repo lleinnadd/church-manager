@@ -1,9 +1,35 @@
-import { PermissionAction } from '@prisma/client';
+import { PermissionAction, PermissionScopeType } from '@prisma/client';
 import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 export default defineEventHandler(async (event) => {
   const rbac = event.context.rbac as UserPermissionContext | null;
   assertPermission(rbac, 'departments', PermissionAction.READ);
+
+  const scope = getPermissionScopeType(rbac, 'departments');
+  const isScoped = scope !== PermissionScopeType.ALL;
+
+  const scopedMembershipFilter = isScoped
+    ? [
+        {
+          $addFields: {
+            memberships: {
+              $filter: {
+                input: '$memberships',
+                as: 'm',
+                cond: { $in: ['$$m.congregationId', rbac.allowedCongregationIds] },
+              },
+            },
+            localNames: {
+              $filter: {
+                input: '$localNames',
+                as: 'ln',
+                cond: { $in: ['$$ln.congregationId', rbac.allowedCongregationIds] },
+              },
+            },
+          },
+        },
+      ]
+    : [];
 
   return prisma.department.aggregateRaw({
     pipeline: [
@@ -40,6 +66,7 @@ export default defineEventHandler(async (event) => {
           as: 'localNameCongregations',
         },
       },
+      ...scopedMembershipFilter,
       { $addFields: { memberIds: { $setUnion: ['$memberships.memberId', []] } } },
       { $addFields: { _count: { memberships: { $size: '$memberIds' } } } },
       {

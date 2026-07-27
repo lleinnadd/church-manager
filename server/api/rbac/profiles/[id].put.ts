@@ -1,10 +1,9 @@
-import { PermissionAction } from '@prisma/client';
 import type { UserPermissionContext } from '~~/shared/types/rbac';
 import { rbacProfileSchema } from '~~/shared/validation/rbac';
 
 export default defineEventHandler(async (event) => {
   const rbac = event.context.rbac as UserPermissionContext | null;
-  assertPermission(rbac, 'rbac', PermissionAction.MANAGE);
+  assertAdmin(rbac);
 
   const id = getRouterParam(event, 'id');
 

@@ -1,15 +1,19 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { requiredPermission } = to.meta;
+  const { requiredPermission, requireAdmin } = to.meta;
 
-  if (!requiredPermission) return undefined;
+  if (!requiredPermission && !requireAdmin) return undefined;
 
-  const { can, permissions, refresh } = usePermissions();
+  const { can, isAdmin, permissions, refresh } = usePermissions();
 
   if (!permissions.value) {
     await refresh();
   }
 
-  if (!can(requiredPermission.resource, requiredPermission.action)) {
+  if (requireAdmin && !isAdmin.value) {
+    return navigateTo('/no-access');
+  }
+
+  if (requiredPermission && !can(requiredPermission.resource, requiredPermission.action)) {
     return navigateTo('/no-access');
   }
 

@@ -1,3 +1,5 @@
+import { NAV_ITEMS } from '~/lib/nav';
+
 const ensured = ref(false);
 
 export default defineNuxtRouteMiddleware(async (to) => {
@@ -21,14 +23,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
       await $fetch('/api/members/ensure', {
         method: 'POST',
         body: {
-          clerkUserId: userId.value,
           name: user.value?.fullName,
         },
       });
       ensured.value = true;
     }
 
-    const { hasAnyPermission, permissions, refresh } = usePermissions();
+    const { can, hasAnyPermission, permissions, refresh } = usePermissions();
 
     if (!permissions.value) {
       await refresh();
@@ -41,7 +42,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
     // Has access but landed on no-access → send back into the app.
     if (hasAnyPermission.value && isNoAccessRoute) {
-      return navigateTo('/');
+      const fallback = NAV_ITEMS.find((item) => can(item.resource, item.action));
+      return navigateTo(fallback?.url ?? '/');
     }
   }
 

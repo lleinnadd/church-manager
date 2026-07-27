@@ -21,10 +21,14 @@ export default defineEventHandler(async (event) => {
 
   const { type, congregationId, categoryId, startDate, endDate } = parsed.data;
 
-  const where: Record<string, unknown> = {};
+  if (congregationId) {
+    assertCongregationAccess(rbac, 'treasury', congregationId);
+  }
+  const scopeFilter = congregationId ? { congregationId } : getCongregationFilter(rbac, 'treasury');
+
+  const where: Record<string, unknown> = { ...scopeFilter };
 
   if (type) where.type = type;
-  if (congregationId) where.congregationId = congregationId;
   if (categoryId) where.categoryId = categoryId;
 
   if (startDate || endDate) {

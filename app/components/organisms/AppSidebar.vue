@@ -1,16 +1,8 @@
 <script setup lang="ts">
-import {
-  Home,
-  Users,
-  CalendarDays,
-  ChevronUp,
-  Church,
-  Building2,
-  Wallet,
-  Settings,
-} from '@lucide/vue';
+import { ChevronUp, Settings } from '@lucide/vue';
 import { dark } from '@clerk/themes';
 import { useSidebar } from '@/components/ui/sidebar/utils';
+import { NAV_ITEMS } from '~/lib/nav';
 
 const { t } = useI18n();
 const { user } = useUser();
@@ -20,43 +12,13 @@ const { can, isAdmin } = usePermissions();
 
 const isCollapsed = computed(() => state.value === 'collapsed');
 
-const allMenuItems = [
-  { title: 'sidebar.home', icon: Home, url: '/', resource: 'stats', action: 'READ' },
-  {
-    title: 'sidebar.congregations',
-    icon: Church,
-    url: '/congregations',
-    resource: 'congregations',
-    action: 'READ',
-  },
-  {
-    title: 'sidebar.departments',
-    icon: Building2,
-    url: '/departments',
-    resource: 'departments',
-    action: 'READ',
-  },
-  { title: 'sidebar.members', icon: Users, url: '/members', resource: 'members', action: 'READ' },
-  {
-    title: 'sidebar.events',
-    icon: CalendarDays,
-    url: '/events',
-    resource: 'events',
-    action: 'READ',
-  },
-  {
-    title: 'sidebar.treasury',
-    icon: Wallet,
-    url: '/treasury',
-    resource: 'treasury',
-    action: 'READ',
-  },
-] as const;
-
 const menuItems = computed(() =>
-  allMenuItems
-    .filter((item) => can(item.resource, item.action))
-    .map((item) => ({ ...item, title: t(item.title) })),
+  NAV_ITEMS.filter(
+    (item) => item.requiresPermission === false || can(item.resource, item.action),
+  ).map((item) => ({
+    ...item,
+    title: t(item.titleKey),
+  })),
 );
 
 const settingsItems = computed(() => {

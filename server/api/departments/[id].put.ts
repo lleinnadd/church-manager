@@ -32,6 +32,7 @@ const departmentSchema = z.object({
 export default defineEventHandler(async (event) => {
   const rbac = event.context.rbac as UserPermissionContext | null;
   assertPermission(rbac, 'departments', PermissionAction.UPDATE);
+  assertGlobalScope(rbac, 'departments');
 
   const id = getRouterParam(event, 'id');
   if (!id) {

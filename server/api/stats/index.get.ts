@@ -1,9 +1,9 @@
 import {
   CongregationType,
+  DepartmentFunctionScope,
   EventSeriesType,
   MaritalStatus,
   MemberStatus,
-  PermissionAction,
   Prisma,
 } from '@prisma/client';
 import { z } from 'zod';
@@ -61,11 +61,28 @@ function isoDateKey(date: Date): string {
 
 export default defineEventHandler(async (event): Promise<DashboardStatsPayload> => {
   const rbac = event.context.rbac as UserPermissionContext | null;
-  assertPermission(rbac, 'stats', PermissionAction.READ);
+  if (!rbac) {
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
+  }
 
   const parsed = querySchema.safeParse(getQuery(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid query params' });
+  }
+
+  const isScoped = !rbac.isAdmin;
+  let viewerDepartmentFilter: Prisma.MemberDepartmentWhereInput | undefined;
+  if (isScoped) {
+    viewerDepartmentFilter = rbac.congregationId
+      ? {
+          OR: [
+            { congregationId: rbac.congregationId },
+            {
+              AND: [{ congregationId: null }, { member: { congregationId: rbac.congregationId } }],
+            },
+          ],
+        }
+      : { id: { in: [] } };
   }
 
   const auth = (event.context.auth as () => { userId: string | null })();
@@ -79,27 +96,44 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
           name: true,
           congregationId: true,
           congregation: { select: { id: true, name: true, type: true } },
-          departments: { select: { departmentId: true, congregationId: true } },
+          departments: {
+            where: viewerDepartmentFilter,
+            select: { departmentId: true, congregationId: true },
+          },
         },
       })
     : null;
 
+  // Admins see the global aggregate view (across every congregation) by
+  // default and can drill into any one via the ?congregationId filter.
+  // Non-admins are hard-scoped to their own congregation regardless.
+  const allCongregationsFilter = isScoped
+    ? { id: { in: rbac.congregationId ? [rbac.congregationId] : [] } }
+    : undefined;
+
   const allCongregations = await prisma.congregation.findMany({
+    where: allCongregationsFilter,
     select: { id: true, name: true, type: true },
     orderBy: [{ type: 'asc' }, { name: 'asc' }],
   });
 
   let scopeCongregation: DashboardCongregationLite | null = null;
   if (parsed.data.congregationId) {
+    if (isScoped && parsed.data.congregationId !== rbac.congregationId) {
+      throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
+    }
     scopeCongregation = allCongregations.find((c) => c.id === parsed.data.congregationId) ?? null;
     if (!scopeCongregation) {
       throw createError({ statusCode: 404, statusMessage: 'Congregation not found' });
     }
-  } else if (
-    viewerMember?.congregation &&
-    viewerMember.congregation.type !== CongregationType.HEADQUARTERS
-  ) {
-    scopeCongregation = viewerMember.congregation;
+  } else if (isScoped) {
+    const primaryId = rbac.congregationId;
+    scopeCongregation = primaryId
+      ? (allCongregations.find((c) => c.id === primaryId) ?? null)
+      : null;
+    if (!scopeCongregation) {
+      throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
+    }
   }
 
   const scope: DashboardScope = {
@@ -241,46 +275,54 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
   }
   birthdays.sort((a, b) => a.dayOfMonth - b.dayOfMonth);
 
-  const [seriesList, cancelledOccurrences, exceptionOccurrences, allDepartmentsLite] =
-    await Promise.all([
-      prisma.eventSeries.findMany({
-        where: {
-          startsOn: { lt: upcomingWindowEnd },
-          OR: [
-            { eventType: EventSeriesType.MONTHLY_RECURRING, endsOn: null },
-            { endsOn: { gte: today } },
-          ],
-          ...eventCongregationFilter,
-        },
-        include: {
-          daySchedules: { orderBy: { date: 'asc' } },
-          congregation: { select: { id: true, name: true, type: true } },
-          department: { select: { id: true, name: true } },
-        },
-      }),
-      prisma.eventOccurrence.count({
-        where: {
-          ...eventCongregationFilter,
-          cancelled: true,
-          occurrenceDate: { gte: monthStart, lt: nextMonthStart },
-        },
-      }),
-      prisma.eventOccurrence.findMany({
-        where: {
-          ...eventCongregationFilter,
-          isException: true,
-          startAt: { lt: upcomingWindowEnd },
-          endAt: { gt: today },
-        },
-        include: {
-          congregation: { select: { id: true, name: true, type: true } },
-          department: { select: { id: true, name: true } },
-        },
-      }),
-      prisma.department.findMany({ select: { id: true, name: true } }),
-    ]);
+  const [seriesList, cancelledOccurrences, exceptionOccurrences] = await Promise.all([
+    prisma.eventSeries.findMany({
+      where: {
+        startsOn: { lt: upcomingWindowEnd },
+        OR: [
+          { eventType: EventSeriesType.MONTHLY_RECURRING, endsOn: null },
+          { endsOn: { gte: today } },
+        ],
+        ...eventCongregationFilter,
+      },
+      include: {
+        daySchedules: { orderBy: { date: 'asc' } },
+        congregation: { select: { id: true, name: true, type: true } },
+        department: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.eventOccurrence.count({
+      where: {
+        ...eventCongregationFilter,
+        cancelled: true,
+        occurrenceDate: { gte: monthStart, lt: nextMonthStart },
+      },
+    }),
+    prisma.eventOccurrence.findMany({
+      where: {
+        ...eventCongregationFilter,
+        isException: true,
+        startAt: { lt: upcomingWindowEnd },
+        endAt: { gt: today },
+      },
+      include: {
+        congregation: { select: { id: true, name: true, type: true } },
+        department: { select: { id: true, name: true } },
+      },
+    }),
+  ]);
 
-  const departmentNameById = new Map(allDepartmentsLite.map((d) => [d.id, d.name]));
+  const departmentNameById = new Map<string, string>();
+  for (const series of seriesList) {
+    if (series.department) {
+      departmentNameById.set(series.department.id, series.department.name);
+    }
+  }
+  for (const occurrence of exceptionOccurrences) {
+    if (occurrence.department) {
+      departmentNameById.set(occurrence.department.id, occurrence.department.name);
+    }
+  }
 
   const exceptionBySeriesAndDate = new Map<string, (typeof exceptionOccurrences)[number]>();
   for (const exc of exceptionOccurrences) {
@@ -516,6 +558,13 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
 
   const [departments, totalFunctions] = await Promise.all([
     prisma.department.findMany({
+      where: scopeCongregation
+        ? {
+            memberships: {
+              some: departmentMembershipFilter,
+            },
+          }
+        : undefined,
       select: {
         id: true,
         name: true,
@@ -527,7 +576,18 @@ export default defineEventHandler(async (event): Promise<DashboardStatsPayload> 
       },
       orderBy: { name: 'asc' },
     }),
-    prisma.departmentFunction.count(),
+    prisma.departmentFunction.count({
+      where: scopeCongregation
+        ? {
+            scope: { not: DepartmentFunctionScope.GENERAL },
+            department: {
+              memberships: {
+                some: departmentMembershipFilter,
+              },
+            },
+          }
+        : undefined,
+    }),
   ]);
 
   let withScopeDivision = 0;

@@ -4,6 +4,7 @@ import type { UserPermissionContext } from '~~/shared/types/rbac';
 export default defineEventHandler(async (event) => {
   const rbac = event.context.rbac as UserPermissionContext | null;
   assertPermission(rbac, 'departments', PermissionAction.DELETE);
+  assertGlobalScope(rbac, 'departments');
 
   const id = getRouterParam(event, 'id');
 

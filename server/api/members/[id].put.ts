@@ -25,6 +25,7 @@ export default defineEventHandler(async (event) => {
   }
 
   assertCongregationAccess(rbac, 'members', existing.congregationId);
+  assertCongregationAccess(rbac, 'members', body.congregationId);
 
   if (existing.photoBlobPath && existing.photoBlobPath !== body.photoBlobPath) {
     await safeDeleteBlob(existing.photoBlobPath);
@@ -39,6 +40,12 @@ export default defineEventHandler(async (event) => {
     body.departments,
     body.congregationId,
   );
+
+  for (const entry of departmentsInput) {
+    if (entry.congregationId) {
+      assertCongregationAccess(rbac, 'members', entry.congregationId);
+    }
+  }
 
   const member = await prisma.member.update({
     where: { id },

@@ -7,6 +7,7 @@ const congregationSchema = createCongregationSchema();
 export default defineEventHandler(async (event) => {
   const rbac = event.context.rbac as UserPermissionContext | null;
   assertPermission(rbac, 'congregations', PermissionAction.CREATE);
+  assertGlobalScope(rbac, 'congregations');
 
   const parsed = congregationSchema.safeParse(await readBody(event));
   if (!parsed.success) {

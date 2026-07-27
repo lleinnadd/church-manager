@@ -1,20 +1,29 @@
 <script setup lang="ts">
-import { Plus, Trash2, Link } from '@lucide/vue';
+import { DepartmentFunctionScope, DepartmentScope } from '@prisma/client';
+import { Trash2 } from '@lucide/vue';
 
 export interface PendingBinding {
+  departmentId: string;
   functionId: string;
-  scope: 'LOCAL' | 'GENERAL';
-  label: string;
+  scope: DepartmentScope;
 }
 
 const model = defineModel<PendingBinding[]>({ default: () => [] });
 
 const { t } = useI18n();
 
+interface DepartmentFunctionOption {
+  id: string;
+  name: string;
+  scope: DepartmentFunctionScope | null;
+  sortOrder: number | null;
+}
+
 interface DepartmentWithFunctions {
   id: string;
   name: string;
-  functions: { id: string; name: string }[];
+  hasScopeDivision: boolean;
+  functions: DepartmentFunctionOption[];
 }
 
 const { data: departments } = useFetch<DepartmentWithFunctions[]>('/api/departments');
@@ -23,123 +32,189 @@ const departmentsWithFunctions = computed(() =>
   (departments.value ?? []).filter((dept) => (dept.functions ?? []).length > 0),
 );
 
-const functionLabels = computed(() => {
-  const map = new Map<string, string>();
-  (departments.value ?? []).forEach((dept) => {
-    (dept.functions ?? []).forEach((fn) => {
-      map.set(fn.id, `${dept.name} — ${fn.name}`);
-    });
+function availableFunctionsForScope(
+  department: DepartmentWithFunctions,
+  scope: DepartmentScope,
+): DepartmentFunctionOption[] {
+  const functions = (department.functions ?? [])
+    .slice()
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
+
+  if (department.hasScopeDivision === false) {
+    return functions;
+  }
+
+  return functions.filter((fn) => {
+    if (!fn.scope || fn.scope === DepartmentFunctionScope.BOTH) return true;
+    if (fn.scope === DepartmentFunctionScope.LOCAL) return scope === DepartmentScope.LOCAL;
+    if (fn.scope === DepartmentFunctionScope.GENERAL) return scope === DepartmentScope.GENERAL;
+    return true;
   });
-  return map;
-});
-
-const checkedFunctionIds = ref<string[]>([]);
-const scope = ref<'LOCAL' | 'GENERAL' | ''>('');
-
-function toggleFunction(functionId: string, checked: boolean) {
-  if (checked) {
-    if (!checkedFunctionIds.value.includes(functionId)) {
-      checkedFunctionIds.value = [...checkedFunctionIds.value, functionId];
-    }
-  } else {
-    checkedFunctionIds.value = checkedFunctionIds.value.filter((id) => id !== functionId);
-  }
 }
 
-function isInModel(functionId: string, scopeValue: string) {
-  return model.value.some((b) => b.functionId === functionId && b.scope === scopeValue);
+function departmentById(id: string): DepartmentWithFunctions | undefined {
+  return departmentsWithFunctions.value.find((d) => d.id === id);
 }
 
-function addSelected() {
-  if (!scope.value || !checkedFunctionIds.value.length) return;
-  const scopeValue = scope.value;
-  const additions: PendingBinding[] = checkedFunctionIds.value
-    .filter((functionId) => !isInModel(functionId, scopeValue))
-    .map((functionId) => ({
-      functionId,
-      scope: scopeValue,
-      label: functionLabels.value.get(functionId) ?? functionId,
-    }));
-
-  if (additions.length) {
-    model.value = [...model.value, ...additions];
-  }
-  checkedFunctionIds.value = [];
+function functionsForBinding(binding: PendingBinding): DepartmentFunctionOption[] {
+  const dept = departmentById(binding.departmentId);
+  if (!dept) return [];
+  return availableFunctionsForScope(dept, binding.scope);
 }
 
-function removePending(index: number) {
+function bindingHasScopeDivision(binding: PendingBinding): boolean {
+  return departmentById(binding.departmentId)?.hasScopeDivision === true;
+}
+
+function addBinding() {
+  const firstDept = departmentsWithFunctions.value[0];
+  if (!firstDept) return;
+  const initialScope = DepartmentScope.GENERAL;
+  const firstFunction = availableFunctionsForScope(firstDept, initialScope)[0];
+  model.value = [
+    ...model.value,
+    {
+      departmentId: firstDept.id,
+      functionId: firstFunction?.id ?? '',
+      scope: initialScope,
+    },
+  ];
+}
+
+function removeBinding(index: number) {
   model.value = model.value.filter((_, i) => i !== index);
 }
+
+function updateBinding(index: number, patch: Partial<PendingBinding>) {
+  const next = [...model.value];
+  const current = next[index];
+  if (!current) return;
+  next[index] = { ...current, ...patch };
+  model.value = next;
+}
+
+watch(
+  model,
+  (current) => {
+    if (!current?.length || !departmentsWithFunctions.value.length) return;
+    let changed = false;
+    const next = current.map((binding) => {
+      const updated: PendingBinding = { ...binding };
+      const dept = departmentById(updated.departmentId);
+      if (!dept) return updated;
+
+      if (dept.hasScopeDivision === false && updated.scope !== DepartmentScope.GENERAL) {
+        updated.scope = DepartmentScope.GENERAL;
+      }
+
+      const functions = availableFunctionsForScope(dept, updated.scope);
+      const hasSelectedFunction = functions.some((fn) => fn.id === updated.functionId);
+      if (!hasSelectedFunction) {
+        updated.functionId = functions[0]?.id ?? '';
+      }
+
+      if (
+        updated.departmentId !== binding.departmentId ||
+        updated.scope !== binding.scope ||
+        updated.functionId !== binding.functionId
+      ) {
+        changed = true;
+      }
+      return updated;
+    });
+    if (changed) model.value = next;
+  },
+  { deep: true },
+);
 </script>
 
 <template>
   <div class="space-y-4">
-    <div v-if="model.length" class="space-y-2">
+    <p v-if="!departmentsWithFunctions.length" class="text-sm text-muted-foreground">
+      {{ $t('rbac.noFunctions') }}
+    </p>
+
+    <div v-else class="space-y-4">
       <div
         v-for="(binding, index) in model"
-        :key="`${binding.functionId}:${binding.scope}`"
-        class="flex items-center justify-between rounded-lg border p-3"
+        :key="index"
+        class="grid gap-3 items-end md:grid-cols-[repeat(3,minmax(0,1fr))_36px]"
       >
-        <div class="flex items-center gap-2">
-          <Link class="size-4 text-muted-foreground" />
-          <span class="font-medium">{{ binding.label }}</span>
-          <Badge variant="outline">{{ binding.scope }}</Badge>
+        <div class="space-y-2">
+          <Label>{{ t('rbac.department') }}</Label>
+          <Select
+            :model-value="binding.departmentId"
+            @update:model-value="
+              (val: unknown) => updateBinding(index, { departmentId: val as string })
+            "
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="d in departmentsWithFunctions" :key="d.id" :value="d.id">
+                {{ d.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
+        <div class="space-y-2">
+          <Label>{{ t('rbac.function') }}</Label>
+          <Select
+            :model-value="binding.functionId"
+            :disabled="!functionsForBinding(binding).length"
+            @update:model-value="
+              (val: unknown) => updateBinding(index, { functionId: val as string })
+            "
+          >
+            <SelectTrigger>
+              <SelectValue :placeholder="t('rbac.selectFunction')" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="fn in functionsForBinding(binding)" :key="fn.id" :value="fn.id">
+                {{ fn.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div v-if="bindingHasScopeDivision(binding)" class="space-y-2">
+          <Label>{{ t('rbac.scope') }}</Label>
+          <Select
+            :model-value="binding.scope"
+            @update:model-value="
+              (val: unknown) => updateBinding(index, { scope: val as DepartmentScope })
+            "
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem :value="DepartmentScope.LOCAL">
+                {{ $t('departments.scope.local') }}
+              </SelectItem>
+              <SelectItem :value="DepartmentScope.GENERAL">
+                {{ $t('departments.scope.general') }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div v-else class="hidden md:block" />
+
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          class="size-8 text-destructive"
-          @click="removePending(index)"
+          class="col-start-1 justify-self-end md:col-start-4"
+          @click="removeBinding(index)"
         >
           <Trash2 class="size-4" />
         </Button>
       </div>
-    </div>
 
-    <div class="rounded-lg border">
-      <div class="border-b p-3">
-        <Label>{{ $t('rbac.selectFunctions') }}</Label>
-      </div>
-      <div class="max-h-64 space-y-4 overflow-y-auto p-3">
-        <p v-if="!departmentsWithFunctions.length" class="text-sm text-muted-foreground">
-          {{ $t('rbac.noFunctions') }}
-        </p>
-        <div v-for="dept in departmentsWithFunctions" :key="dept.id" class="space-y-2">
-          <p class="text-xs font-semibold uppercase text-muted-foreground">{{ dept.name }}</p>
-          <div class="space-y-1 pl-1">
-            <label
-              v-for="fn in dept.functions"
-              :key="fn.id"
-              class="flex cursor-pointer items-center gap-2 text-sm"
-            >
-              <Checkbox
-                :checked="checkedFunctionIds.includes(fn.id)"
-                @update:checked="(val: boolean) => toggleFunction(fn.id, val)"
-              />
-              <span>{{ fn.name }}</span>
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="flex items-end gap-2">
-      <div class="w-48">
-        <Label>{{ $t('rbac.scope') }}</Label>
-        <Select v-model="scope">
-          <SelectTrigger>
-            <SelectValue :placeholder="$t('rbac.selectScope')" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="LOCAL">LOCAL</SelectItem>
-            <SelectItem value="GENERAL">GENERAL</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <Button type="button" :disabled="!scope || !checkedFunctionIds.length" @click="addSelected">
-        <Plus class="mr-2 size-4" />
-        {{ t('rbac.addToList', { count: checkedFunctionIds.length }) }}
+      <Button type="button" variant="outline" @click="addBinding">
+        {{ $t('rbac.addBinding') }}
       </Button>
     </div>
   </div>

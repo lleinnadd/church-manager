@@ -31,6 +31,7 @@ const departmentSchema = z.object({
 export default defineEventHandler(async (event) => {
   const rbac = event.context.rbac as UserPermissionContext | null;
   assertPermission(rbac, 'departments', PermissionAction.CREATE);
+  assertGlobalScope(rbac, 'departments');
 
   const parsed = departmentSchema.safeParse(await readBody(event));
   if (!parsed.success) {

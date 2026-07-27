@@ -171,6 +171,14 @@ export function assertPermission(
   }
 }
 
+export function assertAdmin(
+  ctx: UserPermissionContext | null | undefined,
+): asserts ctx is UserPermissionContext {
+  if (!ctx?.isAdmin) {
+    throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
+  }
+}
+
 export function getPermissionScopeType(
   ctx: UserPermissionContext,
   resource: string,
@@ -192,10 +200,11 @@ export function getPermissionScopeType(
 export function getCongregationFilter(
   ctx: UserPermissionContext,
   resource: string,
+  fieldName = 'congregationId',
 ): Record<string, unknown> {
   const scope = getPermissionScopeType(ctx, resource);
   if (scope === PermissionScopeType.ALL) return {};
-  return { congregationId: { in: ctx.allowedCongregationIds } };
+  return { [fieldName]: { in: ctx.allowedCongregationIds } };
 }
 
 export function assertCongregationAccess(
@@ -211,6 +220,35 @@ export function assertCongregationAccess(
   if (!congregationId || !ctx.allowedCongregationIds.includes(congregationId)) {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
   }
+}
+
+export function assertGlobalScope(ctx: UserPermissionContext, resource: string): void {
+  if (ctx.isAdmin) return;
+  if (getPermissionScopeType(ctx, resource) !== PermissionScopeType.ALL) {
+    throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
+  }
+}
+
+export function getScopedCongregationId(
+  ctx: UserPermissionContext,
+  resource: string,
+  requested: string | null | undefined,
+): string {
+  if (requested) {
+    assertCongregationAccess(ctx, resource, requested);
+    return requested;
+  }
+
+  const scope = getPermissionScopeType(ctx, resource);
+  if (scope === PermissionScopeType.ALL) {
+    throw createError({ statusCode: 400, statusMessage: 'congregationId is required' });
+  }
+
+  const primary = ctx.congregationId ?? ctx.allowedCongregationIds[0] ?? null;
+  if (!primary) {
+    throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
+  }
+  return primary;
 }
 
 export function getRbacContext(event: unknown): UserPermissionContext | null {

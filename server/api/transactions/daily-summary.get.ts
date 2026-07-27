@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { startDate, endDate, congregationId } = parsed.data;
+  assertCongregationAccess(rbac, 'treasury', congregationId);
   const start = new Date(startDate);
   const end = new Date(endDate);
 

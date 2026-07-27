@@ -4,11 +4,10 @@ import { toast } from 'vue-sonner';
 
 definePageMeta({
   middleware: ['rbac'],
-  requiredPermission: { resource: 'rbac', action: 'MANAGE' },
+  requireAdmin: true,
 });
 
 const { t } = useI18n();
-const { can } = usePermissions();
 
 interface RbacProfileListItem {
   id: string;
@@ -51,7 +50,7 @@ async function handleDelete() {
       <div>
         <h1 class="text-2xl font-bold tracking-tight">{{ $t('rbac.title') }}</h1>
       </div>
-      <Button v-if="can('rbac', 'MANAGE')" size="sm" as-child>
+      <Button size="sm" as-child>
         <NuxtLink to="/settings/rbac/new">
           <Plus class="mr-2 size-4" />
           {{ $t('rbac.newProfile') }}
@@ -92,7 +91,7 @@ async function handleDelete() {
                   </NuxtLink>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  v-if="!profile.isSystem && can('rbac', 'MANAGE')"
+                  v-if="!profile.isSystem"
                   class="text-destructive"
                   @click="confirmDelete(profile.id, profile.name)"
                 >
