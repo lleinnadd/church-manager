@@ -80,6 +80,7 @@ export interface MemberFormData {
   congregationId: string;
   status: MemberStatus;
   clerkUserId?: string | null;
+  nameLocked?: boolean;
   photoUrl?: string | null;
   photoBlobPath?: string | null;
   departments?: MemberDepartmentInput[];

@@ -73,8 +73,15 @@ model Member {
   clerkUserId String? @unique
   isAdmin     Boolean @default(false)
 
+  registrationTokenHash String?
+  registrationExpiresAt DateTime?
+  registrationCreatedAt DateTime?
+  registrationCreatedBy String?
+  registrationUsedAt    DateTime?
+
   departments MemberDepartment[]
 
+  @@index([registrationTokenHash])
   @@map("members")
 }
 

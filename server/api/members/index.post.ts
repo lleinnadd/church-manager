@@ -1,4 +1,4 @@
-import { PermissionAction } from '@prisma/client';
+import { MemberStatus, PermissionAction } from '@prisma/client';
 import { createMemberSchema } from '#shared/validation/member';
 import type { UserPermissionContext } from '~~/shared/types/rbac';
 
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
   assertCongregationAccess(rbac, 'members', body.congregationId);
 
-  const { status } = body;
+  const status = body.status ?? MemberStatus.ACTIVE;
 
   const departmentsInput = await resolveMemberDepartmentsInput(
     prisma,
@@ -39,9 +39,10 @@ export default defineEventHandler(async (event) => {
       congregationId: body.congregationId,
       status,
       clerkUserId: null,
-      dateOfBirth: new Date(body.dateOfBirth),
-      memberSince: new Date(body.memberSince),
-      convertionDate: new Date(body.convertionDate),
+      dateOfBirth: body.dateOfBirth == null ? body.dateOfBirth : new Date(body.dateOfBirth),
+      memberSince: body.memberSince == null ? body.memberSince : new Date(body.memberSince),
+      convertionDate:
+        body.convertionDate == null ? body.convertionDate : new Date(body.convertionDate),
       ssn: body.ssn,
       nationalId: body.nationalId,
       maritalStatus: body.maritalStatus,

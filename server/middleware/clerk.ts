@@ -1,10 +1,12 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nuxt/server';
+import { isPublicMemberRegistrationApi } from '../../shared/utils/member-registration';
 
 const isProtectedRoute = createRouteMatcher(['/api/(.*)']);
 const isWebhookRoute = createRouteMatcher(['/api/webhook(.*)']);
 
 export default clerkMiddleware((event) => {
   if (isWebhookRoute(event)) return;
+  if (isPublicMemberRegistrationApi(getRequestURL(event).pathname, event.method)) return;
 
   const authFn = event.context.auth as unknown;
   const authResult =

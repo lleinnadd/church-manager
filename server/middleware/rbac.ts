@@ -1,8 +1,11 @@
+import { isPublicMemberRegistrationApi } from '../../shared/utils/member-registration';
+
 export default defineEventHandler(async (event) => {
   const path = getRequestURL(event).pathname;
 
   if (
     !path.startsWith('/api/') ||
+    isPublicMemberRegistrationApi(path, event.method) ||
     path.startsWith('/api/webhook') ||
     path === '/api/members/ensure' ||
     path === '/api/auth/permissions'

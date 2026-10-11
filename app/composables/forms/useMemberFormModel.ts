@@ -30,11 +30,11 @@ function normalizeDate(value?: string | null): string {
 function parseDate(value: string | null | undefined): DateValue | undefined {
   if (!value) return undefined;
   const normalized = normalizeDate(value);
-  const date = new Date(normalized);
-  if (Number.isNaN(date.getTime())) {
+  const [year, month, day] = normalized.split('-').map(Number);
+  if (!year || !month || !day) {
     return undefined;
   }
-  return new CalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
+  return new CalendarDate(year, month, day);
 }
 
 function emptyToNull(value: string | null | undefined): string | null {
@@ -44,10 +44,15 @@ function emptyToNull(value: string | null | undefined): string | null {
   return value;
 }
 
-export const useMemberFormModel = (initialData: Ref<MemberFormData | undefined>) => {
+export const useMemberFormModel = (
+  initialData: Ref<MemberFormData | undefined>,
+  options: { publicMode?: boolean } = {},
+) => {
   const { t, locale } = useI18n();
 
-  const isClerkManaged = computed(() => Boolean(initialData.value?.clerkUserId));
+  const isClerkManaged = computed(() =>
+    Boolean(initialData.value?.clerkUserId || initialData.value?.nameLocked),
+  );
 
   const buildInitialValues = (data?: MemberFormData): MemberFormPayload => ({
     name: data?.name ?? '',
@@ -82,7 +87,9 @@ export const useMemberFormModel = (initialData: Ref<MemberFormData | undefined>)
       })) ?? [],
   });
 
-  const validationSchema = computed(() => toTypedSchema(buildMemberFormSchema(t)));
+  const validationSchema = computed(() =>
+    toTypedSchema(buildMemberFormSchema(t, options.publicMode)),
+  );
 
   const { handleSubmit, setFieldValue, values, errors, submitCount, resetForm } =
     useForm<MemberFormPayload>({
@@ -152,8 +159,13 @@ export const useMemberFormModel = (initialData: Ref<MemberFormData | undefined>)
     setFieldValue('convertionDate', value ? value.toString() : '', false);
   });
 
-  const { data: congregations, status: congregationsStatus } =
-    useFetch<Congregation[]>('/api/congregations');
+  const { data: congregations, status: congregationsStatus } = useFetch<Congregation[]>(
+    '/api/congregations',
+    {
+      immediate: !options.publicMode,
+      watch: false,
+    },
+  );
 
   type DepartmentWithFunctions = Department & { functions: DepartmentFunction[] };
   interface DepartmentLocalName {
@@ -164,8 +176,13 @@ export const useMemberFormModel = (initialData: Ref<MemberFormData | undefined>)
   }
   type DepartmentWithLocalNames = DepartmentWithFunctions & { localNames?: DepartmentLocalName[] };
 
-  const { data: departments, status: departmentsStatus } =
-    useFetch<DepartmentWithLocalNames[]>('/api/departments');
+  const { data: departments, status: departmentsStatus } = useFetch<DepartmentWithLocalNames[]>(
+    '/api/departments',
+    {
+      immediate: !options.publicMode,
+      watch: false,
+    },
+  );
 
   const departmentsWithFunctions = computed<DepartmentWithLocalNames[]>(
     () => departments.value ?? [],

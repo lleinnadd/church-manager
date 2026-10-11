@@ -1,8 +1,10 @@
 import { NAV_ITEMS } from '~/lib/nav';
+import { isPublicMemberRegistrationPage } from '#shared/utils/member-registration';
 
 const ensured = ref(false);
 
 export default defineNuxtRouteMiddleware(async (to) => {
+  if (isPublicMemberRegistrationPage(to.path)) return undefined;
   const { userId } = useAuth();
   const { user } = useUser();
 

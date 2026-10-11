@@ -27,13 +27,17 @@ export default defineEventHandler(async (event) => {
   assertCongregationAccess(rbac, 'members', existing.congregationId);
   assertCongregationAccess(rbac, 'members', body.congregationId);
 
-  if (existing.photoBlobPath && existing.photoBlobPath !== body.photoBlobPath) {
+  if (
+    body.photoBlobPath !== undefined &&
+    existing.photoBlobPath &&
+    existing.photoBlobPath !== body.photoBlobPath
+  ) {
     await safeDeleteBlob(existing.photoBlobPath);
   }
 
   const isClerkManaged = Boolean(existing.clerkUserId);
 
-  const status = isClerkManaged ? MemberStatus.ACTIVE : body.status;
+  const status = isClerkManaged ? MemberStatus.ACTIVE : (body.status ?? existing.status);
 
   const departmentsInput = await resolveMemberDepartmentsInput(
     prisma,
@@ -55,9 +59,10 @@ export default defineEventHandler(async (event) => {
       status,
       clerkUserId: undefined,
       isAdmin: isAdminUpdate,
-      dateOfBirth: new Date(body.dateOfBirth),
-      memberSince: new Date(body.memberSince),
-      convertionDate: new Date(body.convertionDate),
+      dateOfBirth: body.dateOfBirth == null ? body.dateOfBirth : new Date(body.dateOfBirth),
+      memberSince: body.memberSince == null ? body.memberSince : new Date(body.memberSince),
+      convertionDate:
+        body.convertionDate == null ? body.convertionDate : new Date(body.convertionDate),
       ssn: body.ssn,
       nationalId: body.nationalId,
       maritalStatus: body.maritalStatus,
@@ -69,13 +74,16 @@ export default defineEventHandler(async (event) => {
       nationality: body.nationality,
       phonePrimary: body.phonePrimary,
       phoneSecondary: body.phoneSecondary,
-      photoUrl: body.photoUrl ?? null,
-      photoBlobPath: body.photoBlobPath ?? null,
+      photoUrl: body.photoUrl,
+      photoBlobPath: body.photoBlobPath,
       observations: body.observations,
-      departments: {
-        deleteMany: {},
-        create: departmentsInput,
-      },
+      departments:
+        rawBody.departments === undefined
+          ? undefined
+          : {
+              deleteMany: {},
+              create: departmentsInput,
+            },
     },
     include: {
       departments: {

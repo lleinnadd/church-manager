@@ -30,7 +30,13 @@ async function handleToggleAdmin(checked: boolean) {
   try {
     await $fetch(`/api/members/${id}`, {
       method: 'PUT',
-      body: { ...member.value, isAdmin: checked },
+      body: {
+        ...member.value,
+        dateOfBirth: member.value?.dateOfBirth?.slice(0, 10),
+        memberSince: member.value?.memberSince?.slice(0, 10),
+        convertionDate: member.value?.convertionDate?.slice(0, 10),
+        isAdmin: checked,
+      },
     });
     toast.success(t('rbac.saved'));
     await refresh();
@@ -57,9 +63,12 @@ async function handleSubmit(data: MemberFormPayload) {
 
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight">{{ $t('pages.members.editTitle') }}</h1>
-      <p class="text-muted-foreground text-sm">{{ $t('pages.members.editDescription') }}</p>
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">{{ $t('pages.members.editTitle') }}</h1>
+        <p class="text-muted-foreground text-sm">{{ $t('pages.members.editDescription') }}</p>
+      </div>
+      <MemberRegistrationLink v-if="member" :member-id="id" />
     </div>
 
     <div v-if="isLoading" class="space-y-4">

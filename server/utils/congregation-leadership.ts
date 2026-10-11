@@ -1,5 +1,5 @@
 import { DepartmentFunctionScope, DepartmentScope } from '@prisma/client';
-import type { PrismaClient } from '@prisma/client';
+import type { AppPrismaClient } from './prisma';
 
 const BOARD_DEPARTMENT_NAME = 'Diretoria';
 
@@ -34,7 +34,7 @@ function compareBoardMembership(a: BoardMembership, b: BoardMembership) {
 }
 
 export async function getCongregationLeadershipMap(
-  prismaClient: Pick<PrismaClient, 'department' | 'memberDepartment'>,
+  prismaClient: Pick<AppPrismaClient, 'department' | 'memberDepartment'>,
   congregationIds: string[],
 ): Promise<Map<string, CongregationLeadershipData | null>> {
   const map = new Map<string, CongregationLeadershipData | null>();
@@ -121,7 +121,7 @@ export async function getCongregationLeadershipMap(
 }
 
 export async function getCongregationLeadership(
-  prismaClient: Pick<PrismaClient, 'department' | 'memberDepartment'>,
+  prismaClient: Pick<AppPrismaClient, 'department' | 'memberDepartment'>,
   congregationId: string,
 ): Promise<CongregationLeadershipData | null> {
   const map = await getCongregationLeadershipMap(prismaClient, [congregationId]);

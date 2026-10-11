@@ -64,7 +64,8 @@
     "zipInvalid": "Informe um CEP válido",
     "eventEndAfterStart": "A data final deve ser maior ou igual à data inicial",
     "eventTimeRangeInvalid": "O horário final deve ser maior que o horário inicial",
-    "amountPositive": "O valor deve ser maior que zero"
+    "amountPositive": "O valor deve ser maior que zero",
+    "dateInvalid": "Data inválida"
   },
   "pages": {
     "home": {
@@ -716,5 +717,35 @@
     "resourceEnabled": "Permitir este módulo",
     "isAdmin": "Administrador",
     "isAdminDescription": "Administradores têm acesso total ao sistema, independente de perfis de acesso."
+  },
+  "registration": {
+    "generateLink": "Gerar link de atualização cadastral",
+    "linkDescription": "Crie um link pessoal para salvar os dados uma única vez. Gerar outro link substitui o anterior.",
+    "expiration": "Data e hora de expiração",
+    "expirationHint": "O prazo padrão é de 48 horas a partir de agora.",
+    "expirationInvalid": "Escolha uma data de expiração no futuro.",
+    "generateError": "Não foi possível gerar o link. Tente novamente.",
+    "link": "Link de atualização cadastral",
+    "copy": "Copiar link",
+    "copied": "Link copiado",
+    "copyError": "Não foi possível copiar o link. Selecione e copie manualmente.",
+    "expiresAt": "Expira em {date}.",
+    "title": "Complete seu cadastro",
+    "description": "Confira e complete seus dados pessoais. Os campos marcados como opcionais podem ficar em branco.",
+    "photoRequired": "A foto é obrigatória.",
+    "finalSaveHint": "Você pode salvar apenas uma vez com este link. Confira seus dados antes de salvar.",
+    "successTitle": "Cadastro atualizado",
+    "successDescription": "Seus dados foram salvos. Você pode fechar esta página.",
+    "usedTitle": "Este link já foi utilizado",
+    "usedDescription": "Seu cadastro já foi salvo por este link. Entre em contato com a secretaria da igreja se precisar de outra atualização.",
+    "expiredTitle": "Este link expirou",
+    "expiredDescription": "Entre em contato com a secretaria da igreja para solicitar um novo link.",
+    "unavailableTitle": "Este link está indisponível",
+    "unavailableDescription": "Este link pode ter sido substituído. Entre em contato com a secretaria da igreja para solicitar outro.",
+    "saveError": "Não foi possível salvar seus dados. Confira os campos e a foto e tente novamente.",
+    "conflict": "Seu cadastro foi alterado durante o salvamento. Recarregue os dados e tente novamente.",
+    "reload": "Recarregar dados",
+    "optional": "(opcional)",
+    "clearDate": "Limpar data"
   }
 }

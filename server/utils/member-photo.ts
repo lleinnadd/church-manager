@@ -1,9 +1,11 @@
 import { del, put } from '@vercel/blob';
 import { imageSize } from 'image-size';
+import { createError } from 'h3';
 
 interface ImageDimensionResult {
   width?: number;
   height?: number;
+  type?: string;
 }
 type PutBlobFn = (
   pathname: string,
@@ -52,7 +54,15 @@ export function validateMemberPhotoBuffer(buffer: Buffer, mimeType: string) {
   }
 
   const resolveImageSize = imageSize as (input: Uint8Array) => ImageDimensionResult;
-  const dimensions = resolveImageSize(buffer);
+  let dimensions: ImageDimensionResult;
+  try {
+    dimensions = resolveImageSize(buffer);
+  } catch {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid image file' });
+  }
+  if (`image/${dimensions.type}` !== mimeType) {
+    throw createError({ statusCode: 400, statusMessage: 'Image content does not match its type' });
+  }
   const width = dimensions.width ?? 0;
   const height = dimensions.height ?? 0;
 

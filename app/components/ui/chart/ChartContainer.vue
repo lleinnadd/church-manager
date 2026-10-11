@@ -2,8 +2,8 @@
 import type { HTMLAttributes } from 'vue';
 import { useId } from 'reka-ui';
 import { computed, toRefs } from 'vue';
-import type { ChartConfig } from '.';
 import { cn } from '@/lib/utils';
+import type { ChartConfig } from '.';
 import { provideChartContext } from '.';
 import ChartStyle from './ChartStyle.vue';
 </script>
