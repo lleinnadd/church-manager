@@ -12,6 +12,11 @@ import { EventSeriesType } from '@prisma/client';
 import type { EventFormData, EventFormPayload } from '@/types/forms';
 import { useSidebar } from '@/components/ui/sidebar/utils';
 
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'events', action: 'READ' },
+});
+
 interface EventOccurrence {
   id: string;
   title: string;
@@ -84,6 +89,7 @@ interface EventSeriesDetails {
 type EventActionType = 'delete-occurrence' | 'delete-series' | 'end-recurrence' | null;
 
 const { t, locale } = useI18n();
+const { can } = usePermissions();
 const { timezone } = useTimezone();
 const { open: sidebarOpen, openMobile: sidebarOpenMobile, isMobile } = useSidebar();
 
@@ -784,7 +790,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   headerToolbar: {
     left: 'prev,next today',
     center: 'title',
-    right: 'exportCalendar loadingBadge',
+    right: can('events', 'EXPORT') ? 'exportCalendar loadingBadge' : 'loadingBadge',
   },
   customButtons: {
     loadingBadge: {
@@ -815,6 +821,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   },
   dateClick: (arg: DateClickArg) => {
     if (arg.dayEl.closest('.fc-day-other')) return;
+
+    if (!can('events', 'CREATE')) return;
 
     if (createOpen.value) return;
 
@@ -920,7 +928,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
           </h1>
           <p class="text-muted-foreground text-sm">{{ $t('pages.events.description') }}</p>
         </div>
-        <Button as-child>
+        <Button v-if="can('events', 'CREATE')" as-child>
           <NuxtLink to="/events/new">
             <Plus class="mr-2 size-4" />
             {{ $t('pages.events.new') }}
@@ -995,7 +1003,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 
           <TooltipProvider :delay-duration="120">
             <div class="flex shrink-0 items-center gap-1">
-              <Tooltip>
+              <Tooltip v-if="can('events', 'UPDATE')">
                 <TooltipTrigger as-child>
                   <Button
                     type="button"
@@ -1012,7 +1020,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
                 <TooltipContent side="bottom">{{ $t('pages.events.editAction') }}</TooltipContent>
               </Tooltip>
 
-              <Tooltip v-if="canDeleteOccurrence">
+              <Tooltip v-if="canDeleteOccurrence && can('events', 'DELETE')">
                 <TooltipTrigger as-child>
                   <Button
                     type="button"
@@ -1031,7 +1039,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
                 </TooltipContent>
               </Tooltip>
 
-              <Tooltip v-if="canEndRecurrence">
+              <Tooltip v-if="canEndRecurrence && can('events', 'UPDATE')">
                 <TooltipTrigger as-child>
                   <Button
                     type="button"
@@ -1050,7 +1058,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
                 </TooltipContent>
               </Tooltip>
 
-              <Tooltip>
+              <Tooltip v-if="can('events', 'DELETE')">
                 <TooltipTrigger as-child>
                   <Button
                     type="button"

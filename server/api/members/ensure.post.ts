@@ -2,19 +2,24 @@ import { MemberStatus } from '@prisma/client';
 import { z } from 'zod';
 
 const ensureSchema = z.object({
-  clerkUserId: z.string().min(1),
   name: z.string().optional(),
   congregationId: z.string().optional(),
 });
 
 export default defineEventHandler(async (event) => {
+  const auth = (event.context.auth as () => { userId: string | null })();
+  const clerkUserId = auth?.userId;
+  if (!clerkUserId) {
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
+  }
+
   const parsed = ensureSchema.safeParse(await readBody(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
   }
   const body = parsed.data;
 
-  const existing = await prisma.member.findUnique({ where: { clerkUserId: body.clerkUserId } });
+  const existing = await prisma.member.findUnique({ where: { clerkUserId } });
   if (existing) {
     const desiredName = body.name || existing.name || 'Novo membro';
 
@@ -61,7 +66,7 @@ export default defineEventHandler(async (event) => {
       name: body.name || 'Novo membro',
       congregationId,
       status: MemberStatus.ACTIVE,
-      clerkUserId: body.clerkUserId,
+      clerkUserId,
     },
   });
 

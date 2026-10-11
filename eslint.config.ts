@@ -27,6 +27,7 @@ export default typescriptEslint.config(
       'eslint.config.ts',
       'commitlint.config.ts',
       'prisma.config.ts',
+      'prisma/seed.ts',
     ],
   },
 
@@ -120,6 +121,7 @@ export default typescriptEslint.config(
         useCookie: 'readonly',
         useError: 'readonly',
         useRequestHeaders: 'readonly',
+        useRequestFetch: 'readonly',
         useRequestEvent: 'readonly',
         useRequestURL: 'readonly',
         defineNuxtConfig: 'readonly',
@@ -161,6 +163,7 @@ export default typescriptEslint.config(
             'ctx',
             'req',
             'res',
+            'event',
             'config',
             'tsConfig',
             'nodeConfig',

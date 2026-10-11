@@ -1,4 +1,6 @@
+import { PermissionAction } from '@prisma/client';
 import { z } from 'zod';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const occurrenceSchema = z.object({
   seriesId: z.string().optional(),
@@ -42,6 +44,9 @@ function normalizeOccurrenceDateInput(value: string): string | null {
 }
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'events', PermissionAction.UPDATE);
+
   const id = getRouterParam(event, 'id');
 
   if (!id) {
@@ -90,6 +95,8 @@ export default defineEventHandler(async (event) => {
   if (!series) {
     throw createError({ statusCode: 404, statusMessage: 'Event series not found' });
   }
+
+  assertCongregationAccess(rbac, 'events', series.congregationId);
 
   const existingBySeriesAndDate = await prisma.eventOccurrence.findFirst({
     where: {

@@ -1,5 +1,6 @@
-import { EventSeriesType } from '@prisma/client';
+import { EventSeriesType, PermissionAction } from '@prisma/client';
 import { z } from 'zod';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const querySchema = z.object({
   start: z.string().optional(),
@@ -8,10 +9,20 @@ const querySchema = z.object({
 });
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'events', PermissionAction.READ);
+
   const parsed = querySchema.safeParse(getQuery(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid query params' });
   }
+
+  if (parsed.data.congregationId) {
+    assertCongregationAccess(rbac, 'events', parsed.data.congregationId);
+  }
+  const congregationFilter: Record<string, unknown> = parsed.data.congregationId
+    ? { congregationId: parsed.data.congregationId }
+    : getCongregationFilter(rbac, 'events');
 
   const now = new Date();
   const start = parsed.data.start
@@ -32,7 +43,7 @@ export default defineEventHandler(async (event) => {
         { eventType: EventSeriesType.MONTHLY_RECURRING, endsOn: null },
         { endsOn: { gte: start } },
       ],
-      congregationId: parsed.data.congregationId || undefined,
+      ...congregationFilter,
     },
     include: {
       daySchedules: { orderBy: { date: 'asc' } },
@@ -77,7 +88,7 @@ export default defineEventHandler(async (event) => {
           endAt: { gt: start },
         },
       ],
-      congregationId: parsed.data.congregationId || undefined,
+      ...congregationFilter,
     },
     include: {
       congregation: { select: { id: true, name: true, type: true } },

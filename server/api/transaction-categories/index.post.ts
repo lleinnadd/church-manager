@@ -1,6 +1,12 @@
+import { PermissionAction } from '@prisma/client';
 import { transactionCategorySchema } from '~~/shared/validation/transaction';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'treasury', PermissionAction.CREATE);
+  assertGlobalScope(rbac, 'treasury');
+
   const parsed = transactionCategorySchema.safeParse(await readBody(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });

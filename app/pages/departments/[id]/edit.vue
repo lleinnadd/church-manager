@@ -2,6 +2,11 @@
 import { toast } from 'vue-sonner';
 import type { DepartmentFormData, DepartmentFormPayload } from '@/types/forms';
 
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'departments', action: 'UPDATE' },
+});
+
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();

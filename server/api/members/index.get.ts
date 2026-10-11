@@ -1,5 +1,14 @@
-export default defineEventHandler(async () => {
+import { PermissionAction } from '@prisma/client';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
+
+export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'members', PermissionAction.READ);
+
+  const congregationFilter = getCongregationFilter(rbac, 'members');
+
   return prisma.member.findMany({
+    where: congregationFilter,
     orderBy: { name: 'asc' },
     include: {
       congregation: {

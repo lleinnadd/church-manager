@@ -1,12 +1,19 @@
+import { PermissionAction } from '@prisma/client';
 import { createTransactionSchema } from '~~/shared/validation/transaction';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'treasury', PermissionAction.CREATE);
+
   const parsed = createTransactionSchema().safeParse(await readBody(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
   }
 
   const body = parsed.data;
+
+  assertCongregationAccess(rbac, 'treasury', body.congregationId);
 
   const congregation = await prisma.congregation.findUnique({
     where: { id: body.congregationId },

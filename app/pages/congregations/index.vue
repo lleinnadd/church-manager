@@ -3,7 +3,13 @@ import { Church, Plus, Pencil, Trash2, MapPin, Users, UserRound } from '@lucide/
 import type { CongregationType, Congregation } from '@prisma/client';
 import { toast } from 'vue-sonner';
 
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'congregations', action: 'READ' },
+});
+
 const { t, locale } = useI18n();
+const { can } = usePermissions();
 
 interface CongregationLeadershipData {
   responsibles: { memberName: string }[];
@@ -82,7 +88,7 @@ function getResponsibleName(congregation: CongregationWithCount) {
           {{ $t('pages.congregations.description') }}
         </p>
       </div>
-      <Button as-child>
+      <Button v-if="can('congregations', 'CREATE')" as-child>
         <NuxtLink to="/congregations/new">
           <Plus class="mr-2 size-4" />
           {{ $t('pages.congregations.new') }}
@@ -103,7 +109,7 @@ function getResponsibleName(congregation: CongregationWithCount) {
         <EmptyDescription>{{ $t('pages.congregations.emptyDescription') }}</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button as-child>
+        <Button v-if="can('congregations', 'CREATE')" as-child>
           <NuxtLink to="/congregations/new">
             <Plus class="mr-2 size-4" />
             {{ $t('pages.congregations.new') }}
@@ -147,14 +153,15 @@ function getResponsibleName(congregation: CongregationWithCount) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem as-child>
+                <DropdownMenuItem v-if="can('congregations', 'UPDATE')" as-child>
                   <NuxtLink :to="`/congregations/${congregation.id}/edit`">
                     <Pencil class="mr-2 size-4" />
                     {{ $t('common.edit') }}
                   </NuxtLink>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator v-if="can('congregations', 'DELETE')" />
                 <DropdownMenuItem
+                  v-if="can('congregations', 'DELETE')"
                   class="text-destructive"
                   @select="confirmDelete(congregation.id, congregation.name)"
                 >

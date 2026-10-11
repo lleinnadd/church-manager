@@ -1,4 +1,10 @@
+import { PermissionAction } from '@prisma/client';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
+
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'events', PermissionAction.UPDATE);
+
   const id = getRouterParam(event, 'id');
 
   if (!id) {
@@ -19,10 +25,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Event not found' });
   }
 
+  assertCongregationAccess(rbac, 'events', existing.congregationId);
+
   const congregation = await prisma.congregation.findUnique({ where: { id: body.congregationId } });
   if (!congregation) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid congregationId' });
   }
+
+  assertCongregationAccess(rbac, 'events', body.congregationId);
 
   if (body.departmentId) {
     const department = await prisma.department.findUnique({ where: { id: body.departmentId } });

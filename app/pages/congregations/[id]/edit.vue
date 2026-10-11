@@ -2,6 +2,11 @@
 import { toast } from 'vue-sonner';
 import type { CongregationFormData, CongregationFormPayload } from '@/types/forms';
 
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'congregations', action: 'UPDATE' },
+});
+
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();

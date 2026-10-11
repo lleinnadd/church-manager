@@ -1,5 +1,6 @@
-import { DepartmentFunctionScope } from '@prisma/client';
+import { DepartmentFunctionScope, PermissionAction } from '@prisma/client';
 import { z } from 'zod';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const departmentSchema = z.object({
   name: z.string().min(1),
@@ -28,6 +29,10 @@ const departmentSchema = z.object({
 });
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'departments', PermissionAction.CREATE);
+  assertGlobalScope(rbac, 'departments');
+
   const parsed = departmentSchema.safeParse(await readBody(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });

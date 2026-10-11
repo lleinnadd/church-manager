@@ -1,4 +1,10 @@
+import { PermissionAction } from '@prisma/client';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
+
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'events', PermissionAction.READ);
+
   const id = getRouterParam(event, 'id');
 
   if (!id) {
@@ -17,6 +23,8 @@ export default defineEventHandler(async (event) => {
   if (!series) {
     throw createError({ statusCode: 404, statusMessage: 'Event not found' });
   }
+
+  assertCongregationAccess(rbac, 'events', series.congregationId);
 
   return series;
 });

@@ -3,6 +3,11 @@ import { EventSeriesType } from '@prisma/client';
 import { toast } from 'vue-sonner';
 import type { EventFormData, EventFormPayload } from '@/types/forms';
 
+definePageMeta({
+  middleware: ['rbac'],
+  requiredPermission: { resource: 'events', action: 'UPDATE' },
+});
+
 interface EventSeriesApiResponse {
   id: string;
   title: string;

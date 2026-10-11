@@ -1,21 +1,34 @@
+import { MemberStatus, PermissionAction } from '@prisma/client';
 import { createMemberSchema } from '#shared/validation/member';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const memberSchema = createMemberSchema();
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'members', PermissionAction.CREATE);
+
   const parsed = memberSchema.safeParse(await readBody(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
   }
   const body = parsed.data;
 
-  const { status } = body;
+  assertCongregationAccess(rbac, 'members', body.congregationId);
+
+  const status = body.status ?? MemberStatus.ACTIVE;
 
   const departmentsInput = await resolveMemberDepartmentsInput(
     prisma,
     body.departments,
     body.congregationId,
   );
+
+  for (const entry of departmentsInput) {
+    if (entry.congregationId) {
+      assertCongregationAccess(rbac, 'members', entry.congregationId);
+    }
+  }
 
   const memberNumber = await nextMemberNumber();
 
@@ -26,9 +39,10 @@ export default defineEventHandler(async (event) => {
       congregationId: body.congregationId,
       status,
       clerkUserId: null,
-      dateOfBirth: new Date(body.dateOfBirth),
-      memberSince: new Date(body.memberSince),
-      convertionDate: new Date(body.convertionDate),
+      dateOfBirth: body.dateOfBirth == null ? body.dateOfBirth : new Date(body.dateOfBirth),
+      memberSince: body.memberSince == null ? body.memberSince : new Date(body.memberSince),
+      convertionDate:
+        body.convertionDate == null ? body.convertionDate : new Date(body.convertionDate),
       ssn: body.ssn,
       nationalId: body.nationalId,
       maritalStatus: body.maritalStatus,

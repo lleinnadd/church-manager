@@ -1,4 +1,10 @@
+import { PermissionAction } from '@prisma/client';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
+
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'treasury', PermissionAction.UPDATE);
+
   const id = getRouterParam(event, 'id');
   const attachmentId = getRouterParam(event, 'attachmentId');
 
@@ -16,6 +22,12 @@ export default defineEventHandler(async (event) => {
   if (!attachment) {
     throw createError({ statusCode: 404, statusMessage: 'Attachment not found' });
   }
+
+  const parentTransaction = await prisma.transaction.findUnique({
+    where: { id },
+    select: { congregationId: true },
+  });
+  assertCongregationAccess(rbac, 'treasury', parentTransaction?.congregationId);
 
   await safeDeleteAttachmentBlob(attachment.blobPath);
   await prisma.transactionAttachment.delete({ where: { id: attachmentId } });

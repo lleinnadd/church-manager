@@ -6,6 +6,7 @@ import { toast } from 'vue-sonner';
 import type { Congregation } from '@prisma/client';
 
 const { locale, t } = useI18n();
+const { can } = usePermissions();
 
 const props = defineProps<{
   congregationId?: string;
@@ -194,7 +195,7 @@ async function handleSave() {
       </div>
     </CardContent>
     <CardFooter>
-      <Button :disabled="loading" @click="handleSave">
+      <Button v-if="can('treasury-config', 'UPDATE')" :disabled="loading" @click="handleSave">
         <template v-if="loading">{{ $t('common.loading') }}</template>
         <template v-else>{{ $t('common.save') }}</template>
       </Button>

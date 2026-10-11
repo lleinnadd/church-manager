@@ -4,6 +4,7 @@
   },
   "sidebar": {
     "menu": "Menu",
+    "admin": "Administração",
     "home": "Início",
     "congregations": "Congregações",
     "members": "Membros",
@@ -18,6 +19,7 @@
   "common": {
     "cancel": "Cancelar",
     "confirm": "Confirmar",
+    "errorGeneric": "Ocorreu um erro. Tente novamente.",
     "loading": "Carregando...",
     "save": "Salvar",
     "saving": "Salvando...",
@@ -62,7 +64,8 @@
     "zipInvalid": "Informe um CEP válido",
     "eventEndAfterStart": "A data final deve ser maior ou igual à data inicial",
     "eventTimeRangeInvalid": "O horário final deve ser maior que o horário inicial",
-    "amountPositive": "O valor deve ser maior que zero"
+    "amountPositive": "O valor deve ser maior que zero",
+    "dateInvalid": "Data inválida"
   },
   "pages": {
     "home": {
@@ -654,5 +657,95 @@
     "generating": "Gerando...",
     "success": "PDF exportado com sucesso.",
     "error": "Erro ao exportar PDF."
+  },
+  "noAccess": {
+    "title": "Sem acesso",
+    "description": "Sua conta ainda não possui permissões atribuídas. Entre em contato com um administrador para obter acesso ao sistema."
+  },
+  "rbac": {
+    "title": "Perfis de Acesso",
+    "newProfile": "Novo Perfil",
+    "editProfile": "Editar Perfil",
+    "profileName": "Nome do perfil",
+    "profileDescription": "Descrição",
+    "permissions": "Permissões",
+    "bindings": "Vínculos",
+    "bindingsDescription": "Vincule este perfil a funções de departamento. Membros com essas funções herdam as permissões deste perfil.",
+    "existingBindings": "Vínculos existentes",
+    "addBindings": "Adicionar vínculos",
+    "addBinding": "Adicionar Vínculo",
+    "saveBindings": "Salvar Vínculos",
+    "selectFunctions": "Selecione as funções",
+    "addToList": "Adicionar ({count})",
+    "noFunctions": "Nenhuma função de departamento disponível.",
+    "noProfiles": "Nenhum perfil de acesso cadastrado.",
+    "noBindings": "Nenhum vínculo configurado.",
+    "systemProfile": "Perfil do sistema",
+    "deleteConfirm": "Tem certeza que deseja excluir este perfil?",
+    "deleteBindingConfirm": "Tem certeza que deseja remover este vínculo?",
+    "saved": "Perfil salvo com sucesso.",
+    "deleted": "Perfil excluído com sucesso.",
+    "bindingAdded": "Vínculo adicionado com sucesso.",
+    "bindingDeleted": "Vínculo removido com sucesso.",
+    "resources": {
+      "members": "Membros",
+      "congregations": "Congregações",
+      "departments": "Departamentos",
+      "events": "Eventos",
+      "treasury": "Tesouraria",
+      "treasury-config": "Configuração da Tesouraria",
+      "stats": "Dashboard",
+      "rbac": "Perfis de Acesso"
+    },
+    "actions": {
+      "CREATE": "Criar",
+      "READ": "Visualizar",
+      "UPDATE": "Editar",
+      "DELETE": "Excluir",
+      "EXPORT": "Exportar",
+      "MANAGE": "Gerenciar"
+    },
+    "scopeTypes": {
+      "ALL": "Todas as congregações",
+      "OWN_CONGREGATION": "Própria congregação"
+    },
+    "department": "Departamento",
+    "function": "Função",
+    "scope": "Escopo",
+    "selectFunction": "Selecione uma função",
+    "selectScope": "Selecione um escopo",
+    "resourceEnabled": "Permitir este módulo",
+    "isAdmin": "Administrador",
+    "isAdminDescription": "Administradores têm acesso total ao sistema, independente de perfis de acesso."
+  },
+  "registration": {
+    "generateLink": "Gerar link de atualização cadastral",
+    "linkDescription": "Crie um link pessoal para salvar os dados uma única vez. Gerar outro link substitui o anterior.",
+    "expiration": "Data e hora de expiração",
+    "expirationHint": "O prazo padrão é de 48 horas a partir de agora.",
+    "expirationInvalid": "Escolha uma data de expiração no futuro.",
+    "generateError": "Não foi possível gerar o link. Tente novamente.",
+    "link": "Link de atualização cadastral",
+    "copy": "Copiar link",
+    "copied": "Link copiado",
+    "copyError": "Não foi possível copiar o link. Selecione e copie manualmente.",
+    "expiresAt": "Expira em {date}.",
+    "title": "Complete seu cadastro",
+    "description": "Confira e complete seus dados pessoais. Os campos marcados como opcionais podem ficar em branco.",
+    "photoRequired": "A foto é obrigatória.",
+    "finalSaveHint": "Você pode salvar apenas uma vez com este link. Confira seus dados antes de salvar.",
+    "successTitle": "Cadastro atualizado",
+    "successDescription": "Seus dados foram salvos. Você pode fechar esta página.",
+    "usedTitle": "Este link já foi utilizado",
+    "usedDescription": "Seu cadastro já foi salvo por este link. Entre em contato com a secretaria da igreja se precisar de outra atualização.",
+    "expiredTitle": "Este link expirou",
+    "expiredDescription": "Entre em contato com a secretaria da igreja para solicitar um novo link.",
+    "unavailableTitle": "Este link está indisponível",
+    "unavailableDescription": "Este link pode ter sido substituído. Entre em contato com a secretaria da igreja para solicitar outro.",
+    "saveError": "Não foi possível salvar seus dados. Confira os campos e a foto e tente novamente.",
+    "conflict": "Seu cadastro foi alterado durante o salvamento. Recarregue os dados e tente novamente.",
+    "reload": "Recarregar dados",
+    "optional": "(opcional)",
+    "clearDate": "Limpar data"
   }
 }

@@ -1,8 +1,8 @@
 import { DepartmentScope } from '@prisma/client';
-import type { PrismaClient } from '@prisma/client';
 import type { MemberDepartmentOutput } from '#shared/validation/member';
+import type { AppPrismaClient } from './prisma';
 
-type MemberDepartmentResolverClient = Pick<PrismaClient, 'department' | 'departmentFunction'>;
+type MemberDepartmentResolverClient = Pick<AppPrismaClient, 'department' | 'departmentFunction'>;
 
 const BOARD_DEPARTMENT_NAME = 'Diretoria';
 

@@ -1,34 +1,55 @@
-import { MemberStatus } from '@prisma/client';
+import { MemberStatus, PermissionAction } from '@prisma/client';
 import { createMemberSchema } from '#shared/validation/member';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const memberSchema = createMemberSchema();
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'members', PermissionAction.UPDATE);
+
   const id = getRouterParam(event, 'id');
-  const parsed = memberSchema.safeParse(await readBody(event));
+  const rawBody = await readBody(event);
+  const parsed = memberSchema.safeParse(rawBody);
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' });
   }
   const body = parsed.data;
+
+  const isAdminUpdate =
+    typeof rawBody?.isAdmin === 'boolean' && rbac?.isAdmin ? rawBody.isAdmin : undefined;
 
   const existing = await prisma.member.findUnique({ where: { id } });
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Member not found' });
   }
 
-  if (existing.photoBlobPath && existing.photoBlobPath !== body.photoBlobPath) {
+  assertCongregationAccess(rbac, 'members', existing.congregationId);
+  assertCongregationAccess(rbac, 'members', body.congregationId);
+
+  if (
+    body.photoBlobPath !== undefined &&
+    existing.photoBlobPath &&
+    existing.photoBlobPath !== body.photoBlobPath
+  ) {
     await safeDeleteBlob(existing.photoBlobPath);
   }
 
   const isClerkManaged = Boolean(existing.clerkUserId);
 
-  const status = isClerkManaged ? MemberStatus.ACTIVE : body.status;
+  const status = isClerkManaged ? MemberStatus.ACTIVE : (body.status ?? existing.status);
 
   const departmentsInput = await resolveMemberDepartmentsInput(
     prisma,
     body.departments,
     body.congregationId,
   );
+
+  for (const entry of departmentsInput) {
+    if (entry.congregationId) {
+      assertCongregationAccess(rbac, 'members', entry.congregationId);
+    }
+  }
 
   const member = await prisma.member.update({
     where: { id },
@@ -37,9 +58,11 @@ export default defineEventHandler(async (event) => {
       congregationId: body.congregationId,
       status,
       clerkUserId: undefined,
-      dateOfBirth: new Date(body.dateOfBirth),
-      memberSince: new Date(body.memberSince),
-      convertionDate: new Date(body.convertionDate),
+      isAdmin: isAdminUpdate,
+      dateOfBirth: body.dateOfBirth == null ? body.dateOfBirth : new Date(body.dateOfBirth),
+      memberSince: body.memberSince == null ? body.memberSince : new Date(body.memberSince),
+      convertionDate:
+        body.convertionDate == null ? body.convertionDate : new Date(body.convertionDate),
       ssn: body.ssn,
       nationalId: body.nationalId,
       maritalStatus: body.maritalStatus,
@@ -51,13 +74,16 @@ export default defineEventHandler(async (event) => {
       nationality: body.nationality,
       phonePrimary: body.phonePrimary,
       phoneSecondary: body.phoneSecondary,
-      photoUrl: body.photoUrl ?? null,
-      photoBlobPath: body.photoBlobPath ?? null,
+      photoUrl: body.photoUrl,
+      photoBlobPath: body.photoBlobPath,
       observations: body.observations,
-      departments: {
-        deleteMany: {},
-        create: departmentsInput,
-      },
+      departments:
+        rawBody.departments === undefined
+          ? undefined
+          : {
+              deleteMany: {},
+              create: departmentsInput,
+            },
     },
     include: {
       departments: {

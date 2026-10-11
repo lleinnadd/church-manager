@@ -1,4 +1,6 @@
+import { PermissionAction } from '@prisma/client';
 import { z } from 'zod';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const querySchema = z.object({
   type: z.enum(['INCOME', 'EXPENSE']).optional(),
@@ -9,6 +11,9 @@ const querySchema = z.object({
 });
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'treasury', PermissionAction.READ);
+
   const parsed = querySchema.safeParse(getQuery(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid query params' });
@@ -16,10 +21,14 @@ export default defineEventHandler(async (event) => {
 
   const { type, congregationId, categoryId, startDate, endDate } = parsed.data;
 
-  const where: Record<string, unknown> = {};
+  if (congregationId) {
+    assertCongregationAccess(rbac, 'treasury', congregationId);
+  }
+  const scopeFilter = congregationId ? { congregationId } : getCongregationFilter(rbac, 'treasury');
+
+  const where: Record<string, unknown> = { ...scopeFilter };
 
   if (type) where.type = type;
-  if (congregationId) where.congregationId = congregationId;
   if (categoryId) where.categoryId = categoryId;
 
   if (startDate || endDate) {

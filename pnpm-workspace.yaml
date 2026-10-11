@@ -9,6 +9,7 @@ allowBuilds:
   '@prisma/engines': false
   esbuild: false
   maplibre-gl: false
+  mongodb-memory-server: false
   prisma: false
   unrs-resolver: false
   vue-demi: false

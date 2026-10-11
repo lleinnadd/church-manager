@@ -2,8 +2,8 @@
 import type { Component, HTMLAttributes } from 'vue';
 import type { PrimitiveProps } from 'reka-ui';
 import { reactiveOmit } from '@vueuse/core';
-import type { SidebarMenuButtonVariants } from '.';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { SidebarMenuButtonVariants } from '.';
 import SidebarMenuButtonChild from './SidebarMenuButtonChild.vue';
 import { useSidebar } from './utils';
 

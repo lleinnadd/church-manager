@@ -1,6 +1,11 @@
+import { PermissionAction } from '@prisma/client';
 import { createTransactionSchema } from '~~/shared/validation/transaction';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'treasury', PermissionAction.UPDATE);
+
   const id = getRouterParam(event, 'id');
 
   if (!id) {
@@ -19,12 +24,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Transaction not found' });
   }
 
+  assertCongregationAccess(rbac, 'treasury', existing.congregationId);
+
   const congregation = await prisma.congregation.findUnique({
     where: { id: body.congregationId },
   });
   if (!congregation) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid congregationId' });
   }
+
+  assertCongregationAccess(rbac, 'treasury', body.congregationId);
 
   if (body.categoryId) {
     const category = await prisma.transactionCategory.findUnique({

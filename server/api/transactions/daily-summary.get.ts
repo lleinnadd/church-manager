@@ -1,5 +1,6 @@
-import { TransactionType } from '@prisma/client';
+import { TransactionType, PermissionAction } from '@prisma/client';
 import { z } from 'zod';
+import type { UserPermissionContext } from '~~/shared/types/rbac';
 
 const querySchema = z.object({
   startDate: z.string(),
@@ -8,12 +9,16 @@ const querySchema = z.object({
 });
 
 export default defineEventHandler(async (event) => {
+  const rbac = event.context.rbac as UserPermissionContext | null;
+  assertPermission(rbac, 'treasury', PermissionAction.READ);
+
   const parsed = querySchema.safeParse(getQuery(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'startDate and endDate are required' });
   }
 
   const { startDate, endDate, congregationId } = parsed.data;
+  assertCongregationAccess(rbac, 'treasury', congregationId);
   const start = new Date(startDate);
   const end = new Date(endDate);
 
