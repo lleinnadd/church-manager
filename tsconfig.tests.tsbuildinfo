@@ -1,0 +1,1 @@
+{"root":["./tests/member-registration.integration.test.ts","./tests/member-registration.test.ts","./tests/fixtures/member-registration.ts","./vitest.config.ts","./.nuxt/types/nitro.d.ts"],"version":"5.9.3"}

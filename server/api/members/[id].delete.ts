@@ -1,5 +1,8 @@
 import { PermissionAction } from '@prisma/client';
+import { clerkClient } from '@clerk/nuxt/server';
+import { isClerkAPIResponseError } from '@clerk/nuxt/errors';
 import type { UserPermissionContext } from '~~/shared/types/rbac';
+import { deleteLocalMember } from '../../utils/member-deletion';
 
 export default defineEventHandler(async (event) => {
   const rbac = event.context.rbac as UserPermissionContext | null;
@@ -15,7 +18,7 @@ export default defineEventHandler(async (event) => {
 
   const member = await prisma.member.findUnique({
     where: { id },
-    select: { photoBlobPath: true, clerkUserId: true, congregationId: true },
+    select: { clerkUserId: true, congregationId: true },
   });
 
   if (member) {
@@ -26,12 +29,27 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: 'You cannot delete your own profile' });
   }
 
-  await prisma.memberDepartment.deleteMany({ where: { memberId: id } });
-  await prisma.member.delete({ where: { id } });
+  if (member?.clerkUserId) {
+    try {
+      await clerkClient(event).users.deleteUser(member.clerkUserId);
+    } catch (error) {
+      const alreadyDeleted =
+        error != null &&
+        isClerkAPIResponseError(error) &&
+        error.status === 404 &&
+        error.errors.some((entry) => entry.code === 'resource_not_found');
 
-  if (member?.photoBlobPath) {
-    await safeDeleteBlob(member.photoBlobPath);
+      if (!alreadyDeleted) {
+        throw createError({
+          statusCode: 502,
+          statusMessage: 'Failed to delete linked account. Please try again.',
+          cause: error,
+        });
+      }
+    }
   }
+
+  await deleteLocalMember({ id });
 
   return { success: true };
 });

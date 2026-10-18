@@ -84,7 +84,12 @@ beforeAll(async () => {
     replSet: { count: 1, storageEngine: 'wiredTiger', ip: '127.0.0.1' },
   });
   process.env.DATABASE_URL = database.getUri('registration_tests');
-  await promisify(execFile)(process.execPath, ['node_modules/prisma/build/index.js', 'db', 'push']);
+  await promisify(execFile)(process.execPath, [
+    'node_modules/prisma/build/index.js',
+    'db',
+    'push',
+    '--skip-generate',
+  ]);
   prisma = (await import('../server/utils/prisma')).default;
   service = await import('../server/utils/member-registration');
   photos = await import('../server/utils/member-photo');

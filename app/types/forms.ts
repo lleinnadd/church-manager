@@ -91,6 +91,7 @@ export interface MemberFormData {
   addressLinePrimary?: string | null;
   district?: string | null;
   memberSince?: string | null;
+  baptismDate?: string | null;
   motherName?: string | null;
   fatherName?: string | null;
   naturality?: string | null;
@@ -120,6 +121,7 @@ export interface MemberFormPayload {
   addressLinePrimary?: string | null;
   district?: string | null;
   memberSince?: string | null;
+  baptismDate?: string | null;
   motherName?: string | null;
   fatherName?: string | null;
   naturality?: string | null;

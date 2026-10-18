@@ -803,6 +803,21 @@ const onSubmit = handleSubmit(async (formValues) => {
 
       <Card v-if="!publicMode">
         <CardHeader>
+          <CardTitle>{{ $t('form.member.baptismDate') }}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FormField v-slot="{ componentField }" name="baptismDate">
+            <FormItem>
+              <FormLabel>{{ $t('form.member.baptismDate') }}</FormLabel>
+              <FormControl><Input v-bind="componentField" type="date" /></FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+        </CardContent>
+      </Card>
+
+      <Card v-if="!publicMode">
+        <CardHeader>
           <CardTitle>{{ $t('form.member.observations') }}</CardTitle>
           <CardDescription>{{ $t('form.member.observationsDescription') }}</CardDescription>
         </CardHeader>

@@ -28,6 +28,30 @@ Create a `.env` file based on `.env.example` and configure at least:
 - `NUXT_CLERK_WEBHOOK_SIGNING_SECRET`
 - `BLOB_READ_WRITE_TOKEN` (required for member 3x4 photo upload)
 
+## Clerk account deletion
+
+Deleting a member linked to Clerk also permanently deletes their login account.
+The app deletes the Clerk account first. If Clerk fails, the member remains in the
+application and staff can retry. Members cannot delete their own profile in the app.
+Members without a Clerk account are deleted only from the application.
+
+For each Clerk environment, configure a webhook endpoint in the Clerk Dashboard:
+
+- URL: `https://<application-domain>/api/webhook/clerk` (use a public tunnel for local development).
+- Events: `user.created`, `user.updated`, and `user.deleted`.
+- Copy that endpoint's signing secret into `NUXT_CLERK_WEBHOOK_SIGNING_SECRET` in
+  the matching application environment. Configure its `NUXT_CLERK_SECRET_KEY` too.
+
+Deleting a user through the Clerk Dashboard removes the linked member, department
+memberships, and photo from the app when the signed `user.deleted` webhook arrives.
+Photo removal is best-effort. Duplicate deliveries and concurrent app deletions
+are safe. Processing failures return HTTP 500 so Clerk can retry; invalid signatures
+return HTTP 400. If Clerk deletion succeeds but local cleanup fails, webhook delivery
+or repeating the app deletion can finish cleanup.
+
+Verify both directions with disposable development accounts, check successful
+deliveries in the Clerk Dashboard, and replay a deletion event to verify retries.
+
 ## Development Server
 
 Start the development server on `http://localhost:3000`:

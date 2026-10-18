@@ -51,7 +51,7 @@ const { data: members, refresh, status } = useFetch<MemberWithRelations[]>('/api
 const isLoading = computed(() => status.value === 'pending');
 
 const showBirthdayExport = ref(false);
-const deleteTarget = ref<{ id: string; name: string } | null>(null);
+const deleteTarget = ref<{ id: string; name: string; hasAccount: boolean } | null>(null);
 const isDeleting = ref(false);
 const departmentScrollRefs = ref<Record<string, HTMLElement | null>>({});
 
@@ -95,8 +95,12 @@ function departmentDisplayName(
   return localName || membership.department.name;
 }
 
-function confirmDelete(id: string, name: string) {
-  deleteTarget.value = { id, name };
+function confirmDelete(member: MemberWithRelations) {
+  deleteTarget.value = {
+    id: member.id,
+    name: member.name,
+    hasAccount: Boolean(member.clerkUserId),
+  };
 }
 
 function setDepartmentScrollRef(id: string, el: HTMLElement | null) {
@@ -142,6 +146,13 @@ async function handleDelete() {
         >
           <Cake class="mr-2 size-4" />
           {{ $t('pages.members.exportBirthdays') }}
+        </Button>
+        <Button
+          v-if="can('members', 'CREATE') && can('members', 'UPDATE')"
+          variant="outline"
+          as-child
+        >
+          <NuxtLink to="/members/import">{{ $t('memberImport.title') }}</NuxtLink>
         </Button>
         <Button v-if="can('members', 'CREATE')" as-child>
           <NuxtLink to="/members/new">
@@ -209,10 +220,7 @@ async function handleDelete() {
                 </DropdownMenuItem>
                 <template v-if="member.clerkUserId !== userId && can('members', 'DELETE')">
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    class="text-destructive"
-                    @select="confirmDelete(member.id, member.name)"
-                  >
+                  <DropdownMenuItem class="text-destructive" @select="confirmDelete(member)">
                     <Trash2 class="mr-2 size-4" />
                     {{ $t('common.delete') }}
                   </DropdownMenuItem>
@@ -288,7 +296,14 @@ async function handleDelete() {
     <ConfirmDialog
       :open="!!deleteTarget"
       :title="$t('pages.members.deleteTitle')"
-      :description="$t('pages.members.deleteDescription', { name: deleteTarget?.name })"
+      :description="
+        $t(
+          deleteTarget?.hasAccount
+            ? 'pages.members.deleteAccountDescription'
+            : 'pages.members.deleteDescription',
+          { name: deleteTarget?.name },
+        )
+      "
       :confirm-label="$t('common.delete')"
       variant="destructive"
       :loading="isDeleting"

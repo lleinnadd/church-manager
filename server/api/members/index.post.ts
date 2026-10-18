@@ -41,6 +41,7 @@ export default defineEventHandler(async (event) => {
       clerkUserId: null,
       dateOfBirth: body.dateOfBirth == null ? body.dateOfBirth : new Date(body.dateOfBirth),
       memberSince: body.memberSince == null ? body.memberSince : new Date(body.memberSince),
+      baptismDate: body.baptismDate == null ? body.baptismDate : new Date(body.baptismDate),
       convertionDate:
         body.convertionDate == null ? body.convertionDate : new Date(body.convertionDate),
       ssn: body.ssn,

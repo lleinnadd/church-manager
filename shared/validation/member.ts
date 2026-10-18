@@ -148,6 +148,9 @@ export const createMemberSchema = (messages?: MemberValidationMessageOverrides) 
     status: z.nativeEnum(MemberStatus).nullish(),
     dateOfBirth: optionalString,
     memberSince: optionalString,
+    baptismDate: optionalString.refine((value) => !value || isValidMemberDate(value), {
+      message: resolved.dateInvalid,
+    }),
     convertionDate: optionalString,
     ssn: optionalString.refine((value) => !value || isValidCpf(value), {
       message: resolved.cpfInvalid,

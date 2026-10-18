@@ -1,6 +1,7 @@
 import { MemberStatus } from '@prisma/client';
 import { verifyWebhook } from '@clerk/nuxt/webhooks';
 import { z } from 'zod';
+import { deleteLocalMember } from '../../utils/member-deletion';
 
 const clerkUserSchema = z
   .object({
@@ -39,22 +40,33 @@ const mapClerkName = (data: ClerkUserPayload | undefined) => {
 };
 
 export default defineEventHandler(async (event) => {
+  let verified: unknown;
   try {
-    const verified = await verifyWebhook(event);
-    const parsed = webhookSchema.safeParse(verified);
-    if (!parsed.success) {
+    verified = await verifyWebhook(event);
+  } catch (_err) {
+    setResponseStatus(event, 400);
+    return 'Error verifying webhook';
+  }
+
+  const parsed = webhookSchema.safeParse(verified);
+  if (!parsed.success) {
+    setResponseStatus(event, 400);
+    return 'Invalid webhook payload';
+  }
+
+  const evt = parsed.data;
+  const eventType = evt.type;
+  const clerkUserId = evt.data?.id;
+
+  if (!clerkUserId?.trim()) {
+    if (eventType === 'user.deleted') {
       setResponseStatus(event, 400);
-      return 'Error verifying webhook';
+      return 'Invalid webhook payload';
     }
+    return 'Webhook received';
+  }
 
-    const evt = parsed.data;
-    const eventType = evt.type;
-    const clerkUserId = evt.data?.id;
-
-    if (!clerkUserId) {
-      return 'Webhook received';
-    }
-
+  try {
     if (eventType === 'user.created') {
       const name = mapClerkName(evt.data);
 
@@ -89,26 +101,16 @@ export default defineEventHandler(async (event) => {
     }
 
     if (eventType === 'user.deleted') {
-      const member = await prisma.member.findUnique({
-        where: { clerkUserId },
-        select: { id: true, photoBlobPath: true },
-      });
-
-      if (member) {
-        await prisma.memberDepartment.deleteMany({ where: { memberId: member.id } });
-        await prisma.member.delete({ where: { id: member.id } });
-
-        if (member.photoBlobPath) {
-          await safeDeleteBlob(member.photoBlobPath);
-        }
-      }
-
+      await deleteLocalMember({ clerkUserId });
       return 'Webhook received';
     }
 
     return 'Webhook received';
-  } catch (_err) {
-    setResponseStatus(event, 400);
-    return 'Error verifying webhook';
+  } catch (error) {
+    // Keep failed deliveries visible for diagnosis and replay.
+    // eslint-disable-next-line no-console
+    console.error('Clerk webhook processing failed', { eventType, clerkUserId, error });
+    setResponseStatus(event, 500);
+    return 'Error processing webhook';
   }
 });
