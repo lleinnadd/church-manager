@@ -86,56 +86,6 @@ model Member {
   @@map("members")
 }
 
-model MemberImportBatch {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  createdBy      String
-  congregationId String   @db.ObjectId
-  revision       Int      @default(0)
-  deleting       Boolean  @default(false)
-  items          MemberImportItem[]
-
-  @@index([createdBy, createdAt])
-  @@map("member_import_batches")
-}
-
-model MemberImportItem {
-  id              String            @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  batchId         String            @db.ObjectId
-  batch           MemberImportBatch @relation(fields: [batchId], references: [id])
-  fileName        String
-  sourcePath      String
-  sourceType      String
-  sourceHash      String
-  previewPath     String
-  status          String            @default("UPLOADED")
-  revision        Int               @default(0)
-  attempts        Int               @default(0)
-  leaseToken      String?
-  leaseExpiresAt  DateTime?
-  extraction      Json?
-  draft           Json?
-  errorCode       String?
-  savedMemberId   String?           @db.ObjectId
-  result          String?
-
-  @@unique([batchId, sourceHash])
-  @@index([status, leaseExpiresAt])
-  @@map("member_import_items")
-}
-
-// Every import commit touches this document inside its transaction so concurrent
-// imports retry and recheck matching instead of creating duplicate members.
-model MemberImportLock {
-  id       String @id @map("_id")
-  revision Int    @default(0)
-
-  @@map("member_import_locks")
-}
-
 model Department {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   createdAt DateTime @default(now())

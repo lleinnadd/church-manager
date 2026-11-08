@@ -147,13 +147,6 @@ async function handleDelete() {
           <Cake class="mr-2 size-4" />
           {{ $t('pages.members.exportBirthdays') }}
         </Button>
-        <Button
-          v-if="can('members', 'CREATE') && can('members', 'UPDATE')"
-          variant="outline"
-          as-child
-        >
-          <NuxtLink to="/members/import">{{ $t('memberImport.title') }}</NuxtLink>
-        </Button>
         <Button v-if="can('members', 'CREATE')" as-child>
           <NuxtLink to="/members/new">
             <Plus class="mr-2 size-4" />
