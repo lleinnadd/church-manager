@@ -11,6 +11,13 @@ export const registrationLinkSchema = z
   .object({ expiresAt: z.string().datetime({ offset: true }).optional() })
   .strict();
 
+export const registrationMemberLinkSchema = registrationLinkSchema.extend({
+  congregationId: z
+    .string()
+    .regex(/^[a-f\d]{24}$/i)
+    .optional(),
+});
+
 export const registrationMemberSelect = {
   id: true,
   updatedAt: true,
@@ -53,32 +60,86 @@ export function registrationExpiration(expiresAt?: string, now = new Date()) {
   return expiration;
 }
 
-export async function getRegistrationMember(token: string, now = new Date()) {
+export async function getRegistrationRequest(token: string, now = new Date()) {
   if (!/^[A-Za-z0-9_-]{43}$/.test(token)) {
     throw createError({ statusCode: 404, statusMessage: 'Link unavailable' });
   }
-  const member = await prisma.member.findFirst({
-    where: { registrationTokenHash: hashRegistrationToken(token) },
-    select: registrationMemberSelect,
-  });
-  if (!member || !member.registrationExpiresAt) {
-    throw createError({ statusCode: 404, statusMessage: 'Link unavailable' });
+  const tokenHash = hashRegistrationToken(token);
+  let request = await prisma.memberRegistration.findUnique({ where: { tokenHash } });
+  // Import previously issued links without changing their URL or deadline.
+  if (!request) {
+    const member = await prisma.member.findFirst({
+      where: { registrationTokenHash: tokenHash },
+      select: { ...registrationMemberSelect, congregationId: true, registrationCreatedBy: true },
+    });
+    if (!member?.registrationExpiresAt || !member.congregationId) {
+      throw createError({ statusCode: 404, statusMessage: 'Link unavailable' });
+    }
+    if (member.registrationUsedAt) {
+      throw createError({
+        statusCode: 410,
+        statusMessage: 'Link already used',
+        data: { code: 'LINK_USED' },
+      });
+    }
+    request = await prisma.memberRegistration.upsert({
+      where: { tokenHash },
+      create: {
+        tokenHash,
+        expiresAt: member.registrationExpiresAt,
+        createdBy: member.registrationCreatedBy ?? 'legacy',
+        congregationId: member.congregationId,
+        memberId: member.id,
+        memberUpdatedAt: member.updatedAt,
+        decisions: [],
+      },
+      update: {},
+    });
   }
-  if (member.registrationUsedAt) {
+  if (request.status === 'SUPERSEDED')
+    throw createError({ statusCode: 404, statusMessage: 'Link unavailable' });
+  if (request.status !== 'OPEN') {
     throw createError({
       statusCode: 410,
       statusMessage: 'Link already used',
       data: { code: 'LINK_USED' },
     });
   }
-  if (member.registrationExpiresAt <= now) {
+  if (request.expiresAt <= now) {
     throw createError({
       statusCode: 410,
       statusMessage: 'Link expired',
       data: { code: 'LINK_EXPIRED' },
     });
   }
-  return member;
+  return request;
+}
+
+export async function getRegistrationMember(token: string, now = new Date()) {
+  const request = await getRegistrationRequest(token, now);
+  const member = request.memberId
+    ? await prisma.member.findUnique({
+        where: { id: request.memberId },
+        select: registrationMemberSelect,
+      })
+    : null;
+  if (request.memberId && !member) {
+    throw createError({ statusCode: 404, statusMessage: 'Link unavailable' });
+  }
+  const submission = request.submission as Record<string, unknown> | null;
+  return {
+    ...member,
+    ...submission,
+    name: member?.clerkUserId ? member.name : (submission?.name ?? member?.name ?? ''),
+    clerkUserId: member?.clerkUserId,
+    photoUrl: request.photoUrl ?? member?.photoUrl ?? null,
+    registrationExpiresAt: request.expiresAt,
+    correctionReason: [...request.decisions]
+      .reverse()
+      .find((entry) => (entry as Record<string, unknown>)?.action === 'RETURN') as
+      | Record<string, unknown>
+      | undefined,
+  };
 }
 
 export interface RegistrationPhoto {
@@ -91,6 +152,7 @@ export async function saveMemberRegistration(
   rawData: unknown,
   photo?: RegistrationPhoto,
 ) {
+  const request = await getRegistrationRequest(token);
   const member = await getRegistrationMember(token);
   const parsed = registrationSchema.safeParse(rawData);
   if (!parsed.success) {
@@ -100,48 +162,45 @@ export async function saveMemberRegistration(
       data: { code: 'INVALID_FIELDS', fields: parsed.error.flatten().fieldErrors },
     });
   }
-  const body = parsed.data;
-  if (member.clerkUserId && body.name !== member.name) {
+  if (member.clerkUserId && parsed.data.name !== member.name) {
     throw createError({ statusCode: 400, statusMessage: 'Name is managed by your account' });
   }
-  if (!photo && !member.photoUrl) {
+  if (!photo && !member.photoUrl)
     throw createError({ statusCode: 400, statusMessage: 'Photo is required' });
-  }
   if (photo) validateMemberPhotoBuffer(photo.data, photo.type);
   const uploaded = photo ? await uploadMemberPhoto(photo.data, photo.type) : null;
   const now = new Date();
-  // A single MongoDB document update saves the data and consumes the link together.
-  // updatedAt also protects against concurrent staff edits and photo replacements.
-  const result = await prisma.member.updateMany({
-    where: {
-      id: member.id,
-      updatedAt: member.updatedAt,
-      registrationTokenHash: hashRegistrationToken(token),
-      registrationUsedAt: null,
-      registrationExpiresAt: { gt: now },
-    },
+  if (request.memberId) {
+    const latest = await prisma.member.findUnique({
+      where: { id: request.memberId },
+      select: { updatedAt: true },
+    });
+    if (!latest || latest.updatedAt.getTime() !== member.updatedAt?.getTime()) {
+      if (uploaded) await safeDeleteBlob(uploaded.photoBlobPath);
+      throw createError({
+        statusCode: latest ? 409 : 404,
+        statusMessage: 'Member changed. Reload and try again.',
+      });
+    }
+  }
+  const result = await prisma.memberRegistration.updateMany({
+    where: { id: request.id, updatedAt: request.updatedAt, status: 'OPEN', expiresAt: { gt: now } },
     data: {
-      ...body,
-      name: member.clerkUserId ? member.name : body.name,
-      dateOfBirth: new Date(body.dateOfBirth),
-      memberSince: body.memberSince ? new Date(body.memberSince) : null,
-      convertionDate: body.convertionDate ? new Date(body.convertionDate) : null,
-      nationalId: body.nationalId || null,
-      fatherName: body.fatherName || null,
-      ...(uploaded ?? {}),
-      registrationUsedAt: now,
+      submission: parsed.data,
+      status: 'PENDING',
+      submittedAt: now,
+      photoUrl: uploaded?.photoUrl ?? member.photoUrl,
+      photoBlobPath:
+        uploaded?.photoBlobPath ?? request.photoBlobPath ?? member.photoBlobPath ?? null,
     },
   });
-  // On an ambiguous database error we retain the upload: the write may have committed.
   if (result.count !== 1) {
     if (uploaded) await safeDeleteBlob(uploaded.photoBlobPath);
-    await getRegistrationMember(token);
+    await getRegistrationRequest(token);
     throw createError({
       statusCode: 409,
-      statusMessage: 'Member changed during save. Reload and try again.',
-      data: { code: 'MEMBER_CHANGED' },
+      statusMessage: 'Registration changed. Reload and try again.',
     });
   }
-  if (uploaded && member.photoBlobPath) await safeDeleteBlob(member.photoBlobPath);
   return { success: true };
 }

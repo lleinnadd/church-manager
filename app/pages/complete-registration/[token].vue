@@ -18,6 +18,7 @@ const conflict = ref(false);
 const { data, status, error, refresh } = await useFetch<{
   member: Omit<MemberFormData, 'congregationId' | 'status'>;
   expiresAt: string;
+  correctionReason?: string | null;
 }>(endpoint);
 
 useHead({
@@ -120,6 +121,9 @@ async function reload() {
           $t('registration.reload')
         }}</Button>
       </div>
+      <p v-if="data.correctionReason" class="rounded-lg border p-4 text-sm">
+        {{ $t('registration.correctionReason') }}: {{ data.correctionReason }}
+      </p>
       <MemberForm
         :key="formVersion"
         :initial-data="initialData"

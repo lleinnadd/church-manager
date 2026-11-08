@@ -68,7 +68,11 @@ async function handleSubmit(data: MemberFormPayload) {
         <h1 class="text-2xl font-bold tracking-tight">{{ $t('pages.members.editTitle') }}</h1>
         <p class="text-muted-foreground text-sm">{{ $t('pages.members.editDescription') }}</p>
       </div>
-      <MemberRegistrationLink v-if="member" :member-id="id" />
+      <MemberRegistrationLink
+        v-if="member"
+        :member-id="id"
+        :current-congregation-id="member.congregationId"
+      />
     </div>
 
     <div v-if="isLoading" class="space-y-4">

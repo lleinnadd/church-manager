@@ -8,6 +8,8 @@ const props = defineProps<{
   initialData?: MemberFormData;
   loading?: boolean;
   publicMode?: boolean;
+  photoReadOnly?: boolean;
+  submitLabel?: string;
 }>();
 
 const { locale } = useI18n();
@@ -349,6 +351,7 @@ const onSubmit = handleSubmit(async (formValues) => {
                 "
               >
                 <Button
+                  v-if="!photoReadOnly"
                   type="button"
                   variant="outline"
                   size="sm"
@@ -360,7 +363,7 @@ const onSubmit = handleSubmit(async (formValues) => {
                   }}
                 </Button>
                 <Button
-                  v-if="photoPreviewUrl"
+                  v-if="photoPreviewUrl && !photoReadOnly"
                   type="button"
                   variant="destructive"
                   :size="publicMode ? 'icon-sm' : 'sm'"
@@ -983,7 +986,7 @@ const onSubmit = handleSubmit(async (formValues) => {
         </Button>
         <Button type="submit" :disabled="loading || isUploadingPhoto">
           <span v-if="loading || isUploadingPhoto">{{ $t('common.saving') }}</span>
-          <span v-else>{{ $t('common.save') }}</span>
+          <span v-else>{{ submitLabel || $t('common.save') }}</span>
         </Button>
       </div>
 

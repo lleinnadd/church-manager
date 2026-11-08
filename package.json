@@ -14,7 +14,8 @@
     "format:check": "prettier --check .",
     "prepare": "husky",
     "commit": "cz",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:prepare": "node scripts/prepare-database.mjs"
   },
   "dependencies": {
     "@clerk/localizations": "^3.37.2",
@@ -44,6 +45,7 @@
     "embla-carousel-vue": "^8.6.0",
     "h3": "1.15.11",
     "image-size": "^2.0.2",
+    "mongodb": "7.5.0",
     "nuxt": "^4.4.8",
     "react": "^19.2.7",
     "reka-ui": "^2.10.0",

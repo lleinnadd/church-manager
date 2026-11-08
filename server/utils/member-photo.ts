@@ -1,6 +1,7 @@
 import { del, put } from '@vercel/blob';
 import { imageSize } from 'image-size';
 import { createError } from 'h3';
+import prisma from './prisma';
 
 interface ImageDimensionResult {
   width?: number;
@@ -93,6 +94,17 @@ export async function uploadMemberPhoto(buffer: Buffer, mimeType: string) {
 
 export async function safeDeleteBlob(pathname: string) {
   try {
+    // Review history can still reference a photo after staff replace it.
+    const reference = await prisma.memberRegistration.findFirst({
+      where: { OR: [{ photoBlobPath: pathname }, { retainedPhotoBlobPaths: { has: pathname } }] },
+      select: { id: true },
+    });
+    if (reference) return;
+    const current = await prisma.member.findFirst({
+      where: { photoBlobPath: pathname },
+      select: { id: true },
+    });
+    if (current) return;
     const deleteBlob = del as DelBlobFn;
     await deleteBlob(pathname, { token: blobToken() });
   } catch {

@@ -18,9 +18,17 @@ export async function deleteLocalMember(where: MemberDeletionTarget): Promise<vo
 
         if (!member) return null;
 
+        const retainedRegistration = await tx.memberRegistration.findFirst({
+          where: { memberId: member.id },
+          select: { id: true },
+        });
+        await tx.memberRegistration.updateMany({
+          where: { memberId: member.id, status: { in: ['OPEN', 'PENDING'] } },
+          data: { status: 'SUPERSEDED' },
+        });
         await tx.memberDepartment.deleteMany({ where: { memberId: member.id } });
         await tx.member.delete({ where: { id: member.id } });
-        return member.photoBlobPath;
+        return retainedRegistration ? null : member.photoBlobPath;
       });
 
       break;

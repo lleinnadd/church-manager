@@ -138,7 +138,13 @@ async function handleDelete() {
         <h1 class="text-2xl font-bold tracking-tight">{{ $t('pages.members.title') }}</h1>
         <p class="text-muted-foreground text-sm">{{ $t('pages.members.description') }}</p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
+        <MemberRegistrationLink v-if="can('members', 'CREATE')" />
+        <Button variant="outline" as-child
+          ><NuxtLink to="/members/registrations">{{
+            $t('registration.reviewQueue')
+          }}</NuxtLink></Button
+        >
         <Button
           v-if="can('members', 'EXPORT')"
           variant="outline"

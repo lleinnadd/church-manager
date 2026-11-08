@@ -14,6 +14,7 @@ export default defineEventHandler(async (event) => {
       photoUrl: member.photoUrl,
       nameLocked: Boolean(member.clerkUserId),
     },
-    expiresAt: member.registrationExpiresAt!.toISOString(),
+    correctionReason: member.correctionReason?.reason ?? null,
+    expiresAt: member.registrationExpiresAt.toISOString(),
   };
 });

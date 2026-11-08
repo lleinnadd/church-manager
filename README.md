@@ -134,3 +134,22 @@ set and never use the configured application database. The first integration run
 downloads a MongoDB server binary; local test ports must be allowed.
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+### Member registration links and reviews
+
+Staff can generate a blank registration link from **Members**, choosing only a
+congregation, or issue a prefilled link from a member's edit page. Submissions
+appear under **Registration reviews** (`/members/registrations`) and do not alter
+members until approved. Reviewers can edit the personal details and congregation,
+or request corrections with a reason and a new deadline. Corrections use the same
+link. Decision history and submitted photos are retained for review; photos from
+failed concurrent submissions are removed. Existing active links continue to work.
+
+Before deploying this change, run `npm run db:prepare` against the target database
+using its `DATABASE_URL`. This pushes the MongoDB schema/indexes and repairs the
+account ID index so multiple members may have no account. Run this preparation
+in a maintenance window: replacing that index briefly removes its uniqueness
+constraint. Use this command instead of a direct `prisma db push` for subsequent schema
+updates: Prisma cannot express MongoDB partial unique indexes. The command
+excludes that index from the push and recreates it with its partial predicate. No live database is changed by
+building or running the test suite; integration tests use temporary MongoDB.

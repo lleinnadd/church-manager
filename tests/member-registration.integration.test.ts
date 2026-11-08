@@ -42,11 +42,18 @@ function permissionContext(role: string): UserPermissionContext {
     memberId,
     clerkUserId: 'test-staff',
     congregationId,
-    isAdmin: false,
+    isAdmin: role === 'admin',
     isGlobal: false,
     hasAnyPermission: true,
     allowedCongregationIds: role === 'other-congregation' ? [] : [congregationId],
     permissions: [
+      ...(role !== 'reader'
+        ? [PermissionAction.READ, PermissionAction.CREATE].map((action) => ({
+            resource: 'members',
+            action,
+            scopeType: PermissionScopeType.OWN_CONGREGATION,
+          }))
+        : []),
       {
         resource: 'members',
         action: role === 'reader' ? PermissionAction.READ : PermissionAction.UPDATE,
@@ -78,6 +85,24 @@ async function submit(token: string, details: unknown = personalDetails, file?: 
   return fetch(`${origin}/api/public/member-registration/${token}`, { method: 'POST', body });
 }
 
+async function staffRequest(path: string, body?: unknown, role = 'editor') {
+  return fetch(`${origin}${path}`, {
+    method: body ? 'POST' : 'GET',
+    headers: { 'Content-Type': 'application/json', 'x-test-role': role },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+}
+async function approve(id: string, submission = personalDetails) {
+  const detail = await (await staffRequest(`/api/member-registrations/${id}`)).json();
+  return staffRequest(`/api/member-registrations/${id}`, {
+    action: 'APPROVE',
+    updatedAt: detail.updatedAt,
+    memberUpdatedAt: detail.member?.updatedAt ?? null,
+    congregationId,
+    submission,
+  });
+}
+
 beforeAll(async () => {
   database = await MongoMemoryReplSet.create({
     binary: { downloadDir: join(tmpdir(), 'church-manager-mongodb-binaries') },
@@ -91,6 +116,8 @@ beforeAll(async () => {
     '--skip-generate',
   ]);
   prisma = (await import('../server/utils/prisma')).default;
+  const { ensureMemberAccountIndex } = await import('../scripts/ensure-member-indexes.mjs');
+  await ensureMemberAccountIndex();
   service = await import('../server/utils/member-registration');
   photos = await import('../server/utils/member-photo');
   const permissions = await import('../server/utils/rbac');
@@ -103,6 +130,7 @@ beforeAll(async () => {
   vi.stubGlobal('resolveUserPermissions', resolvePermissions);
   vi.stubGlobal('resolveMemberDepartmentsInput', departments.resolveMemberDepartmentsInput);
   vi.stubGlobal('safeDeleteBlob', photos.safeDeleteBlob);
+  vi.stubGlobal('getCongregationFilter', permissions.getCongregationFilter);
 
   const app = h3.createApp({ onError: () => {} });
   app.use(
@@ -132,6 +160,22 @@ beforeAll(async () => {
     '/api/public/member-registration/:token',
     (await import('../server/api/public/member-registration/[token].post')).default,
   );
+  router.post(
+    '/api/member-registrations',
+    (await import('../server/api/member-registrations/index.post')).default,
+  );
+  router.get(
+    '/api/member-registrations',
+    (await import('../server/api/member-registrations/index.get')).default,
+  );
+  router.get(
+    '/api/member-registrations/:id',
+    (await import('../server/api/member-registrations/[id].get')).default,
+  );
+  router.post(
+    '/api/member-registrations/:id',
+    (await import('../server/api/member-registrations/[id].post')).default,
+  );
   app.use(router);
   server = createServer(h3.toNodeListener(app));
   await new Promise<void>((resolve) => {
@@ -141,6 +185,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  await prisma.memberRegistration.deleteMany();
   await prisma.memberDepartment.deleteMany();
   await prisma.member.deleteMany();
   await prisma.congregation.deleteMany();
@@ -315,12 +360,17 @@ describe('public member registration with MongoDB', () => {
     expect((await submit(newToken)).status).toBe(404);
   });
 
-  it('saves once, normalizes optional blanks, and preserves administrative fields and departments', async () => {
+  it('queues once, then approves, normalizes blanks, normalizes optional blanks, and preserves administrative fields and departments', async () => {
     const department = await prisma.department.create({ data: { name: 'Test department' } });
     await prisma.memberDepartment.create({ data: { memberId, departmentId: department.id } });
     const token = await issueToken();
     expect((await submit(token)).status).toBe(200);
     expect((await submit(token, { ...personalDetails, name: 'Repeated edit' })).status).toBe(410);
+    expect((await prisma.member.findUnique({ where: { id: memberId } }))?.name).toBe(
+      'Original name',
+    );
+    const request = await prisma.memberRegistration.findFirstOrThrow({ where: { memberId } });
+    expect((await approve(request.id)).status).toBe(200);
     const stored = await prisma.member.findUnique({
       where: { id: memberId },
       include: { departments: true },
@@ -353,15 +403,18 @@ describe('public member registration with MongoDB', () => {
       where: { id: memberId },
       select: { name: true, registrationUsedAt: true },
     });
-    expect(['First writer', 'Second writer']).toContain(stored?.name);
-    expect(stored?.registrationUsedAt).toBeInstanceOf(Date);
+    expect(stored?.name).toBe('Original name');
+    const request = await prisma.memberRegistration.findFirstOrThrow({ where: { memberId } });
+    expect(['First writer', 'Second writer']).toContain(
+      (request.submission as { name: string }).name,
+    );
   });
 
   it('rejects expired links', async () => {
     const token = await issueToken();
-    await prisma.member.update({
-      where: { id: memberId },
-      data: { registrationExpiresAt: new Date(0) },
+    await prisma.memberRegistration.updateMany({
+      where: { memberId },
+      data: { expiresAt: new Date(0) },
     });
     const response = await submit(token);
     expect(response.status).toBe(410);
@@ -415,16 +468,21 @@ describe('public member registration with MongoDB', () => {
     await expect(service.getRegistrationMember(token)).resolves.toBeDefined();
     vi.mocked(photos.uploadMemberPhoto).mockResolvedValueOnce(uploaded);
     expect((await submit(token, personalDetails, file)).status).toBe(200);
-    expect(photos.safeDeleteBlob).toHaveBeenCalledExactlyOnceWith('members/photos/existing.png');
-    expect(await prisma.member.findUnique({ where: { id: memberId } })).toMatchObject(uploaded);
+    expect(photos.safeDeleteBlob).not.toHaveBeenCalled();
+    expect(await prisma.memberRegistration.findFirst({ where: { memberId } })).toMatchObject(
+      uploaded,
+    );
+    expect((await prisma.member.findUnique({ where: { id: memberId } }))?.photoUrl).toBe(
+      'https://example.com/existing.png',
+    );
   });
 
   it('cleans up a replacement photo when the link expires during upload', async () => {
     const token = await issueToken();
     vi.mocked(photos.uploadMemberPhoto).mockImplementationOnce(async () => {
-      await prisma.member.update({
-        where: { id: memberId },
-        data: { registrationExpiresAt: new Date(0) },
+      await prisma.memberRegistration.updateMany({
+        where: { memberId },
+        data: { expiresAt: new Date(0) },
       });
       return { photoUrl: 'https://example.com/new.png', photoBlobPath: 'members/photos/new.png' };
     });
@@ -475,7 +533,7 @@ describe('public member registration with MongoDB', () => {
       photoUrl: 'https://example.com/new.png',
       photoBlobPath: 'members/photos/new.png',
     });
-    vi.spyOn(prisma.member, 'updateMany').mockRejectedValueOnce(
+    vi.spyOn(prisma.memberRegistration, 'updateMany').mockRejectedValueOnce(
       new Error('Database connection interrupted'),
     );
     const response = await submit(
@@ -520,14 +578,271 @@ describe('public member registration with MongoDB', () => {
     ]);
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
     expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
-    const stored = await prisma.member.findUnique({ where: { id: memberId } });
+    const stored = await prisma.memberRegistration.findFirst({ where: { memberId } });
     const winningPath = stored?.photoBlobPath;
     const losingPath =
       winningPath === 'members/photos/new-1.png'
         ? 'members/photos/new-2.png'
         : 'members/photos/new-1.png';
-    expect(photos.safeDeleteBlob).toHaveBeenCalledWith('members/photos/existing.png');
+    expect(photos.safeDeleteBlob).not.toHaveBeenCalledWith('members/photos/existing.png');
     expect(photos.safeDeleteBlob).toHaveBeenCalledWith(losingPath);
     expect(photos.safeDeleteBlob).not.toHaveBeenCalledWith(winningPath);
+  });
+});
+
+describe('registration review', () => {
+  it('creates a blank link, requires a photo, and creates a member only on edited approval', async () => {
+    const issued = await staffRequest('/api/member-registrations', { congregationId });
+    expect(issued.status).toBe(200);
+    const { path } = await issued.json();
+    const token = path.split('/').pop();
+    const publicData = await (
+      await fetch(`${origin}/api/public/member-registration/${token}`)
+    ).json();
+    expect(publicData.member.name).toBe('');
+    expect((await submit(token)).status).toBe(400);
+    vi.mocked(photos.uploadMemberPhoto).mockResolvedValueOnce({
+      photoUrl: 'https://example.com/new.png',
+      photoBlobPath: 'members/photos/new.png',
+    });
+    expect(
+      (
+        await submit(
+          token,
+          personalDetails,
+          new Blob([new Uint8Array(validPhoto)], { type: 'image/png' }),
+        )
+      ).status,
+    ).toBe(200);
+    expect(await prisma.member.count()).toBe(1);
+    const request = await prisma.memberRegistration.findFirstOrThrow();
+    expect((await approve(request.id, { ...personalDetails, name: 'Reviewed name' })).status).toBe(
+      200,
+    );
+    expect(await prisma.member.count()).toBe(2);
+    expect(await prisma.member.findFirst({ where: { name: 'Reviewed name' } })).toMatchObject({
+      congregationId,
+    });
+    expect((await approve(request.id)).status).toBe(409);
+  });
+  it('returns corrections with a new deadline and permits the same link to submit again', async () => {
+    const token = await issueToken();
+    expect((await submit(token)).status).toBe(200);
+    expect((await issue()).status).toBe(409);
+    const request = await prisma.memberRegistration.findFirstOrThrow();
+    const expiresAt = new Date(Date.now() + 96 * 3600000).toISOString();
+    expect(
+      (
+        await staffRequest(`/api/member-registrations/${request.id}`, {
+          action: 'RETURN',
+          updatedAt: request.updatedAt.toISOString(),
+          reason: 'Correct the phone',
+          expiresAt,
+        })
+      ).status,
+    ).toBe(200);
+    const data = await (await fetch(`${origin}/api/public/member-registration/${token}`)).json();
+    expect(data.correctionReason).toBe('Correct the phone');
+    expect(data.expiresAt).toBe(expiresAt);
+    expect(data.member.name).toBe(personalDetails.name);
+    expect((await submit(token)).status).toBe(200);
+    expect((await approve(request.id)).status).toBe(200);
+    expect(
+      (await prisma.memberRegistration.findUniqueOrThrow({ where: { id: request.id } })).decisions,
+    ).toHaveLength(2);
+  });
+  it('enforces review permissions and congregation boundaries', async () => {
+    const token = await issueToken();
+    await submit(token);
+    const request = await prisma.memberRegistration.findFirstOrThrow();
+    const body = {
+      action: 'RETURN',
+      updatedAt: request.updatedAt.toISOString(),
+      reason: 'Correct details',
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    };
+    expect(
+      (await staffRequest(`/api/member-registrations/${request.id}`, body, 'reader')).status,
+    ).toBe(403);
+    expect(
+      (await staffRequest(`/api/member-registrations/${request.id}`, body, 'other-congregation'))
+        .status,
+    ).toBe(403);
+    expect(
+      (
+        await staffRequest(
+          `/api/member-registrations/${request.id}`,
+          undefined,
+          'other-congregation',
+        )
+      ).status,
+    ).toBe(403);
+    expect(
+      await (
+        await staffRequest('/api/member-registrations', undefined, 'other-congregation')
+      ).json(),
+    ).toEqual([]);
+    expect(
+      (await staffRequest('/api/member-registrations', { congregationId }, 'reader')).status,
+    ).toBe(403);
+  });
+  it('rejects approval when the member changed after the reviewer loaded it', async () => {
+    const token = await issueToken();
+    await submit(token);
+    const request = await prisma.memberRegistration.findFirstOrThrow();
+    const detail = await (await staffRequest(`/api/member-registrations/${request.id}`)).json();
+    await prisma.member.update({
+      where: { id: memberId },
+      data: { name: 'Staff changed name', updatedAt: new Date(Date.now() + 1000) },
+    });
+    const response = await staffRequest(`/api/member-registrations/${request.id}`, {
+      action: 'APPROVE',
+      updatedAt: detail.updatedAt,
+      memberUpdatedAt: detail.member.updatedAt,
+      congregationId,
+      submission: personalDetails,
+    });
+    expect(response.status).toBe(409);
+    expect(
+      (await prisma.memberRegistration.findUniqueOrThrow({ where: { id: request.id } })).status,
+    ).toBe('PENDING');
+  });
+  it('imports an active legacy link into the review workflow', async () => {
+    const { token, tokenHash } = service.createRegistrationToken();
+    await prisma.member.update({
+      where: { id: memberId },
+      data: {
+        registrationTokenHash: tokenHash,
+        registrationExpiresAt: new Date(Date.now() + 3600000),
+      },
+    });
+    expect((await submit(token)).status).toBe(200);
+    expect((await prisma.member.findUniqueOrThrow({ where: { id: memberId } })).name).toBe(
+      'Original name',
+    );
+    expect((await prisma.memberRegistration.findFirstOrThrow()).status).toBe('PENDING');
+  });
+  it('allows exactly one concurrent review decision and keeps a single decision history entry', async () => {
+    const token = await issueToken();
+    await submit(token);
+    const request = await prisma.memberRegistration.findFirstOrThrow();
+    const detail = await (await staffRequest(`/api/member-registrations/${request.id}`)).json();
+    const body = {
+      action: 'APPROVE',
+      updatedAt: detail.updatedAt,
+      memberUpdatedAt: detail.member.updatedAt,
+      congregationId,
+      submission: personalDetails,
+    };
+    const results = await Promise.all([
+      staffRequest(`/api/member-registrations/${request.id}`, body),
+      staffRequest(`/api/member-registrations/${request.id}`, body),
+    ]);
+    expect(results.map((result) => result.status).sort()).toEqual([200, 409]);
+    expect(
+      (await prisma.memberRegistration.findUniqueOrThrow({ where: { id: request.id } })).decisions,
+    ).toHaveLength(1);
+  });
+  it('rejects incomplete correction requests and unauthorized destination congregations', async () => {
+    const token = await issueToken();
+    await submit(token);
+    const request = await prisma.memberRegistration.findFirstOrThrow();
+    const base = {
+      action: 'RETURN',
+      updatedAt: request.updatedAt.toISOString(),
+      reason: 'Correct details',
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    };
+    expect(
+      (await staffRequest(`/api/member-registrations/${request.id}`, { ...base, reason: ' ' }))
+        .status,
+    ).toBe(400);
+    expect(
+      (
+        await staffRequest(`/api/member-registrations/${request.id}`, {
+          ...base,
+          expiresAt: new Date(0).toISOString(),
+        })
+      ).status,
+    ).toBe(400);
+    const member = await prisma.member.findUniqueOrThrow({ where: { id: memberId } });
+    const other = await prisma.congregation.create({ data: { name: 'Other congregation' } });
+    expect(
+      (
+        await staffRequest(`/api/member-registrations/${request.id}`, {
+          action: 'APPROVE',
+          updatedAt: request.updatedAt.toISOString(),
+          memberUpdatedAt: member.updatedAt.toISOString(),
+          congregationId: other.id,
+          submission: personalDetails,
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (await prisma.memberRegistration.findUniqueOrThrow({ where: { id: request.id } })).status,
+    ).toBe('PENDING');
+  });
+  it('keeps the account index repair idempotent and permits multiple members without accounts', async () => {
+    const { ensureMemberAccountIndex } = await import('../scripts/ensure-member-indexes.mjs');
+    await ensureMemberAccountIndex();
+    await prisma.member.create({
+      data: { name: 'Second unlinked member', memberNumber: 2, clerkUserId: null },
+    });
+    const { prepareDatabase } = await import('../scripts/prepare-database.mjs');
+    await prepareDatabase();
+    await ensureMemberAccountIndex();
+    await prisma.member.create({
+      data: { name: 'Third unlinked member', memberNumber: 3, clerkUserId: null },
+    });
+    await prisma.member.update({
+      where: { id: memberId },
+      data: { clerkUserId: 'linked-account' },
+    });
+    await expect(
+      prisma.member.create({
+        data: { name: 'Duplicate account', memberNumber: 4, clerkUserId: 'linked-account' },
+      }),
+    ).rejects.toThrow();
+  });
+  it('allows an administrator to choose a congregation for an unassigned member link', async () => {
+    await prisma.member.update({ where: { id: memberId }, data: { congregationId: null } });
+    const path = `/api/members/${memberId}/registration-link`;
+    expect((await staffRequest(path, {}, 'admin')).status).toBe(400);
+    expect((await staffRequest(path, { congregationId })).status).toBe(403);
+    expect((await staffRequest(path, { congregationId }, 'admin')).status).toBe(200);
+    const request = await prisma.memberRegistration.findFirstOrThrow();
+    expect(request.congregationId).toBe(congregationId);
+    expect(
+      (await prisma.member.findUniqueOrThrow({ where: { id: memberId } })).congregationId,
+    ).toBeNull();
+  });
+  it('preserves an existing MongoDB $type partial account index during preparation', async () => {
+    await prisma.$runCommandRaw({ dropIndexes: 'members', index: 'members_clerkUserId_key' });
+    await prisma.$runCommandRaw({
+      createIndexes: 'members',
+      indexes: [
+        {
+          name: 'members_clerkUserId_key',
+          key: { clerkUserId: 1 },
+          unique: true,
+          partialFilterExpression: { clerkUserId: { $type: 'string' } },
+        },
+      ],
+    });
+    const { prepareDatabase } = await import('../scripts/prepare-database.mjs');
+    await prepareDatabase();
+    await prepareDatabase();
+    await prisma.member.create({
+      data: { name: 'Unlinked after preparation', memberNumber: 2, clerkUserId: null },
+    });
+    await prisma.member.update({
+      where: { id: memberId },
+      data: { clerkUserId: 'existing-account' },
+    });
+    await expect(
+      prisma.member.create({
+        data: { name: 'Duplicate account', memberNumber: 3, clerkUserId: 'existing-account' },
+      }),
+    ).rejects.toThrow();
   });
 });
